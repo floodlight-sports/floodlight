@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "floodlight"
+version = "0.1.0"
+description = "A high-level framework for sports data analysis"
+authors = ["draabe <draabx@posteo.org>"]
+license = "MIT"
+
+
+[tool.poetry.dependencies]
+python = ">=3.7, ~3.8"
+numpy = "^1.21.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+black = "^21.9b0"
+flake8 = "^3.9.2"
+pre-commit = "^2.15.0"
+commitizen = "^2.20.0"
+
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.0.1"
+tag_format = "$version"
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+  | foo.py           # also separately exclude a file named foo.py in
+                     # the root of the project
+)
+'''
