@@ -17,6 +17,9 @@ black = "^21.9b0"
 flake8 = "^3.9.2"
 pre-commit = "^2.15.0"
 commitizen = "^2.20.0"
+Sphinx = "^4.2.0"
+sphinx-rtd-theme = "^1.0.0"
+sphinx-autodoc-typehints = "^1.12.0"
 
 
 [tool.commitizen]
