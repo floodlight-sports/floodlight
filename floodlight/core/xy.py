@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import Union, Tuple
+from typing import Tuple
 
 import numpy as np
 
-
-numeric = Union[int, float, np.number]
+from floodlight.utils.typing import Numeric
 
 
 @dataclass
@@ -105,7 +104,7 @@ class XY:
         """
         return self.xy[t, xID * 2 : xID * 2 + 2]
 
-    def translate(self, shift: Tuple[numeric, numeric]):
+    def translate(self, shift: Tuple[Numeric, Numeric]):
         """Translates data by shift vector.
 
         Parameters
