@@ -23,6 +23,3 @@ def test_read_positions_for_all_files(data_loc: str or Path):
                 np.sum([obs_xy.xy.shape == obs_2_xy.xy.shape for obs_2_xy in match_xy])
                 >= 2
             )
-
-
-test_read_positions_for_all_files("D:\\dfl_data\\PositionalData\\BL")
