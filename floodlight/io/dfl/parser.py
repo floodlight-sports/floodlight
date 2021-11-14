@@ -9,8 +9,9 @@ from floodlight.core.xy import XY
 def read_positions(filepath: str or Path):
     """Read a DFL format position data XML
 
-    Returns a List of floodlight.core.xy.XY Objects
-    TODO: Extensive description
+    Read a position data XML file that is given in the DFL (German Football League)
+    format into a (unsorted) List of floodlight.core.xy.XY Objects comprising the
+    positions for each half of the Home and Away team.
 
     Parameters
     ----------
@@ -130,12 +131,45 @@ def read_positions(filepath: str or Path):
                             in_pl_num = int(np.nanargmin(time_deltas))
 
                             # append x/y position of in-player to out-player
-                            pl_xy[sgm_id][team_id][out_pl_num] = np.vstack(
+                            xy_combined = np.vstack(
                                 (
                                     pl_xy[sgm_id][team_id][out_pl_num],
                                     pl_xy[sgm_id][team_id][in_pl_num],
                                 )
                             )
+
+                            # assign to player if combined position length matches ball
+                            if xy_combined.shape[0] == ball_xy[sgm_id].shape[0]:
+                                pl_xy[sgm_id][team_id][out_pl_num] = xy_combined
+
+                            # otherwise remove time overlaps in positions of in-player
+                            else:
+                                # check for time overlaps within in- and out-player
+                                time_ovlp = []
+                                for ind, t in enumerate(
+                                    pl_time[sgm_id][team_id][out_pl_num]
+                                ):
+                                    if t in pl_time[sgm_id][team_id][in_pl_num]:
+                                        time_ovlp.append(ind)
+
+                                # remove time overlaps
+                                pl_xy[sgm_id][team_id][in_pl_num] = np.array(
+                                    [
+                                        pl_xy[sgm_id][team_id][in_pl_num][i]
+                                        for i in range(
+                                            pl_xy[sgm_id][team_id][in_pl_num].shape[0]
+                                        )
+                                        if i not in time_ovlp
+                                    ]
+                                )
+
+                                # create new combined position without overlaps
+                                pl_xy[sgm_id][team_id][out_pl_num] = np.vstack(
+                                    (
+                                        pl_xy[sgm_id][team_id][out_pl_num],
+                                        pl_xy[sgm_id][team_id][in_pl_num],
+                                    )
+                                )
 
                             # store number of in-player to remove from containers later
                             in_subs[sgm_id][team_id].append(in_pl_num)
@@ -159,10 +193,6 @@ def read_positions(filepath: str or Path):
 
                             # assign new end time as ball end time
                             end_time = ball_time[sgm_id][-1]
-
-                        # TODO
-                        # if pl_xy[sgm_id][team_id][out_pl_num].shape[0] == 70429:
-                        #    debug = 0
 
             # remove in-player positions from container if substitution was performed
             for in_pl_num in in_subs[sgm_id][team_id]:
