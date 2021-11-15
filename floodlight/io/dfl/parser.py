@@ -190,13 +190,13 @@ def read_positions(filepath: str or Path):
                                         < pl_time[sgm_id][team_id][in_pl_num][0]
                                     ):
 
-                                        # duplicate last position of out-player
+                                        # append NaNs to last position of out-player
+                                        nan_pos = np.empty(1, 2)
+                                        nan_pos.fill(np.nan)
+
                                         pl_xy[sgm_id][team_id][out_pl_num] = np.append(
                                             pl_xy[sgm_id][team_id][out_pl_num],
-                                            np.reshape(
-                                                pl_xy[sgm_id][team_id][out_pl_num][-1],
-                                                (1, 2),
-                                            ),
+                                            nan_pos,
                                             axis=0,
                                         )
 
