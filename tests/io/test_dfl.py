@@ -1,8 +1,8 @@
 import os
-import numpy as np
 from pathlib import Path
 
 from floodlight.io.dfl.parser import read_positions
+from floodlight.core.xy import XY
 
 
 def test_read_positions_for_all_files(data_loc: str or Path):
@@ -17,9 +17,7 @@ def test_read_positions_for_all_files(data_loc: str or Path):
         file = os.path.join(data_loc, file)
         match_xy = read_positions(file)
 
-        # check that each segment (i.e. half) exists twice (for both home and away team)
-        for obs_xy in match_xy:
-            assert (
-                np.sum([obs_xy.xy.shape == obs_2_xy.xy.shape for obs_2_xy in match_xy])
-                >= 2
-            )
+        # assert that match_xy is a List of XY objects
+        assert isinstance(match_xy, list)
+        for xy in match_xy:
+            assert isinstance(xy, XY)
