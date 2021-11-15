@@ -1,11 +1,14 @@
 import os
 from pathlib import Path
 
-from floodlight.io.dfl.parser import read_positions
+from floodlight.io.dfl import read_positions
 from floodlight.core.xy import XY
 
 
-def test_read_positions_for_all_files(data_loc: str or Path):
+def test_read_positions_for_all_files():
+
+    # TODO: define local data location with all files
+    data_loc: str or Path = None
 
     # iterate over files in data location
     for file in os.listdir(data_loc):
