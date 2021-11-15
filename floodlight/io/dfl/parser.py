@@ -191,7 +191,7 @@ def read_positions(filepath: str or Path):
                                     ):
 
                                         # append NaNs to last position of out-player
-                                        nan_pos = np.empty(1, 2)
+                                        nan_pos = np.empty((1, 2))
                                         nan_pos.fill(np.nan)
 
                                         pl_xy[sgm_id][team_id][out_pl_num] = np.append(
