@@ -7,11 +7,11 @@ from floodlight.core.xy import XY
 
 
 def read_positions(filepath: str or Path):
-    """Read a DFL format position data XML
+    """Read a DFL format position data XML File
 
     Read a position data XML file that is given in the DFL (German Football League)
-    format into a (unsorted) List of floodlight.core.xy.XY Objects comprising the
-    positions for each half of the Home and Away team.
+    format into a List of (unsorted) floodlight.core.xy.XY Objects comprising the
+    positions for each half of the Home and Away team
 
     Parameters
     ----------
@@ -142,17 +142,20 @@ def read_positions(filepath: str or Path):
                             if xy_combined.shape[0] == ball_xy[sgm_id].shape[0]:
                                 pl_xy[sgm_id][team_id][out_pl_num] = xy_combined
 
-                            # otherwise remove time overlaps in positions of in-player
-                            else:
-                                # check for time overlaps within in- and out-player
+                            # if too long remove time overlaps in positions of in-player
+                            elif xy_combined.shape[0] > ball_xy[sgm_id].shape[0]:
+
+                                # search for time overlaps in in-player timestamps
                                 time_ovlp = []
                                 for ind, t in enumerate(
-                                    pl_time[sgm_id][team_id][out_pl_num]
+                                    pl_time[sgm_id][team_id][in_pl_num]
                                 ):
-                                    if t in pl_time[sgm_id][team_id][in_pl_num]:
+
+                                    # store timestamps earlier than last out-player time
+                                    if t <= pl_time[sgm_id][team_id][out_pl_num][-1]:
                                         time_ovlp.append(ind)
 
-                                # remove time overlaps
+                                # remove overlapping timestamps from in-player positions
                                 pl_xy[sgm_id][team_id][in_pl_num] = np.array(
                                     [
                                         pl_xy[sgm_id][team_id][in_pl_num][i]
@@ -164,6 +167,44 @@ def read_positions(filepath: str or Path):
                                 )
 
                                 # create new combined position without overlaps
+                                pl_xy[sgm_id][team_id][out_pl_num] = np.vstack(
+                                    (
+                                        pl_xy[sgm_id][team_id][out_pl_num],
+                                        pl_xy[sgm_id][team_id][in_pl_num],
+                                    )
+                                )
+
+                            # if too small find missing timestamps
+                            else:
+
+                                # check timestamps in the gap
+                                for frame in range(
+                                    ball_xy[sgm_id].shape[0] - xy_combined.shape[0]
+                                ):
+
+                                    # check if timestamp is included for in-player
+                                    if (
+                                        end_time
+                                        + (frame + 1)
+                                        * (ball_time[sgm_id][1] - ball_time[sgm_id][0])
+                                        < pl_time[sgm_id][team_id][in_pl_num][0]
+                                    ):
+
+                                        # duplicate last position of out-player
+                                        pl_xy[sgm_id][team_id][out_pl_num] = np.append(
+                                            pl_xy[sgm_id][team_id][out_pl_num],
+                                            np.reshape(
+                                                pl_xy[sgm_id][team_id][out_pl_num][-1],
+                                                (1, 2),
+                                            ),
+                                            axis=0,
+                                        )
+
+                                    # break the for loop otherwise
+                                    else:
+                                        break
+
+                                # create new combined position
                                 pl_xy[sgm_id][team_id][out_pl_num] = np.vstack(
                                     (
                                         pl_xy[sgm_id][team_id][out_pl_num],
