@@ -1,269 +1,248 @@
 from pathlib import Path
+from typing import Dict, Tuple, Union
+
+from lxml import etree
 import numpy as np
 import datetime as dt
-from lxml import etree
 
 from floodlight.core.xy import XY
+from floodlight.core.pitch import Pitch
 
 
-def read_positions(filepath: str or Path):
-    """Read a DFL format position data XML File
-
-    Read a position data XML file that is given in the DFL (German Football League)
-    format into a List of (unsorted) floodlight.core.xy.XY Objects comprising the
-    positions for each half of the Home and Away team
+def _read_matchinfo(filepath_matchinfo: Union[str, Path]) -> Tuple[Dict, Pitch]:
+    """Reads match information XML file and returns dictionary with match information
+    and Pitch object.
 
     Parameters
     ----------
-    filepath: str or pathlib.Path
+    filepath_matchinfo: str or Path
+        Full path to metadata.xml file.
+
+    Returns
+    -------
+    metainfo: Dict
+        Dictionary with metainformation such as framerate.
+    pitch: Pitch
+        Pitch object with actual pitch length and width.
+    """
+    # set up XML tree
+    tree = etree.parse(str(filepath_matchinfo))
+    root = tree.getroot()
+
+    # parse XML file and extract matchinfo
+    metadata = {}
+
+    length = root.find("MatchInformation").find("Environment").get("PitchX")
+    metadata["length"] = float(length) if length else None
+
+    width = root.find("MatchInformation").find("Environment").get("PitchY")
+    metadata["width"] = float(width) if width else None
+
+    pitch = Pitch(
+        length=metadata["length"],
+        width=metadata["width"],
+        xlim=(-metadata["length"] / 2, metadata["length"] / 2),
+        ylim=(-metadata["width"] / 2, metadata["width"] / 2),
+        unit="m",
+        boundaries="flexible",
+        sport="football",
+    )
+
+    return metadata, pitch
+
+
+def create_links_from_matchinfo(
+    filepath_matchinfo: Union[str, Path]
+) -> Dict[str, Dict[int, int]]:
+    """"""
+    # set up XML tree
+    tree = etree.parse(str(filepath_matchinfo))
+    root = tree.getroot()
+
+    # parse XML file and extract links from pID to xID for both teams
+    homeids = None
+    awayids = None
+    teams = root.find("MatchInformation").find("Teams")
+    home = root.find("MatchInformation").find("General").get("HomeTeamId")
+    away = root.find("MatchInformation").find("General").get("AwayTeamId")
+
+    for team in teams:
+        if team.get("TeamId") == home:
+            homeids = [player.get("PersonId") for player in team.find("Players")]
+        elif team.get("TeamId") == away:
+            awayids = [player.get("PersonId") for player in team.find("Players")]
+        else:
+            continue
+            # potential warning that matchinfo file is corrupted
+
+    links = {
+        "Home": {pID: xID + 1 for xID, pID in enumerate(homeids)},
+        "Away": {pID: xID + 1 for xID, pID in enumerate(awayids)},
+    }
+
+    return links
+
+
+def _create_periods_from_dat(filepath_dat: Union[str, Path]) -> Tuple[Dict, int]:
+    """Parses over position file and returns dictionary with segment timeaxis
+
+    Parameters
+    ----------
+    filepath_dat: str or Path
+        Full path to position.xml file.
+
+
+    Returns
+    -------
+    periods: Dict
+        Dictionary with timeaxis for the segment:
+        `periods[segment] = List of dt.datetime`.
+    """
+    periods = {}
+    framerate = None
+
+    # parse the framesets for the ball to find the segment timeaxis
+    for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
+        if frame_set.get("TeamId") == "Ball":
+            periods[frame_set.get("GameSection")] = [
+                dt.datetime.fromisoformat(frame.get("T"))
+                for frame in frame_set.iterfind("Frame")
+            ]
+            if framerate is None:
+                framerate = int(
+                    1
+                    / (
+                        periods[frame_set.get("GameSection")][1]
+                        - periods[frame_set.get("GameSection")][0]
+                    ).total_seconds()
+                )
+
+    return periods, framerate
+
+
+def read_dfl_files(
+    filepath_dat: Union[str, Path],
+    filepath_matchinfo: Union[str, Path],
+    links: Dict[str, Dict[int, int]] = None,
+) -> Tuple[XY, XY, XY, XY, XY, XY, Pitch]:
+    """Read a DFL format position data and match information XML
+
+    Parameters
+    ----------
+    filepath_dat: str or pathlib.Path
         XML File where the Position data in DFL format is saved
+    filepath_matchinfo: str or pathlib.Path
+        XML File where the Match Information data in DFL format is saved
+    links: Dict
+        Dictionary from DFL PersonId to position in the XY Object
 
     Returns
     -------
     List of floodlight.core.xy.XY Objects
     """
+    # checks?
 
-    # initialize variables
-    sub_tol = 30  # tolerance fir a possible substitution; in [s]
-    in_subs = {}  # player numbers of all in subs
-    all_xy = []  # List with all XY Objects
-    pl_xy = {}  # player positions at each segment
-    pl_time = {}  # player timestamps at each segment
-    ball_xy = {}  # ball positions at each segment
-    ball_time = {}  # ball timestamps at each segment
+    # read metadata
+    metadata, pitch = _read_matchinfo(filepath_matchinfo)
 
-    # loop over all FrameSets containing the positions of the
-    # respective objects/players
-    for _, frame_set in etree.iterparse(filepath, tag="FrameSet"):
+    # create or check links
+    if links is None:
+        links = create_links_from_matchinfo(filepath_matchinfo)
+    else:
+        pass
+        # potential check
 
-        # read TeamId describing the affiliation with a team
-        team_id = frame_set.get("TeamId")
+    # create segments
+    periods, framerate = _create_periods_from_dat(filepath_dat)
+    segments = list(periods.keys())
 
-        # get GameSection describing the current segment
-        sgm_id = frame_set.get("GameSection")
+    # infer data array shapes
+    number_of_home_players = max(links["Home"].values())
+    number_of_away_players = max(links["Away"].values())
+    number_of_frames = {}
+    for segment in segments:
+        number_of_frames[segment] = len(periods[segment])
 
-        # create temporary Lists with x/y positions and timestamps
-        frame_set_x_pos = []
-        frame_set_y_pos = []
-        frame_set_times = []
-
-        # append x/y positions and timestamps for all Frames in current segment
-        for frame in frame_set.iterfind("Frame"):
-
-            # append x/y position and timestamp at current frame
-            frame_set_x_pos.append(frame.get("X"))
-            frame_set_y_pos.append(frame.get("Y"))
-            frame_set_times.append(dt.datetime.fromisoformat(frame.get("T")))
-
-            # release memory
-            frame.clear()
-
-        # assign x/y positions and timestamps
-        if team_id == "Ball":
-            ball_xy[sgm_id] = np.array([frame_set_x_pos, frame_set_y_pos]).T
-            ball_time[sgm_id] = frame_set_times
-
-        else:  # player
-
-            # initialize player position and timestamp containers for segment
-            if sgm_id not in pl_xy:
-                pl_xy[sgm_id] = {}
-                pl_time[sgm_id] = {}
-            if team_id not in pl_xy[sgm_id]:
-                pl_xy[sgm_id][team_id] = []
-                pl_time[sgm_id][team_id] = []
-
-            # x/y positions
-            pl_xy[sgm_id][team_id].append(
-                np.array([frame_set_x_pos, frame_set_y_pos]).T
+    # bins
+    xydata = {
+        "Home": {
+            segment: np.full(
+                [number_of_frames[segment], number_of_home_players * 2], np.nan
             )
-            # timestamps
-            pl_time[sgm_id][team_id].append(frame_set_times)
+            for segment in segments
+        },
+        "Away": {
+            segment: np.full(
+                [number_of_frames[segment], number_of_away_players * 2], np.nan
+            )
+            for segment in segments
+        },
+        "Ball": {
+            segment: np.full([number_of_frames[segment], 2], np.nan)
+            for segment in segments
+        },
+    }
+    # codes = {
+    #     code: {segment: [] for segment in segments}
+    #     for code in ["possession", "ballstatus"]
+    # }
 
-        # release memory
-        frame_set.clear()
+    # loop over data filepath containing the positions
+    for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
 
-    # account for substitutions
-    for sgm_id in pl_time:
-        for team_id in pl_time[sgm_id]:
+        # assign team and columns
+        if frame_set.get("TeamId") == "Ball":
+            team = "Ball"
+            x_col = 0
+            y_col = 1
+        else:
+            pID = frame_set.get("PersonId")
+            if pID in links["Home"]:
+                team = "Home"
+            elif pID in links["Away"]:
+                team = "Away"
+            else:
+                team = None
+                pass
+                # possible error or warning
+            x_col = (links[team][pID] - 1) * 2
+            y_col = (links[team][pID] - 1) * 2 + 1
 
-            # initialize in-player number containers
-            if sgm_id not in in_subs:
-                in_subs[sgm_id] = {}
-            if team_id not in in_subs[sgm_id]:
-                in_subs[sgm_id][team_id] = []
+        # fill rows of xy data according to playing times of the player
+        segment = frame_set.get("GameSection")
+        times = [
+            dt.datetime.fromisoformat(frame.get("T"))
+            for frame in frame_set.iterfind("Frame")
+        ]
+        if len(times) == number_of_frames[segment]:  # player did play through
+            xydata[team][segment][:, x_col] = np.array(
+                [float(frame.get("X")) for frame in frame_set.iterfind("Frame")]
+            )
+            xydata[team][segment][:, y_col] = np.array(
+                [float(frame.get("Y")) for frame in frame_set.iterfind("Frame")]
+            )
+        else:  # player did not play through
+            if times[0] < periods[segment][-1] and times[-1] > periods[segment][0]:
+                start = np.argmin(
+                    np.abs([(t - times[0]).total_seconds() for t in periods[segment]])
+                )
+                end = np.argmin(
+                    np.abs([(t - times[-1]).total_seconds() for t in periods[segment]])
+                )
+                xydata[team][segment][start : end + 1, x_col] = np.array(
+                    [float(frame.get("X")) for frame in frame_set.iterfind("Frame")]
+                )
+                xydata[team][segment][start : end + 1, y_col] = np.array(
+                    [float(frame.get("Y")) for frame in frame_set.iterfind("Frame")]
+                )
 
-            # perform substitution loop for every player
-            for out_pl_num in range(len(pl_time[sgm_id][team_id])):
+    # Create XY Objects
+    home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate)
+    home_ht2 = XY(xy=xydata["Home"]["secondHalf"], framerate=framerate)
+    away_ht1 = XY(xy=xydata["Away"]["firstHalf"], framerate=framerate)
+    away_ht2 = XY(xy=xydata["Away"]["secondHalf"], framerate=framerate)
+    ball_ht1 = XY(xy=xydata["Ball"]["firstHalf"], framerate=framerate)
+    ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate)
 
-                # check if player did start the segment but did not play through
-                if (
-                    len(pl_xy[sgm_id][team_id][out_pl_num]) < len(ball_xy[sgm_id])
-                    and pl_time[sgm_id][team_id][out_pl_num][0] <= ball_time[sgm_id][0]
-                ):
-
-                    # read end time of out-player
-                    end_time = pl_time[sgm_id][team_id][out_pl_num][-1]
-
-                    # substitution loop to search for possible in-player replacements
-                    for _ in range(len(pl_time[sgm_id][team_id])):
-
-                        # check if the out-player retired before the end of segment
-                        if end_time >= ball_time[sgm_id][-1]:
-                            break
-
-                        # compare end time of out-player to to start times of in-players
-                        time_deltas = [
-                            (
-                                np.abs(
-                                    end_time - pl_time[sgm_id][team_id][in_pl_num][0]
-                                ).total_seconds()
-                            )
-                            if in_pl_num != out_pl_num
-                            else np.nan
-                            for in_pl_num in range(len(pl_time[sgm_id][team_id]))
-                        ]
-
-                        # perform sub if the minimum time delta is within tolerance
-                        if np.nanmin(time_deltas) <= sub_tol:
-
-                            # get the number of the chosen in-player
-                            in_pl_num = int(np.nanargmin(time_deltas))
-
-                            # append x/y position of in-player to out-player
-                            xy_combined = np.vstack(
-                                (
-                                    pl_xy[sgm_id][team_id][out_pl_num],
-                                    pl_xy[sgm_id][team_id][in_pl_num],
-                                )
-                            )
-
-                            # assign to player if combined position length matches ball
-                            if xy_combined.shape[0] == ball_xy[sgm_id].shape[0]:
-                                pl_xy[sgm_id][team_id][out_pl_num] = xy_combined
-
-                            # if too long remove time overlaps in positions of in-player
-                            elif xy_combined.shape[0] > ball_xy[sgm_id].shape[0]:
-
-                                # search for time overlaps in in-player timestamps
-                                time_ovlp = []
-                                for ind, t in enumerate(
-                                    pl_time[sgm_id][team_id][in_pl_num]
-                                ):
-
-                                    # store timestamps earlier than last out-player time
-                                    if t <= pl_time[sgm_id][team_id][out_pl_num][-1]:
-                                        time_ovlp.append(ind)
-
-                                # remove overlapping timestamps from in-player positions
-                                pl_xy[sgm_id][team_id][in_pl_num] = np.array(
-                                    [
-                                        pl_xy[sgm_id][team_id][in_pl_num][i]
-                                        for i in range(
-                                            pl_xy[sgm_id][team_id][in_pl_num].shape[0]
-                                        )
-                                        if i not in time_ovlp
-                                    ]
-                                )
-
-                                # create new combined position without overlaps
-                                pl_xy[sgm_id][team_id][out_pl_num] = np.vstack(
-                                    (
-                                        pl_xy[sgm_id][team_id][out_pl_num],
-                                        pl_xy[sgm_id][team_id][in_pl_num],
-                                    )
-                                )
-
-                            # if too small find missing timestamps
-                            else:
-
-                                # check timestamps in the gap
-                                for frame in range(
-                                    ball_xy[sgm_id].shape[0] - xy_combined.shape[0]
-                                ):
-
-                                    # check if timestamp is included for in-player
-                                    if (
-                                        end_time
-                                        + (frame + 1)
-                                        * (ball_time[sgm_id][1] - ball_time[sgm_id][0])
-                                        < pl_time[sgm_id][team_id][in_pl_num][0]
-                                    ):
-
-                                        # append NaNs to last position of out-player
-                                        nan_pos = np.empty((1, 2))
-                                        nan_pos.fill(np.nan)
-
-                                        pl_xy[sgm_id][team_id][out_pl_num] = np.append(
-                                            pl_xy[sgm_id][team_id][out_pl_num],
-                                            nan_pos,
-                                            axis=0,
-                                        )
-
-                                    # break the for loop otherwise
-                                    else:
-                                        break
-
-                                # create new combined position
-                                pl_xy[sgm_id][team_id][out_pl_num] = np.vstack(
-                                    (
-                                        pl_xy[sgm_id][team_id][out_pl_num],
-                                        pl_xy[sgm_id][team_id][in_pl_num],
-                                    )
-                                )
-
-                            # store number of in-player to remove from containers later
-                            in_subs[sgm_id][team_id].append(in_pl_num)
-
-                            # assign new end time as end time of in-player
-                            end_time = pl_time[sgm_id][team_id][in_pl_num][-1]
-
-                        # if no in-player is found (red card, injury) append zeros
-                        else:
-                            pl_xy[sgm_id][team_id][out_pl_num] = np.append(
-                                pl_xy[sgm_id][team_id][out_pl_num],
-                                np.zeros(
-                                    (
-                                        len(ball_xy[sgm_id])
-                                        - len(pl_xy[sgm_id][team_id][out_pl_num]),
-                                        2,
-                                    )
-                                ),
-                                axis=0,
-                            )
-
-                            # assign new end time as ball end time
-                            end_time = ball_time[sgm_id][-1]
-
-            # remove in-player positions from container if substitution was performed
-            for in_pl_num in in_subs[sgm_id][team_id]:
-                pl_xy[sgm_id][team_id][in_pl_num] = None
-            pl_xy[sgm_id][team_id] = [
-                xy for xy in pl_xy[sgm_id][team_id] if xy is not None
-            ]
-
-    # summarize player and ball positions to single np.array
-    for sgm_id in pl_xy:
-        for team_id in pl_xy[sgm_id]:
-
-            # initialize temporary np.array
-            n_rows = len(ball_xy[sgm_id])
-            n_cols = 2 + 2 * len(pl_xy[sgm_id][team_id])
-            obs_xy = np.zeros(shape=(n_rows, n_cols))
-
-            # write ball position to array
-            obs_xy[:, 0:2] = ball_xy[sgm_id]
-
-            # write player positions to array
-            for pl_num in range(len(pl_xy[sgm_id][team_id])):
-                obs_xy[:, 2 + 2 * pl_num : 2 + 2 * pl_num + 2] = pl_xy[sgm_id][team_id][
-                    pl_num
-                ]
-
-            # compute frame rate [in Hz]
-            fps = int(1 / (ball_time[sgm_id][1] - ball_time[sgm_id][0]).total_seconds())
-
-            # append to global object
-            all_xy.append(XY(obs_xy, framerate=fps))
-
-    return all_xy
+    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2, pitch)
+    return data_objects
