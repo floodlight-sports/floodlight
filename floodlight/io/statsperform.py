@@ -42,7 +42,7 @@ def read_positions(filepath: str or Path):
         boundaries="flexible!",
         length=pi_len,
         width=pi_wid,
-        sport="soccer",
+        sport="football",
     )
 
     # compute frame rate
