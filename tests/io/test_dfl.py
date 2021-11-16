@@ -1,27 +1,32 @@
-import os
+from typing import Union
 from pathlib import Path
 
-from floodlight.io.dfl import read_positions
+import os
+
+from floodlight.io.dfl import read_dfl_files
 from floodlight.core.xy import XY
+from floodlight.core.pitch import Pitch
 
 
-def test_read_positions_for_all_files():
+def test_read_positions_for_all_files(
+    loc_dat: Union[str, Path] = None, loc_metadata: Union[str, Path] = None
+):
 
-    # TODO: define local data location with all files
-    data_loc: str or Path = None
-
-    if data_loc is not None:
+    if loc_dat is not None and loc_metadata is not None:
         # iterate over files in data location
-        for file in os.listdir(data_loc):
+        for file in os.listdir(loc_dat):
 
             # perform test battery
             print("Testing File @ " + file)
 
             # read positions to XY
-            file = os.path.join(data_loc, file)
-            match_xy = read_positions(file)
+            match_xy = read_dfl_files(
+                os.path.join(loc_dat, file), os.path.join(loc_metadata, file)
+            )
 
-            # assert that match_xy is a List of XY objects
-            assert isinstance(match_xy, list)
-            for xy in match_xy:
-                assert isinstance(xy, XY)
+            # check that each segment exists for two teams
+            for i, obj in enumerate(match_xy):
+                if i < 6:
+                    assert isinstance(obj, XY)
+                else:
+                    assert isinstance(obj, Pitch)
