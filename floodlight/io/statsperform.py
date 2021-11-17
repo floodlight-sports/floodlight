@@ -27,6 +27,7 @@ def _create_metadata_from_dat_df(dat_df: pd.DataFrame) -> Tuple[int, Dict, Pitch
     pi_len = ball_df["pitch_dimension_long_side"].values[0]
     pi_wid = ball_df["pitch_dimension_short_side"].values[0]
     pitch = Pitch.from_template(
+        "statsperform",
         length=pi_len,
         width=pi_wid,
         sport="football",
