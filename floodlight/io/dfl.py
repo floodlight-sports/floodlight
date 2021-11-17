@@ -9,9 +9,11 @@ from floodlight.core.xy import XY
 from floodlight.core.pitch import Pitch
 
 
-def _read_matchinfo(filepath_matchinfo: Union[str, Path]) -> Tuple[Dict, Pitch]:
-    """Reads match information XML file and returns dictionary with match information
-    and Pitch object.
+def _read_matchinfo(
+    filepath_matchinfo: Union[str, Path]
+) -> Tuple[Dict[str, float], Pitch]:
+    """Reads match_information XML file and returns dictionary with meta information and
+    the playing Pitch.
 
     Parameters
     ----------
@@ -22,7 +24,7 @@ def _read_matchinfo(filepath_matchinfo: Union[str, Path]) -> Tuple[Dict, Pitch]:
     -------
     metainfo: Dict
         Dictionary with metainformation such as framerate.
-    pitch: Pitch
+    pitch: floodlight.core.pitch.Pitch
         Pitch object with actual pitch length and width.
     """
     # set up XML tree
@@ -54,7 +56,17 @@ def _read_matchinfo(filepath_matchinfo: Union[str, Path]) -> Tuple[Dict, Pitch]:
 def create_links_from_matchinfo(
     filepath_matchinfo: Union[str, Path]
 ) -> Dict[str, Dict[int, int]]:
-    """"""
+    """Creates links between player_id and column in the array from matchinfo XML file
+
+    Parameters
+    ----------
+    filepath_matchinfo: str or pathlib.Path
+        XML File where the Match Information data in DFL format is saved
+
+    Returns
+    -------
+
+    """
     # set up XML tree
     tree = etree.parse(str(filepath_matchinfo))
     root = tree.getroot()
