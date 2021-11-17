@@ -98,7 +98,7 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
     Tuple of six floodlight.core.xy.XY Objects comprising a Tuple of six
     floodlight.core.xy.XY objects comprising respectively the position data for the both
     halftimes of the game for the home team, away team, and the ball.
-    
+
     Parameters
     ----------
     filepath: str or pathlib.Path
