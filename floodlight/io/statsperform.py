@@ -10,7 +10,7 @@ from floodlight.core.pitch import Pitch
 
 def _create_metadata_from_dat_df(
     dat_df: pd.DataFrame,
-) -> Tuple[int, Dict[int, np.array], Pitch]:
+) -> Tuple[int, Dict[int, tuple], Pitch]:
     """Creates meta information from the ball position DataFrame
 
     Parameters
@@ -22,18 +22,18 @@ def _create_metadata_from_dat_df(
     -------
     framerate: int
         Framerate in frames per second/Hertz
-    periods: Dict[int, np.array]
-        Dictionary with frame axis for the given segment of the form
-            periods[segment] = np.arange(startframe, endframe + 1)
+    periods: Dict[int, int]
+        Dictionary with start and endframes:
+            `periods[segment] = (startframe, endframe)`.
     pitch: floodlight.core.pitch.Pitch
         Playing Pitch object
     """
-    # extract ball information
-    ball_df = dat_df[dat_df["team_id"] == 4]
+    # extract ball information used for all computations
+    # ball_df = dat_df[dat_df["team_id"] == 4]
 
     # create pitch
-    pi_len = ball_df["pitch_dimension_long_side"].values[0]
-    pi_wid = ball_df["pitch_dimension_short_side"].values[0]
+    pi_len = dat_df["pitch_dimension_long_side"].values[0]
+    pi_wid = dat_df["pitch_dimension_short_side"].values[0]
     pitch = Pitch.from_template(
         "statsperform",
         length=pi_len,
@@ -42,29 +42,28 @@ def _create_metadata_from_dat_df(
     )
 
     # compute framerate
-    framerate = 1 / (
-        ball_df["timeelapsed"].values[1] - ball_df["timeelapsed"].values[0]
-    )
+    time_values = dat_df["timeelapsed"].unique()
+    framerate = 1 / (time_values[1] - time_values[0])
 
-    # create period time axis for segments
-    seg_idx = np.where(
-        np.diff(ball_df["frame_count"].values, prepend=ball_df["frame_count"].values[0])
-        > 1
-    )
+    # create periods for segments, coded as jumps in the frame sequence
+    periods = {}
+    frame_values = dat_df["frame_count"].unique()
+
+    seg_idx = np.where(np.diff(frame_values, prepend=frame_values[0]) > 1)
     seg_idx = np.insert(seg_idx, 0, 0)
-    seg_idx = np.append(seg_idx, len(ball_df) - 1)
-    periods = {
-        segment: np.arange(
-            ball_df["frame_count"].values[seg_idx[segment]],
-            ball_df["frame_count"].values[seg_idx[segment + 1] - 1] + 1,
-        )
-        for segment in range(len(seg_idx) - 1)
-    }
+    seg_idx = np.append(seg_idx, len(frame_values) - 1)
+    for segment in range(len(seg_idx) - 1):
+        start = int(frame_values[seg_idx[segment]])
+        end = int(frame_values[seg_idx[segment + 1] - 1] + 1)
+        periods[segment] = (start, end)
+
     return framerate, periods, pitch
 
 
-def create_links_from_dat_df(dat_df: pd.DataFrame) -> Dict[str, Dict[str, int]]:
-    """Creates links between player_id and column in the array from
+def _create_links_from_dat_df(
+    dat_df: pd.DataFrame, team_ids: Dict[str, float]
+) -> Dict[str, Dict[int, int]]:
+    """Creates links between player_id and column in the array from parsed dat-file
 
     Parameters
     ----------
@@ -74,18 +73,56 @@ def create_links_from_dat_df(dat_df: pd.DataFrame) -> Dict[str, Dict[str, int]]:
 
     Returns
     -------
+    links: Dict[str, Dict[int, int]]
+        Dictionary with frame axis for the given segment of the form
+            `periods[segment] = (startframe, endframe)`.
+    """
+    links = {}
+    for team_id in team_ids:
+        links[team_id] = {
+            jID: xID + 1
+            for xID, jID in enumerate(
+                dat_df[dat_df["team_id"] == team_id]["jersey_no"].unique()
+            )
+        }
+    return links
+
+
+def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
+    """Creates links between player_id and column in the array from dat-file.
+
+    Parameters
+    ----------
+    filepath_dat: str or Path
+        Full path to dat-file.
+
+
+    Returns
+    -------
     links: Dict[str, Dict[str, int]]
         Dictionary with frame axis for the given segment of the form
-            periods[segment] = np.arange(startframe, endframe + 1)
+            `periods[segment] = np.arange(startframe, endframe + 1)`.
     """
+    # read dat-file into pd.DataFrame
+    dat_df = pd.read_csv(str(filepath_dat))
+
+    # create links
     links = {}
     for team_id in dat_df["team_id"].unique():
         if team_id == 4:  # code for the ball
             continue
-        links[team_id] = {
-            pID: xID
-            for xID, pID in enumerate(
-                dat_df[dat_df["team_id"] == team_id]["player_id"].unique()
+        elif team_id == 1:
+            team = "Home"
+        elif team_id == 2:
+            team = "Away"
+        else:
+            team = None
+            # possible error or warning
+
+        links[team] = {
+            jID: xID + 1
+            for xID, jID in enumerate(
+                dat_df[dat_df["team_id"] == team_id]["jersey_no"].unique()
             )
         }
     return links
@@ -114,13 +151,24 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
     # parse the CSV file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath))
 
-    links = create_links_from_dat_df(dat_df)
+    # initialize team and ball ids
+    team_ids = {"Home": 1.0, "Away": 2.0}
+    ball_id = 4
+    # check
+    assert [ID in team_ids or ID == ball_id for ID in dat_df["team_id"].unique()]
 
+    # create links, metadata and pitch
+    links = _create_links_from_dat_df(dat_df, team_ids)
     framerate, periods, pitch = _create_metadata_from_dat_df(dat_df)
+    segments = list(periods.keys())
 
     # infer data shapes
-    number_of_frames = {segment: len(periods[segment]) for segment in periods}
     number_of_players = {team: len(links[team]) for team in links}
+    number_of_frames = {}
+    for segment in segments:
+        start = periods[segment][0]
+        end = periods[segment][1]
+        number_of_frames[segment] = end - start
 
     # bins
     xydata = {
@@ -151,65 +199,37 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
     }
 
     # loop
-    for segment in periods:
-        for team_id in dat_df["team_id"].unique():
-            if team_id == 4:
-                team = "Ball"
-            elif team_id == list(links.keys())[0]:
-                team = "Home"
-            elif team_id == list(links.keys())[1]:
-                team = "Away"
-            else:
-                team = None
-                pass
-                # possible warning or error message
+    for segment in segments:
+        # insert team data
+        for team in team_ids:
+            team_df = dat_df[dat_df["team_id"] == team_ids[team]]
+            for pID in team_df["player_id"].unique():
 
-            # write player/ball position data to bins
-            team_pos = dat_df[dat_df["team_id"] == team_id]
-            for pID in team_pos["player_id"].unique():
-                pl_pos = team_pos[team_pos["player_id"] == pID]
-                pl_axis = np.array(
-                    (pl_pos["frame_count"].values >= periods[segment][0])
-                    * (pl_pos["frame_count"].values <= periods[segment][-1])
+                # extract player DataFrame
+                pl_df = team_df[team_df["player_id"] == pID]
+                pl_frames = pl_df["frame_count"].values
+                pl_x = pl_df["pos_x"].values
+                pl_y = pl_df["pos_y"].values
+
+                # retrieve start and end points of player
+                segment_pl_axis = np.array(
+                    [
+                        (periods[segment][0] <= frame <= periods[segment][-1])
+                        for frame in pl_frames
+                    ]
                 )
-                # assign positions at the correct frames
-                if pl_pos["frame_count"].values[pl_axis].shape[0] > 0:
-                    if (
-                        np.sum(pl_axis) == number_of_frames[segment]
-                    ):  # player played through
-                        if team == "Ball":
-                            xydata[team][segment][:, 0] = pl_pos["pos_x"].values[
-                                pl_axis
-                            ]
-                            xydata[team][segment][:, 1] = pl_pos["pos_y"].values[
-                                pl_axis
-                            ]
-                        else:
-                            xydata[team][segment][:, 2 * links[team_id][pID]] = pl_pos[
-                                "pos_x"
-                            ].values[pl_axis]
-                            xydata[team][segment][
-                                :, 2 * links[team_id][pID] + 1
-                            ] = pl_pos["pos_y"].values[pl_axis]
-                    else:  # player did not play through
-                        init = np.where(
-                            periods[segment] == pl_pos["frame_count"].values[pl_axis][0]
-                        )[0][0]
-                        end = (
-                            np.where(
-                                periods[segment]
-                                == pl_pos["frame_count"].values[pl_axis][-1]
-                            )[0][0]
-                            + 1
-                        )
-                        xydata[team][segment][
-                            init:end, 2 * links[team_id][pID]
-                        ] = pl_pos["pos_x"].values[pl_axis]
-                        xydata[team][segment][
-                            init:end, 2 * links[team_id][pID] + 1
-                        ] = pl_pos["pos_y"].values[pl_axis]
+                start = np.argmin(periods[segment] - pl_frames[0])
+                end = np.argmin(periods[segment] - pl_frames[-1])
 
-    # Create XY Objects
+                # write to bins
+                xydata[team][segment][:, 0] = pl_x[segment_pl_axis]
+                xydata[team][segment][:, 1] = pl_y[segment_pl_axis]
+
+        # insert ball data
+        xydata["Ball"][segment][:, 0] = dat_df[dat_df["team_id" == 4]]["pos_x"].values()
+        xydata["Ball"][segment][:, 1] = dat_df[dat_df["team_id" == 4]]["pos_x"].values()
+
+    # create XY Objects
     home_ht1 = XY(xy=xydata["Home"][0], framerate=framerate)
     home_ht2 = XY(xy=xydata["Home"][1], framerate=framerate)
     away_ht1 = XY(xy=xydata["Away"][0], framerate=framerate)
