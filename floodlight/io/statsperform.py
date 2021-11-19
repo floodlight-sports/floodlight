@@ -12,21 +12,21 @@ from floodlight.core.code import Code
 def _create_metadata_from_dat_df(
     dat_df: pd.DataFrame,
 ) -> Tuple[int, Dict[int, tuple], Pitch]:
-    """Creates meta information from the ball position DataFrame
+    """Creates meta information from the ball position DataFrame.
 
     Parameters
     ----------
-    dat_df: pd.DataFrame
-        Containing all data from the positions.csv file as parsed by pd.read_csv()
+    dat_df: DataFrame
+        Containing all data from the positions.csv file as DataFrame.
 
     Returns
     -------
     framerate: int
-        Framerate in frames per second/Hertz
+        Temporal resolution of data in frames per second/Hertz.
     periods: Dict[int, int]
         Dictionary with start and endframes:
             `periods[segment] = (startframe, endframe)`.
-    pitch: floodlight.core.pitch.Pitch
+    pitch: Pitch
         Playing Pitch object
     """
     # extract ball information used for all computations
@@ -55,7 +55,7 @@ def _create_metadata_from_dat_df(
     seg_idx = np.append(seg_idx, len(frame_values))
     for segment in range(len(seg_idx) - 1):
         start = int(frame_values[seg_idx[segment]])
-        end = int(frame_values[seg_idx[segment + 1] - 1] + 1)
+        end = int(frame_values[seg_idx[segment + 1] - 1])
         periods[segment] = (start, end)
 
     return framerate, periods, pitch
@@ -64,13 +64,12 @@ def _create_metadata_from_dat_df(
 def _create_links_from_dat_df(
     dat_df: pd.DataFrame, team_ids: Dict[str, float]
 ) -> Dict[str, Dict[int, int]]:
-    """Creates links between player_id and column in the array from parsed dat-file
+    """Creates links between player_id and column in the array from parsed dat-file.
 
     Parameters
     ----------
     dat_df: pd.DataFrame
-        Containing all data from the positions.csv file as parsed by pd.read_csv()
-
+        Containing the parsed DataFrame from the positions CSV file
 
     Returns
     -------
@@ -95,42 +94,29 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     Parameters
     ----------
     filepath_dat: str or Path
-        Full path to dat-file.
+        XML File where the Position data in Statsperform format is saved.
 
 
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        Dictionary with frame axis for the given segment of the form
-            `periods[segment] = np.arange(startframe, endframe + 1)`.
+        Dictionary mapping the player jersey number to his position in the data array.
     """
     # read dat-file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath_dat))
 
-    # create links
-    links = {}
-    for team_id in dat_df["team_id"].unique():
-        if team_id == 4:  # code for the ball
-            continue
-        elif team_id == 1:
-            team = "Home"
-        elif team_id == 2:
-            team = "Away"
-        else:
-            team = None
-            # possible error or warning
+    # initialize team and ball ids
+    team_ids = {"Home": 1.0, "Away": 2.0}
+    ball_id = 4
+    # check
+    assert [ID in team_ids or ID == ball_id for ID in dat_df["team_id"].unique()]
 
-        links[team] = {
-            jID: xID + 1
-            for xID, jID in enumerate(
-                dat_df[dat_df["team_id"] == team_id]["jersey_no"].unique()
-            )
-        }
-    return links
+    return _create_links_from_dat_df(dat_df, team_ids)
 
 
 def read_positions(
-    filepath: Union[str, Path]
+    filepath_dat: Union[str, Path],
+    links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
     """Parse StatsPerform dat file for (x,y)-data.
 
@@ -141,9 +127,11 @@ def read_positions(
 
     Parameters
     ----------
-    filepath: str or pathlib.Path
-        XML File where the Position data in DFL format is saved.
-
+    filepath_dat: Union[str, Path]
+        XML File where the Position data in Statsperform format is saved.
+    links: Dict[str, Dict[int, int]] or None
+        Dictionary mapping the player jersey number to his position in the data array,
+        if not passed it is computed from the Position data File
     Returns
     -------
     data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]
@@ -153,7 +141,7 @@ def read_positions(
     """
 
     # parse the CSV file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath))
+    dat_df = pd.read_csv(str(filepath_dat))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -172,10 +160,10 @@ def read_positions(
     for segment in segments:
         start = periods[segment][0]
         end = periods[segment][1]
-        number_of_frames[segment] = end - start
+        number_of_frames[segment] = end - start + 1
 
     # bins
-    codes = {}
+    codes = {"possession": {segment: [] for segment in segments}}
     xydata = {
         "Home": {
             segment: np.full(
@@ -246,21 +234,27 @@ def read_positions(
         xydata["Ball"][segment][:, 1] = ball_df["pos_x"].values[appearance]
 
         # update codes
-        codes[segment] = Code(
-            code=ball_df["possession"].values[appearance],
-            name="possession",
-            definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
-        )
+        codes["possession"][segment] = ball_df["possession"].values[appearance]
 
-    # create XY Objects
+    # create XY objects
     home_ht1 = XY(xy=xydata["Home"][0], framerate=framerate)
     home_ht2 = XY(xy=xydata["Home"][1], framerate=framerate)
     away_ht1 = XY(xy=xydata["Away"][0], framerate=framerate)
     away_ht2 = XY(xy=xydata["Away"][1], framerate=framerate)
     ball_ht1 = XY(xy=xydata["Ball"][0], framerate=framerate)
     ball_ht2 = XY(xy=xydata["Ball"][1], framerate=framerate)
-    poss_ht1 = codes[0]
-    poss_ht2 = codes[1]
+
+    # create Code objects
+    poss_ht1 = Code(
+        name="possession",
+        code=codes["possession"][0],
+        definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
+    )
+    poss_ht2 = Code(
+        name="possession",
+        code=codes["possession"][1],
+        definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
+    )
 
     data_objects = (
         home_ht1,
