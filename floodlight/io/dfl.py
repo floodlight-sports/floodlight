@@ -15,7 +15,7 @@ def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
 
     Parameters
     ----------
-    filepath_mat_info: str or Path
+    filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
 
     Returns
@@ -41,6 +41,44 @@ def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
     return pitch
 
 
+def _create_periods_from_dat(
+    filepath_dat: Union[str, Path]
+) -> Tuple[Dict[str, Tuple[int, int]], int]:
+    """Parses over position file and returns dictionary with periods
+
+    Parameters
+    ----------
+    filepath_dat: str or pathlib.Path
+        Path to XML File where the Position data in DFL format is saved
+
+    Returns
+    -------
+    periods: Dict[str, Tuple[int, int]
+        Dictionary with times for the segment:
+        `periods[segment] = (starttime, endtime)`
+    framerate: int
+        Temporal resolution of data in frames per second/Hertz.
+    """
+    periods = {}
+    framerate = None
+
+    # retrieve information from ball frame sets
+    for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
+        if frame_set.get("TeamId") == "Ball":
+            frames = [frame for frame in frame_set.iterfind("Frame")]
+            periods[frame_set.get("GameSection")] = (
+                int(frames[0].get("N")),
+                int(frames[-1].get("N")),
+            )
+            if framerate is None:
+                delta = dt.datetime.fromisoformat(
+                    frames[1].get("T")
+                ) - dt.datetime.fromisoformat(frames[0].get("T"))
+                framerate = int(round(1 / delta.total_seconds()))
+
+    return periods, framerate
+
+
 def create_links_from_mat_info(
     filepath_mat_info: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[int, int]], Dict[str, Dict[str, int]]]:
@@ -50,7 +88,7 @@ def create_links_from_mat_info(
 
     Parameters
     ----------
-    filepath_mat_info: str or Path
+    filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved
 
     Returns
@@ -98,44 +136,6 @@ def create_links_from_mat_info(
     return links, id_to_jrsy
 
 
-def _create_periods_from_dat(
-    filepath_dat: Union[str, Path]
-) -> Tuple[Dict[str, Tuple[int, int]], int]:
-    """Parses over position file and returns dictionary with periods
-
-    Parameters
-    ----------
-    filepath_dat: str or Path
-        Path to XML File where the Position data in DFL format is saved
-
-    Returns
-    -------
-    periods: Dict[str, Tuple[int, int]
-        Dictionary with times for the segment:
-        `periods[segment] = (starttime, endtime)`
-    framerate: int
-        Temporal resolution of data in frames per second/Hertz.
-    """
-    periods = {}
-    framerate = None
-
-    # retrieve information from ball frame sets
-    for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
-        if frame_set.get("TeamId") == "Ball":
-            frames = [frame for frame in frame_set.iterfind("Frame")]
-            periods[frame_set.get("GameSection")] = (
-                int(frames[0].get("N")),
-                int(frames[-1].get("N")),
-            )
-            if framerate is None:
-                delta = dt.datetime.fromisoformat(
-                    frames[1].get("T")
-                ) - dt.datetime.fromisoformat(frames[0].get("T"))
-                framerate = int(round(1 / delta.total_seconds()))
-
-    return periods, framerate
-
-
 def read_dfl_files(
     filepath_dat: Union[str, Path],
     filepath_mat_info: Union[str, Path],
@@ -157,13 +157,13 @@ def read_dfl_files(
         Full path to XML File where the Position data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
-    links: Dict
+    links: Dict, optional
         A link dictionary of the form `links[team][jID] = xID`. Player's are identified
         in the XML files via jID, and this dictionary is used to map them to a specific
         xID in the respective XY objects. Should be supplied if that order matters. If
         one of links or id_to_jrsy is given as None (default), they are automatically
         extracted from the Match Information XML file.
-    id_to_jrsy: Dict
+    id_to_jrsy: Dict, optional
         A link dictionary of the form `links[team][pID] = jID` where pID is the PersonId
         specified in the DFL Match Information file.
 
@@ -175,9 +175,6 @@ def read_dfl_files(
         possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
 
     """
-
-    # checks?
-
     # read metadata
     pitch = _read_pitch_from_mat_info(filepath_mat_info)
 
