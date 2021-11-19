@@ -9,3 +9,4 @@ Collection of parsing modules for different provider data.
    :caption: Spatiotemporal Data
 
    tracab
+   statsperform
