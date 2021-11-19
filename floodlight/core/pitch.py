@@ -83,10 +83,10 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
-        elif template_name == "chyronhego_international":
+        elif template_name == "tracab":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
-                    "For an exact ChyronHego (international format) "
+                    "For an exact TRACAB (ChyronHego, international format) "
                     "Pitch object, `length` and `width` of the pitch need "
                     "to be passed as keyworded arguments"
                 )
@@ -95,7 +95,7 @@ class Pitch:
             return cls(
                 xlim=(-x_half, x_half),
                 ylim=(-y_half, y_half),
-                unit="m",
+                unit="cm",
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
