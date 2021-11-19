@@ -9,15 +9,15 @@ from floodlight.core.pitch import Pitch
 from floodlight.core.code import Code
 
 
-def _create_metadata_from_dat_df(
-    dat_df: pd.DataFrame,
+def _create_metadata_from_csv_df(
+    csv_df: pd.DataFrame,
 ) -> Tuple[Dict[int, tuple], Pitch]:
-    """Creates meta information from the ball position DataFrame.
+    """Creates meta information from the CSV file as parsed by pd.read_csv().
 
     Parameters
     ----------
-    dat_df: DataFrame
-        Containing all data from the positions.csv file as DataFrame.
+    csv_df: DataFrame
+        Containing all data from the positions CSV file as DataFrame.
 
     Returns
     -------
@@ -25,14 +25,12 @@ def _create_metadata_from_dat_df(
         Dictionary with start and endframes:
             `periods[segment] = (startframe, endframe)`.
     pitch: Pitch
-        Playing Pitch object
+        Playing Pitch object.
     """
-    # extract ball information used for all computations
-    # ball_df = dat_df[dat_df["team_id"] == 4]
 
     # create pitch
-    pi_len = dat_df["pitch_dimension_long_side"].values[0]
-    pi_wid = dat_df["pitch_dimension_short_side"].values[0]
+    pi_len = csv_df["pitch_dimension_long_side"].values[0]
+    pi_wid = csv_df["pitch_dimension_short_side"].values[0]
     pitch = Pitch.from_template(
         "statsperform",
         length=pi_len,
@@ -42,7 +40,7 @@ def _create_metadata_from_dat_df(
 
     # create periods for segments, coded as jumps in the frame sequence
     periods = {}
-    frame_values = dat_df["frame_count"].unique()
+    frame_values = csv_df["frame_count"].unique()
 
     seg_idx = np.where(np.diff(frame_values, prepend=frame_values[0]) > 1)
     seg_idx = np.insert(seg_idx, 0, 0)
@@ -55,49 +53,51 @@ def _create_metadata_from_dat_df(
     return periods, pitch
 
 
-def _create_links_from_dat_df(
-    dat_df: pd.DataFrame, team_ids: Dict[str, float]
+def _create_links_from_csv_df(
+    csv_df: pd.DataFrame, team_ids: Dict[str, float]
 ) -> Dict[str, Dict[int, int]]:
-    """Creates links between player_id and column in the array from parsed dat-file.
+    """Checks the entire parsed StatsPerform CSV file for unique jIDs (jerseynumbers)
+    and creates a dictionary linking jIDs to xIDs in ascending order.
 
     Parameters
     ----------
-    dat_df: pd.DataFrame
+    csv_df: pd.DataFrame
         Containing the parsed DataFrame from the positions CSV file
+    team_ids: Dict[str, float]
+        Dictionary that stores the StatsPerform team id of the Home and Away team
 
     Returns
     -------
     links: Dict[str, Dict[int, int]]
-        Dictionary with frame axis for the given segment of the form
-            `periods[segment] = (startframe, endframe)`.
+        A link dictionary of the form `links[team][jID] = xID`.
     """
     links = {}
     for team in team_ids:
         links[team] = {
             jID: xID + 1
             for xID, jID in enumerate(
-                dat_df[dat_df["team_id"] == team_ids[team]]["jersey_no"].unique()
+                csv_df[csv_df["team_id"] == team_ids[team]]["jersey_no"].unique()
             )
         }
     return links
 
 
-def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
-    """Creates links between player_id and column in the array from dat-file.
+def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int, int]]:
+    """Parses the entire StatsPerform CSV file for unique jIDs (jerseynumbers) and team
+    Ids and creates a dictionary linking jIDs to xIDs in ascending order.
 
     Parameters
     ----------
-    filepath_dat: str or Path
-        XML File where the Position data in Statsperform format is saved.
-
+    filepath_csv: str or pathlib.Path
+        CSV File where the Position data in StatsPerform format is saved.
 
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        Dictionary mapping the player jersey number to his position in the data array.
+        A link dictionary of the form `links[team][jID] = xID`.
     """
     # read dat-file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_dat))
+    dat_df = pd.read_csv(str(filepath_csv))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -105,37 +105,41 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     # check
     assert [ID in team_ids or ID == ball_id for ID in dat_df["team_id"].unique()]
 
-    return _create_links_from_dat_df(dat_df, team_ids)
+    return _create_links_from_csv_df(dat_df, team_ids)
 
 
 def read_positions(
-    filepath_dat: Union[str, Path],
+    filepath_csv: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
-    """Parse StatsPerform dat file for (x,y)-data.
+    """Parse a StatsPerform CSV file and extract position data and possession codes as
+     well as pitch information.
 
-    Read a position data CSV file that is given in the StatsPerform format into a
-    Tuple of six floodlight.core.xy.XY Objects comprising a Tuple of six
-    floodlight.core.xy.XY objects comprising respectively the position data for the both
-    halftimes of the game for the home team, away team, and the ball.
+     Openly published StatsPerform position data (e.g. for the Pro Forum '22) is stored
+     in a CSV file containing all position data (for both halves) as well as information
+     about players, the pitch size, and the ball possession. This function provides a
+     high-level access to StatsPerform data by parsing the CSV file.
 
     Parameters
     ----------
-    filepath_dat: Union[str, Path]
-        XML File where the Position data in Statsperform format is saved.
-    links: Dict[str, Dict[int, int]] or None
-        Dictionary mapping the player jersey number to his position in the data array,
-        if not passed it is computed from the Position data File
+    filepath_csv: str or pathlib.Path
+        Full path to the CSV file.
+    links: Dict[str, Dict[int, int]], optional
+        A link dictionary of the form `links[team][jID] = xID`. Player's are identified
+        in StatsPerform files via jID, and this dictionary is used to map them to a
+        specificxID in the respective XY objects. Should be supplied if that order
+        matters. If None is given (default), the links are automatically extracted from
+        the .dat file at the cost of a second pass through the entire file.
+
     Returns
     -------
     data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]
-        Tuple of XY objects in the order: home team halftime 1, home team halftime 2,
-        away team halftime 1, away team halftime 2, ball halftime 1, ball halftime 2,
-        possession code for halftime 1, possession code for halftime 2, playing pitch.
+        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
+        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
+        possession_ht1, possession_ht2, pitch)
     """
-
     # parse the CSV file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_dat))
+    dat_df = pd.read_csv(str(filepath_csv))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -143,9 +147,15 @@ def read_positions(
     # check
     assert [ID in team_ids or ID == ball_id for ID in dat_df["team_id"].unique()]
 
-    # create links, metadata and pitch
-    links = _create_links_from_dat_df(dat_df, team_ids)
-    periods, pitch = _create_metadata_from_dat_df(dat_df)
+    # create or check links
+    if links is None:
+        links = _create_links_from_csv_df(dat_df, team_ids)
+    else:
+        pass
+        # potential check vs jerseys in dat file
+
+    # create periods and pitch
+    periods, pitch = _create_metadata_from_csv_df(dat_df)
     segments = list(periods.keys())
 
     # infer data shapes
