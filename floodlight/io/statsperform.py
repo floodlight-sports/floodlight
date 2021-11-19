@@ -127,9 +127,9 @@ def read_positions(
     links: Dict[str, Dict[int, int]], optional
         A link dictionary of the form `links[team][jID] = xID`. Player's are identified
         in StatsPerform files via jID, and this dictionary is used to map them to a
-        specificxID in the respective XY objects. Should be supplied if that order
+        specific xID in the respective XY objects. Should be supplied if that order
         matters. If None is given (default), the links are automatically extracted from
-        the .dat file at the cost of a second pass through the entire file.
+        the CSV file at the cost of a second pass through the entire file.
 
     Returns
     -------
