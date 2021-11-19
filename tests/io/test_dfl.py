@@ -1,11 +1,12 @@
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 import os
 
+from floodlight.core.code import Code
+from floodlight.core.pitch import Pitch
 from floodlight.io.dfl import read_dfl_files
 from floodlight.core.xy import XY
-from floodlight.core.pitch import Pitch
 
 
 def test_read_positions_for_all_files(
@@ -28,5 +29,7 @@ def test_read_positions_for_all_files(
             for i, obj in enumerate(match_xy):
                 if i < 6:
                     assert isinstance(obj, XY)
+                elif i < 10:
+                    assert isinstance(obj, Code)
                 else:
                     assert isinstance(obj, Pitch)
