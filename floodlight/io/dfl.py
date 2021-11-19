@@ -120,7 +120,7 @@ def _create_periods_from_dat(
     # retrieve information from ball frame sets
     for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
         if frame_set.get("TeamId") == "Ball":
-            frames = frame_set.findall("Frame")
+            frames = [frame for frame in frame_set.iterfind("Frame")]
             periods[frame_set.get("GameSection")] = (
                 int(frames[0].get("N")),
                 int(frames[-1].get("N")),
@@ -231,7 +231,7 @@ def read_dfl_files(
         # teams
         else:
             # find identity of frame set
-            frames = frame_set.findall("Frame")
+            frames = [frame for frame in frame_set.iterfind("Frame")]
             segment = frame_set.get("GameSection")
             if frame_set.get("PersonId") in id_to_jrsy["Home"]:
                 team = "Home"
