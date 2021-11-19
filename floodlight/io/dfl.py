@@ -16,7 +16,7 @@ def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
     Parameters
     ----------
     filepath_mat_info: str or Path
-        Path to XML File where the Match Information data in DFL format is saved
+        Full path to XML File where the Match Information data in DFL format is saved.
 
     Returns
     -------
@@ -44,19 +44,21 @@ def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
 def create_links_from_mat_info(
     filepath_mat_info: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[int, int]], Dict[str, Dict[str, int]]]:
-    """Creates links between player_id and column in the array from matchinfo XML file
+    """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
+    creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
+    ascending order.
 
     Parameters
     ----------
     filepath_mat_info: str or Path
-        Path to XML File where the Match Information data in DFL format is saved
+        Full path to XML File where the Match Information data in DFL format is saved
 
     Returns
     -------
     links: Dict[str, Dict[int, int]]
-        Dictionary mapping the jersey number to position in the team data array
+        A link dictionary of the form `links[team][jID] = xID`.
     id_to_jrsy: Dict[str, Dict[str, int]]
-        Dictionary mapping the DFL player id to jersey number
+        A link dictionary of the form `links[team][pID] = jID`.
     """
     # set up XML tree
     tree = etree.parse(str(filepath_mat_info))
@@ -140,23 +142,40 @@ def read_dfl_files(
     links: Dict[str, Dict[int, int]] = None,
     id_to_jrsy: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
-    """Read a DFL format position data and match information XML.
+    """Parse DFL files and extract position data, possession and ballstatus codes as
+    well as pitch information.
+
+    The official tracking system of the DFL (German Football League) delivers two
+    separate XML files, one containing the actual data as well as a metadata file
+    containing information about pitch size, framerate and start- and endframes of
+    match periods. This function provides a high-level access to TRACAB data by parsing
+    "the full match" given both files.
 
     Parameters
     ----------
     filepath_dat: str or pathlib.Path
-        XML File where the Position data in DFL format is saved.
+        Full path to XML File where the Position data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
-        XML File where the Match Information data in DFL format is saved.
+        Full path to XML File where the Match Information data in DFL format is saved.
     links: Dict
-        Dictionary mapping jersey number to position in the XY Object.
+        A link dictionary of the form `links[team][jID] = xID`. Player's are identified
+        in the XML files via jID, and this dictionary is used to map them to a specific
+        xID in the respective XY objects. Should be supplied if that order matters. If
+        one of links or id_to_jrsy is given as None (default), they are automatically
+        extracted from the Match Information XML file.
     id_to_jrsy: Dict
-        Dictionary mapping DFL PersonId to jersey number.
+        A link dictionary of the form `links[team][pID] = jID` where pID is the PersonId
+        specified in the DFL Match Information file.
 
     Returns
     -------
-    List of XY Objects
+    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]
+        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
+        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
+        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
+
     """
+
     # checks?
 
     # read metadata
@@ -266,28 +285,28 @@ def read_dfl_files(
     ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate)
 
     # create Code objects
-    stat_ht1 = Code(
-        name="ballstatus",
-        code=codes["ballstatus"]["firstHalf"],
-        definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate,
-    )
-    stat_ht2 = Code(
-        name="ballstatus",
-        code=codes["ballstatus"]["secondHalf"],
-        definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate,
-    )
-    poss_ht1 = Code(
-        name="possession",
+    possession_ht1 = Code(
         code=codes["possession"]["firstHalf"],
+        name="possession",
         definitions={1: "Home", 2: "Away"},
         framerate=framerate,
     )
-    poss_ht2 = Code(
-        name="ballstatus",
+    possession_ht2 = Code(
         code=codes["possession"]["secondHalf"],
+        name="possession",
         definitions={1: "Home", 2: "Away"},
+        framerate=framerate,
+    )
+    ballstatus_ht1 = Code(
+        code=codes["ballstatus"]["firstHalf"],
+        name="ballstatus",
+        definitions={0: "Dead", 1: "Alive"},
+        framerate=framerate,
+    )
+    ballstatus_ht2 = Code(
+        code=codes["ballstatus"]["secondHalf"],
+        name="ballstatus",
+        definitions={0: "Dead", 1: "Alive"},
         framerate=framerate,
     )
 
@@ -298,10 +317,11 @@ def read_dfl_files(
         away_ht2,
         ball_ht1,
         ball_ht2,
-        stat_ht1,
-        stat_ht2,
-        poss_ht1,
-        poss_ht2,
+        possession_ht1,
+        possession_ht2,
+        ballstatus_ht1,
+        ballstatus_ht2,
         pitch,
     )
+
     return data_objects
