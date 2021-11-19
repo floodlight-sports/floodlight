@@ -6,6 +6,7 @@ import numpy as np
 
 from floodlight.core.xy import XY
 from floodlight.core.pitch import Pitch
+from floodlight.core.code import Code
 
 
 def _create_metadata_from_dat_df(
@@ -51,7 +52,7 @@ def _create_metadata_from_dat_df(
 
     seg_idx = np.where(np.diff(frame_values, prepend=frame_values[0]) > 1)
     seg_idx = np.insert(seg_idx, 0, 0)
-    seg_idx = np.append(seg_idx, len(frame_values) - 1)
+    seg_idx = np.append(seg_idx, len(frame_values))
     for segment in range(len(seg_idx) - 1):
         start = int(frame_values[seg_idx[segment]])
         end = int(frame_values[seg_idx[segment + 1] - 1] + 1)
@@ -78,11 +79,11 @@ def _create_links_from_dat_df(
             `periods[segment] = (startframe, endframe)`.
     """
     links = {}
-    for team_id in team_ids:
-        links[team_id] = {
+    for team in team_ids:
+        links[team] = {
             jID: xID + 1
             for xID, jID in enumerate(
-                dat_df[dat_df["team_id"] == team_id]["jersey_no"].unique()
+                dat_df[dat_df["team_id"] == team_ids[team]]["jersey_no"].unique()
             )
         }
     return links
@@ -128,7 +129,9 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     return links
 
 
-def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, Pitch]:
+def read_positions(
+    filepath: Union[str, Path]
+) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
     """Parse StatsPerform dat file for (x,y)-data.
 
     Read a position data CSV file that is given in the StatsPerform format into a
@@ -143,9 +146,10 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Pitch]
+    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]
         Tuple of XY objects in the order: home team halftime 1, home team halftime 2,
-        away team halftime 1, away team halftime 2, ball halftime 1, ball halftime 2.
+        away team halftime 1, away team halftime 2, ball halftime 1, ball halftime 2,
+        possession code for halftime 1, possession code for halftime 2, playing pitch.
     """
 
     # parse the CSV file into pd.DataFrame
@@ -171,6 +175,7 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
         number_of_frames[segment] = end - start
 
     # bins
+    codes = {}
     xydata = {
         "Home": {
             segment: np.full(
@@ -200,34 +205,52 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
 
     # loop
     for segment in segments:
-        # insert team data
+
+        # teams
         for team in team_ids:
             team_df = dat_df[dat_df["team_id"] == team_ids[team]]
             for pID in team_df["player_id"].unique():
-
-                # extract player DataFrame
+                # extract player information
                 pl_df = team_df[team_df["player_id"] == pID]
-                pl_frames = pl_df["frame_count"].values
-                pl_x = pl_df["pos_x"].values
-                pl_y = pl_df["pos_y"].values
+                frames = pl_df["frame_count"].values
+                x_position = pl_df["pos_x"].values
+                y_position = pl_df["pos_y"].values
 
-                # retrieve start and end points of player
-                segment_pl_axis = np.array(
+                # compute appearance of player in segment
+                appearance = np.array(
                     [
                         (periods[segment][0] <= frame <= periods[segment][-1])
-                        for frame in pl_frames
+                        for frame in frames
                     ]
                 )
-                start = np.argmin(periods[segment] - pl_frames[0])
-                end = np.argmin(periods[segment] - pl_frames[-1])
+                # check for players that did not play in segment
+                if not np.sum(appearance):
+                    continue
 
-                # write to bins
-                xydata[team][segment][:, 0] = pl_x[segment_pl_axis]
-                xydata[team][segment][:, 1] = pl_y[segment_pl_axis]
+                # insert player position to bin array
+                jrsy = pl_df["jersey_no"].values[0]
+                x_col = (links[team][jrsy] - 1) * 2
+                y_col = (links[team][jrsy] - 1) * 2 + 1
+                start = frames[appearance][0] - periods[segment][0]
+                end = frames[appearance][-1] - periods[segment][0] + 1
+                xydata[team][segment][start:end, x_col] = x_position[appearance]
+                xydata[team][segment][start:end, y_col] = y_position[appearance]
 
-        # insert ball data
-        xydata["Ball"][segment][:, 0] = dat_df[dat_df["team_id" == 4]]["pos_x"].values()
-        xydata["Ball"][segment][:, 1] = dat_df[dat_df["team_id" == 4]]["pos_x"].values()
+        # ball
+        ball_df = dat_df[dat_df["team_id"] == 4]
+        frames = ball_df["frame_count"].values
+        appearance = np.array(
+            [(periods[segment][0] <= frame <= periods[segment][-1]) for frame in frames]
+        )
+        xydata["Ball"][segment][:, 0] = ball_df["pos_x"].values[appearance]
+        xydata["Ball"][segment][:, 1] = ball_df["pos_x"].values[appearance]
+
+        # update codes
+        codes[segment] = Code(
+            code=ball_df["possession"].values[appearance],
+            name="possession",
+            definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
+        )
 
     # create XY Objects
     home_ht1 = XY(xy=xydata["Home"][0], framerate=framerate)
@@ -236,6 +259,18 @@ def read_positions(filepath: Union[str, Path]) -> Tuple[XY, XY, XY, XY, XY, XY, 
     away_ht2 = XY(xy=xydata["Away"][1], framerate=framerate)
     ball_ht1 = XY(xy=xydata["Ball"][0], framerate=framerate)
     ball_ht2 = XY(xy=xydata["Ball"][1], framerate=framerate)
+    poss_ht1 = codes[0]
+    poss_ht2 = codes[1]
 
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2, pitch)
+    data_objects = (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        ball_ht1,
+        ball_ht2,
+        poss_ht1,
+        poss_ht2,
+        pitch,
+    )
     return data_objects
