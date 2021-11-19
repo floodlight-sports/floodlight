@@ -89,7 +89,7 @@ def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int,
     Parameters
     ----------
     filepath_csv: str or pathlib.Path
-        CSV File where the Position data in StatsPerform format is saved.
+        CSV File where the position data in StatsPerform format is saved.
 
     Returns
     -------
