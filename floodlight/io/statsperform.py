@@ -243,11 +243,13 @@ def read_positions(
         name="possession",
         code=codes["possession"][0],
         definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
+        framerate=10,
     )
     poss_ht2 = Code(
         name="possession",
         code=codes["possession"][1],
         definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
+        framerate=10,
     )
 
     data_objects = (
