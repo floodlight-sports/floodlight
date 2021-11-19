@@ -11,7 +11,7 @@ from floodlight.core.code import Code
 
 def _create_metadata_from_dat_df(
     dat_df: pd.DataFrame,
-) -> Tuple[int, Dict[int, tuple], Pitch]:
+) -> Tuple[Dict[int, tuple], Pitch]:
     """Creates meta information from the ball position DataFrame.
 
     Parameters
@@ -21,8 +21,6 @@ def _create_metadata_from_dat_df(
 
     Returns
     -------
-    framerate: int
-        Temporal resolution of data in frames per second/Hertz.
     periods: Dict[int, int]
         Dictionary with start and endframes:
             `periods[segment] = (startframe, endframe)`.
@@ -42,10 +40,6 @@ def _create_metadata_from_dat_df(
         sport="football",
     )
 
-    # compute framerate
-    time_values = dat_df["timeelapsed"].unique()
-    framerate = 1 / (time_values[1] - time_values[0])
-
     # create periods for segments, coded as jumps in the frame sequence
     periods = {}
     frame_values = dat_df["frame_count"].unique()
@@ -58,7 +52,7 @@ def _create_metadata_from_dat_df(
         end = int(frame_values[seg_idx[segment + 1] - 1])
         periods[segment] = (start, end)
 
-    return framerate, periods, pitch
+    return periods, pitch
 
 
 def _create_links_from_dat_df(
@@ -151,7 +145,7 @@ def read_positions(
 
     # create links, metadata and pitch
     links = _create_links_from_dat_df(dat_df, team_ids)
-    framerate, periods, pitch = _create_metadata_from_dat_df(dat_df)
+    periods, pitch = _create_metadata_from_dat_df(dat_df)
     segments = list(periods.keys())
 
     # infer data shapes
@@ -237,12 +231,12 @@ def read_positions(
         codes["possession"][segment] = ball_df["possession"].values[appearance]
 
     # create XY objects
-    home_ht1 = XY(xy=xydata["Home"][0], framerate=framerate)
-    home_ht2 = XY(xy=xydata["Home"][1], framerate=framerate)
-    away_ht1 = XY(xy=xydata["Away"][0], framerate=framerate)
-    away_ht2 = XY(xy=xydata["Away"][1], framerate=framerate)
-    ball_ht1 = XY(xy=xydata["Ball"][0], framerate=framerate)
-    ball_ht2 = XY(xy=xydata["Ball"][1], framerate=framerate)
+    home_ht1 = XY(xy=xydata["Home"][0], framerate=10)
+    home_ht2 = XY(xy=xydata["Home"][1], framerate=10)
+    away_ht1 = XY(xy=xydata["Away"][0], framerate=10)
+    away_ht2 = XY(xy=xydata["Away"][1], framerate=10)
+    ball_ht1 = XY(xy=xydata["Ball"][0], framerate=10)
+    ball_ht2 = XY(xy=xydata["Ball"][1], framerate=10)
 
     # create Code objects
     poss_ht1 = Code(
