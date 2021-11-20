@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Dict, Tuple, Union
 
@@ -319,10 +318,3 @@ def read_dfl_files(
         pitch,
     )
     return data_objects
-
-
-for file in os.listdir("D:\\soccerbot"):
-    read_dfl_files(
-        "D:\\soccerbot\\" + file + "\\SoccerBot\\Positions.xml",
-        "D:\\soccerbot\\" + file + "\\SoccerBot\\MatchInfo.xml",
-    )
