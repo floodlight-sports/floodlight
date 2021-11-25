@@ -5,6 +5,7 @@ import warnings
 from lxml import etree
 import iso8601
 import numpy as np
+import pandas as pd
 
 from floodlight.core.code import Code
 from floodlight.core.pitch import Pitch
@@ -63,7 +64,7 @@ def _create_periods_from_dat(
         Estimated temporal resolution of data in frames per second/Hertz.
     """
     periods = {}
-    est_framerate = None
+    framerate_est = None
 
     # retrieve information from ball frame sets
     for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
@@ -76,9 +77,9 @@ def _create_periods_from_dat(
             delta = iso8601.parse_date(frames[1].get("T")) - iso8601.parse_date(
                 frames[0].get("T")
             )
-            if est_framerate is None:
-                est_framerate = int(round(1 / delta.total_seconds()))
-            elif est_framerate != int(round(1 / delta.total_seconds())):
+            if framerate_est is None:
+                framerate_est = int(round(1 / delta.total_seconds()))
+            elif framerate_est != int(round(1 / delta.total_seconds())):
                 warnings.warn(
                     "Framerate estimation yielded diverging results."
                     "The originally estimated framerate of %d Hz did not "
@@ -86,14 +87,14 @@ def _create_periods_from_dat(
                     "caused by missing frame(s) in the position data."
                     "Continuing by choosing the latest estimation of %d Hz"
                     % (
-                        est_framerate,
+                        framerate_est,
                         int(round(1 / delta.total_seconds())),
                         int(round(1 / delta.total_seconds())),
                     )
                 )
-                est_framerate = int(round(1 / delta.total_seconds()))
+                framerate_est = int(round(1 / delta.total_seconds()))
 
-    return periods, est_framerate
+    return periods, framerate_est
 
 
 def create_links_from_mat_info(
@@ -153,6 +154,217 @@ def create_links_from_mat_info(
     return links_jID_to_xID, links_pID_to_jID
 
 
+def _get_event_description(elem: etree.Element) -> Tuple[str, dict]:
+    """Returns the full description of a single XML Event in the DFL format.
+
+    Parameters
+    ----------
+    elem: lxml.etree.Element
+        lxml.etree.Element with the Event information.
+
+    Returns
+    -------
+    eID: str
+        High-level description for the current event.
+    attrib: dict
+        Additional attributes for the current event in the form
+        ´attrib[category] = label´.
+    """
+    # read description
+    eID = elem.tag
+
+    # read additional attributes
+    attrib = {}
+    for category in elem.attrib:
+        attrib[category] = elem.attrib[category]
+
+    # find nested elements
+    nested_eID = None
+    nested_attrib = None
+    if elem.find("Play") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("Play"))
+    elif elem.find("Pass") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("Pass"))
+    elif elem.find("Cross") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("Cross"))
+    elif elem.find("ShotAtGoal") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("ShotAtGoal"))
+        nested_attrib.update(attrib)
+    elif elem.find("SuccessfulShot") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("SuccessfulShot"))
+        nested_attrib.update(attrib)
+    elif elem.find("SavedShot") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("SavedShot"))
+        nested_attrib.update(attrib)
+    elif elem.find("BlockedShot") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("BlockedShot"))
+        nested_attrib.update(attrib)
+    elif elem.find("ShotWide") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("ShotWide"))
+        nested_attrib.update(attrib)
+    elif elem.find("ShotWoodWork") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("ShotWoodWork"))
+        nested_attrib.update(attrib)
+    elif elem.find("OtherShot") is not None:
+        nested_eID, nested_attrib = _get_event_description(elem.find("OtherShot"))
+
+    # update
+    if nested_eID is not None and nested_attrib is not None:
+        eID += "_" + nested_eID
+        attrib.update(nested_attrib)
+
+    return eID, attrib
+
+
+def _get_event_outcome(eID, attrib):
+    """Returns the outcome of a single Event in the DFL format.
+
+    Parameters
+    ----------
+    eID: str
+        High-level description for the current event.
+    attrib: dict
+        Additional attributes for the current event in the form
+        ´attrib[category] = label´.
+
+    Returns
+    -------
+    outcome: int
+        Outcome coded as 1 (success) or 0 (failure) of the current event.
+    """
+    outcome = None
+
+    if eID == "TacklingGame":
+        if attrib["WinnerRole"] == "withoutBallControl":
+            outcome = 1
+        elif attrib["WinnerRole"] == "withBallControl":
+            outcome = 0
+        else:
+            pass
+    elif eID == "BallClaiming":
+        if "Type" in attrib:
+            if attrib["Type"] in ["BallClaimed"]:
+                outcome = 1
+            elif attrib["Type"] in ["BallHeld"]:
+                outcome = 0
+            else:
+                pass
+    elif eID == "Play":
+        if attrib["Successful"] == "true":
+            outcome = 1
+        elif attrib["Successful"] == "false":
+            outcome = 0
+        else:
+            pass
+    # per definition no outcome
+    elif eID in [
+        "OwnGoal",
+        "DefensiveClearance",
+        "Foul",
+        "Offside",
+        "Caution",
+        "SendingOff",
+        "Substitution",
+        "KickoffWhistle",
+        "FinalWhistle",
+        "FairPlay",
+        "RefereeBall",
+        "OtherBallAction",
+        "OtherPlayerAction",
+    ]:
+        pass
+    # only defined as positive outcome -> necessary?
+    elif eID in ["PreventedOwnGoal"]:
+        outcome = 1
+    # nested structure with outcome in sub child
+    elif eID in [
+        "FreeKick",
+        "ThrowIn",
+        "CornerKick",
+        "Penalty",
+        "GoalKick",
+        "Kickoff",
+        "ShotAtGoal",
+    ]:
+        pass
+    else:
+        warnings.warn("Unknown Event Type %s" % eID)
+    return outcome
+
+
+def read_events(filepath_events: Union[str, Path], framerate: int):
+    """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
+    creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
+    ascending order.
+
+    Parameters
+    ----------
+    filepath_events: str or pathlib.Path
+        Full path to XML File where the Event data in DFL format is saved
+    framerate: int
+        (Estimated) temporal resolution of data in frames per second/Hertz.
+    Returns
+    -------
+    events: List of Event
+        List of events for all segments.
+    """
+    # set up XML tree
+    tree = etree.parse(str(filepath_events))
+    root = tree.getroot()
+
+    # find start and end of half
+    kickoff_whistles = {}
+    final_whistles = {}
+    for whistle in root.findall("Event/KickoffWhistle"):
+        kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
+            whistle.getparent().get("EventTime")
+        )
+    for whistle in root.findall("Event/FinalWhistle"):
+        final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
+            whistle.getparent().get("EventTime")
+        )
+
+    # define periods
+    segments = list(kickoff_whistles.keys())
+    periods = {}
+    for segment in segments:
+        periods[segment] = (kickoff_whistles[segment], final_whistles[segment])
+
+    # set up bins
+    events = {segment: pd.DataFrame() for segment in segments}
+
+    # loop over events
+    for elem in root.findall("Event"):
+        # initialize
+        event = {}
+
+        # check for structure that is an element Event with a single child
+        if len(elem) != 1:
+            warnings.warn(
+                "Access of an Element with multiple children! This can cause"
+                "unprecise Event descriptions and outcomes."
+            )
+
+        # time information: timestamp (absolute) and gameclock (relative)
+        event["timestamp"] = iso8601.parse_date(elem.get("EventTime"))
+        event["gameclock"] = np.nan
+        segment = None
+        for seg in segments:
+            if periods[seg][0] <= event["timestamp"] <= periods[seg][1]:
+                event["gameclock"] = (
+                    event["timestamp"] - periods[segment][0]
+                ).total_seconds()
+                segment = seg
+
+        # description and outcome
+        for child in elem:
+            event["eID"], attrib = _get_event_description(child)
+            event.update(attrib)
+            event["outcome"] = _get_event_outcome(child, attrib)
+
+        events[segment].append(event)
+
+
 def read_dfl_files(
     filepath_dat: Union[str, Path],
     filepath_mat_info: Union[str, Path],
@@ -206,7 +418,7 @@ def read_dfl_files(
         # potential check
 
     # create periods
-    periods, framerate = _create_periods_from_dat(filepath_dat)
+    periods, framerate_est = _create_periods_from_dat(filepath_dat)
     segments = list(periods.keys())
 
     # infer data array shapes
@@ -292,37 +504,37 @@ def read_dfl_files(
             )
 
     # create XY objects
-    home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate)
-    home_ht2 = XY(xy=xydata["Home"]["secondHalf"], framerate=framerate)
-    away_ht1 = XY(xy=xydata["Away"]["firstHalf"], framerate=framerate)
-    away_ht2 = XY(xy=xydata["Away"]["secondHalf"], framerate=framerate)
-    ball_ht1 = XY(xy=xydata["Ball"]["firstHalf"], framerate=framerate)
-    ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate)
+    home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)
+    home_ht2 = XY(xy=xydata["Home"]["secondHalf"], framerate=framerate_est)
+    away_ht1 = XY(xy=xydata["Away"]["firstHalf"], framerate=framerate_est)
+    away_ht2 = XY(xy=xydata["Away"]["secondHalf"], framerate=framerate_est)
+    ball_ht1 = XY(xy=xydata["Ball"]["firstHalf"], framerate=framerate_est)
+    ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate_est)
 
     # create Code objects
     possession_ht1 = Code(
         code=codes["possession"]["firstHalf"],
         name="possession",
         definitions={1: "Home", 2: "Away"},
-        framerate=framerate,
+        framerate=framerate_est,
     )
     possession_ht2 = Code(
         code=codes["possession"]["secondHalf"],
         name="possession",
         definitions={1: "Home", 2: "Away"},
-        framerate=framerate,
+        framerate=framerate_est,
     )
     ballstatus_ht1 = Code(
         code=codes["ballstatus"]["firstHalf"],
         name="ballstatus",
         definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate,
+        framerate=framerate_est,
     )
     ballstatus_ht2 = Code(
         code=codes["ballstatus"]["secondHalf"],
         name="ballstatus",
         definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate,
+        framerate=framerate_est,
     )
 
     data_objects = (
