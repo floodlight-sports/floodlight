@@ -117,7 +117,7 @@ class Pitch:
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
-                sport="football",
+                sport=kwargs.get("sport"),
             )
         else:
             raise ValueError(f"Unsupported template name '{template_name}'")

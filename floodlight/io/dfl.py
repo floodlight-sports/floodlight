@@ -37,6 +37,7 @@ def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
         "dfl",
         length=length,
         width=width,
+        sport="football",
     )
 
     return pitch
