@@ -8,4 +8,5 @@ Collection of parsing modules for different provider data.
    :maxdepth: 1
    :caption: Spatiotemporal Data
 
+   opta
    tracab
