@@ -3,7 +3,7 @@ from typing import Dict, Tuple, Union
 import warnings
 
 from lxml import etree
-import datetime as dt
+import iso8601
 import numpy as np
 
 from floodlight.core.code import Code
@@ -73,9 +73,9 @@ def _create_periods_from_dat(
                 int(frames[0].get("N")),
                 int(frames[-1].get("N")),
             )
-            delta = dt.datetime.fromisoformat(
-                frames[1].get("T")
-            ) - dt.datetime.fromisoformat(frames[0].get("T"))
+            delta = iso8601.parse_date(frames[1].get("T")) - iso8601.parse_date(
+                frames[0].get("T")
+            )
             if est_framerate is None:
                 est_framerate = int(round(1 / delta.total_seconds()))
             elif est_framerate != int(round(1 / delta.total_seconds())):
