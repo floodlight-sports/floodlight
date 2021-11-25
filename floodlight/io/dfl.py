@@ -274,8 +274,6 @@ def read_dfl_files(
                 team = "Away"
                 jrsy = id_to_jrsy[team][frame_set.get("PersonId")]
             else:
-                team = None
-                jrsy = None
                 pass
                 # possible error or warning
 
