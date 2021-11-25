@@ -236,6 +236,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "iso8601"
+version = "1.0.2"
+description = "Simple module to parse ISO 8601 dates"
+category = "main"
+optional = false
+python-versions = ">=3.6.2,<4.0"
+
+[[package]]
 name = "jinja2"
 version = "3.0.2"
 description = "A very fast and expressive template engine."
@@ -752,7 +760,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7, ~3.8"
-content-hash = "fc9b05a48296b76689ee00a0eaf3f94feb0bfbfa4ee2356521300520a38797ed"
+content-hash = "a1500acb97ff7c9c88cdc9a2b8a75639a50473b6b204a5d9215f20f5f995104e"
 
 [metadata.files]
 alabaster = [
@@ -842,6 +850,10 @@ imagesize = [
 iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},
     {file = "iniconfig-1.1.1.tar.gz", hash = "sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32"},
+]
+iso8601 = [
+    {file = "iso8601-1.0.2-py3-none-any.whl", hash = "sha256:d7bc01b1c2a43b259570bb307f057abc578786ea734ba2b87b836c5efc5bd443"},
+    {file = "iso8601-1.0.2.tar.gz", hash = "sha256:27f503220e6845d9db954fb212b95b0362d8b7e6c1b2326a87061c3de93594b1"},
 ]
 jinja2 = [
     {file = "Jinja2-3.0.2-py3-none-any.whl", hash = "sha256:8569982d3f0889eed11dd620c706d39b60c36d6d25843961f33f77fb6bc6b20c"},
