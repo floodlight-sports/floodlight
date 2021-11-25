@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict, Tuple, Union
+import warnings
 
 from lxml import etree
 import datetime as dt
@@ -44,23 +45,24 @@ def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
 def _create_periods_from_dat(
     filepath_dat: Union[str, Path]
 ) -> Tuple[Dict[str, Tuple[int, int]], int]:
-    """Parses over position file and returns dictionary with periods
+    """Parses over position file and returns dictionary with periods as well as an
+    estimate of the framerate based on the timedelta between multiple frames.
 
     Parameters
     ----------
     filepath_dat: str or pathlib.Path
-        Path to XML File where the Position data in DFL format is saved
+        Path to XML File where the Position data in DFL format is saved.
 
     Returns
     -------
     periods: Dict[str, Tuple[int, int]
         Dictionary with times for the segment:
         `periods[segment] = (starttime, endtime)`
-    framerate: int
-        Temporal resolution of data in frames per second/Hertz.
+    est_framerate: int
+        Estimated temporal resolution of data in frames per second/Hertz.
     """
     periods = {}
-    framerate = None
+    est_framerate = None
 
     # retrieve information from ball frame sets
     for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
@@ -70,13 +72,27 @@ def _create_periods_from_dat(
                 int(frames[0].get("N")),
                 int(frames[-1].get("N")),
             )
-            if framerate is None:
-                delta = dt.datetime.fromisoformat(
-                    frames[1].get("T")
-                ) - dt.datetime.fromisoformat(frames[0].get("T"))
-                framerate = int(round(1 / delta.total_seconds()))
+            delta = dt.datetime.fromisoformat(
+                frames[1].get("T")
+            ) - dt.datetime.fromisoformat(frames[0].get("T"))
+            if est_framerate is None:
+                est_framerate = int(round(1 / delta.total_seconds()))
+            elif est_framerate != int(round(1 / delta.total_seconds())):
+                warnings.warn(
+                    "Framerate estimation yielded diverging results."
+                    "The originally estimated framerate of %d Hz did not "
+                    "match the current estimation of %d Hz. This might be "
+                    "caused by missing frame(s) in the position data."
+                    "Continuing by choosing the latest estimation of %d Hz"
+                    % (
+                        est_framerate,
+                        int(round(1 / delta.total_seconds())),
+                        int(round(1 / delta.total_seconds())),
+                    )
+                )
+                est_framerate = int(round(1 / delta.total_seconds()))
 
-    return periods, framerate
+    return periods, est_framerate
 
 
 def create_links_from_mat_info(
@@ -147,9 +163,10 @@ def read_dfl_files(
 
     The official tracking system of the DFL (German Football League) delivers two
     separate XML files, one containing the actual data as well as a metadata file
-    containing information about pitch size, framerate and start- and endframes of
-    match periods. This function provides a high-level access to TRACAB data by parsing
-    "the full match" given both files.
+    containing information about pitch size and start- and endframes of match periods.
+    Since no information about framerate is delivered, it is estimated from time
+    difference between individual frames. This function provides a high-level access to
+    DFL data by parsing "the full match" given both files.
 
     Parameters
     ----------
