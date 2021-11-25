@@ -110,9 +110,9 @@ def create_links_from_mat_info(
 
     Returns
     -------
-    links: Dict[str, Dict[int, int]]
+    links_jID_to_xID: Dict[str, Dict[int, int]]
         A link dictionary of the form `links[team][jID] = xID`.
-    id_to_jrsy: Dict[str, Dict[str, int]]
+    links_pID_to_jID: Dict[str, Dict[str, int]]
         A link dictionary of the form `links[team][pID] = jID`.
     """
     # set up XML tree
@@ -120,44 +120,44 @@ def create_links_from_mat_info(
     root = tree.getroot()
 
     # parse XML file and extract links from pID to xID for both teams
-    id_to_jrsy = {}
+    links_pID_to_jID = {}
     teams = root.find("MatchInformation").find("Teams")
     home = root.find("MatchInformation").find("General").get("HomeTeamId")
     away = root.find("MatchInformation").find("General").get("AwayTeamId")
 
     for team in teams:
         if team.get("TeamId") == home:
-            id_to_jrsy["Home"] = {
+            links_pID_to_jID["Home"] = {
                 player.get("PersonId"): int(player.get("ShirtNumber"))
                 for player in team.find("Players")
             }
         elif team.get("TeamId") == away:
-            id_to_jrsy["Away"] = {
+            links_pID_to_jID["Away"] = {
                 player.get("PersonId"): int(player.get("ShirtNumber"))
                 for player in team.find("Players")
             }
         else:
             continue
 
-    links = {
+    links_jID_to_xID = {
         "Home": {
-            int(id_to_jrsy["Home"][pID]): xID + 1
-            for xID, pID in enumerate(id_to_jrsy["Home"])
+            int(links_pID_to_jID["Home"][pID]): xID + 1
+            for xID, pID in enumerate(links_pID_to_jID["Home"])
         },
         "Away": {
-            int(id_to_jrsy["Away"][pID]): xID + 1
-            for xID, pID in enumerate(id_to_jrsy["Away"])
+            int(links_pID_to_jID["Away"][pID]): xID + 1
+            for xID, pID in enumerate(links_pID_to_jID["Away"])
         },
     }
 
-    return links, id_to_jrsy
+    return links_jID_to_xID, links_pID_to_jID
 
 
 def read_dfl_files(
     filepath_dat: Union[str, Path],
     filepath_mat_info: Union[str, Path],
-    links: Dict[str, Dict[int, int]] = None,
-    id_to_jrsy: Dict[str, Dict[int, int]] = None,
+    links_jID_to_xID: Dict[str, Dict[int, int]] = None,
+    links_pID_to_jID: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
     """Parse DFL files and extract position data, possession and ballstatus codes as
     well as pitch information.
@@ -175,13 +175,13 @@ def read_dfl_files(
         Full path to XML File where the Position data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
-    links: Dict, optional
+    links_jID_to_xID: Dict, optional
         A link dictionary of the form `links[team][jID] = xID`. Player's are identified
         in the XML files via jID, and this dictionary is used to map them to a specific
         xID in the respective XY objects. Should be supplied if that order matters. If
         one of links or id_to_jrsy is given as None (default), they are automatically
         extracted from the Match Information XML file.
-    id_to_jrsy: Dict, optional
+    links_pID_to_jID: Dict, optional
         A link dictionary of the form `links[team][pID] = jID` where pID is the PersonId
         specified in the DFL Match Information file.
 
@@ -197,8 +197,10 @@ def read_dfl_files(
     pitch = _read_pitch_from_mat_info(filepath_mat_info)
 
     # create or check links
-    if links is None or id_to_jrsy is None:
-        links, id_to_jrsy = create_links_from_mat_info(filepath_mat_info)
+    if links_jID_to_xID is None or links_pID_to_jID is None:
+        links_jID_to_xID, links_pID_to_jID = create_links_from_mat_info(
+            filepath_mat_info
+        )
     else:
         pass
         # potential check
@@ -208,8 +210,8 @@ def read_dfl_files(
     segments = list(periods.keys())
 
     # infer data array shapes
-    number_of_home_players = max(links["Home"].values())
-    number_of_away_players = max(links["Away"].values())
+    number_of_home_players = max(links_jID_to_xID["Home"].values())
+    number_of_away_players = max(links_jID_to_xID["Away"].values())
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -267,12 +269,12 @@ def read_dfl_files(
             # find identity of frame set
             frames = [frame for frame in frame_set.iterfind("Frame")]
             segment = frame_set.get("GameSection")
-            if frame_set.get("PersonId") in id_to_jrsy["Home"]:
+            if frame_set.get("PersonId") in links_pID_to_jID["Home"]:
                 team = "Home"
-                jrsy = id_to_jrsy[team][frame_set.get("PersonId")]
-            elif frame_set.get("PersonId") in id_to_jrsy["Away"]:
+                jrsy = links_pID_to_jID[team][frame_set.get("PersonId")]
+            elif frame_set.get("PersonId") in links_pID_to_jID["Away"]:
                 team = "Away"
-                jrsy = id_to_jrsy[team][frame_set.get("PersonId")]
+                jrsy = links_pID_to_jID[team][frame_set.get("PersonId")]
             else:
                 pass
                 # possible error or warning
@@ -280,8 +282,8 @@ def read_dfl_files(
             # insert (x,y) data to correct place in bin
             start = int(frames[0].get("N")) - periods[segment][0]
             end = int(frames[-1].get("N")) - periods[segment][0] + 1
-            x_col = (links[team][jrsy] - 1) * 2
-            y_col = (links[team][jrsy] - 1) * 2 + 1
+            x_col = (links_jID_to_xID[team][jrsy] - 1) * 2
+            y_col = (links_jID_to_xID[team][jrsy] - 1) * 2 + 1
             xydata[team][segment][start:end, x_col] = np.array(
                 [float(frame.get("X")) for frame in frames]
             )
