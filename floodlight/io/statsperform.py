@@ -108,7 +108,7 @@ def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int,
     return _create_links_from_csv_df(dat_df, team_ids)
 
 
-def read_positions(
+def read_open_statsperform_csv(
     filepath_csv: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
