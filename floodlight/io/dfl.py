@@ -12,38 +12,6 @@ from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
 
 
-def _read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
-    """Reads match_information XML file and returns the playing Pitch.
-
-    Parameters
-    ----------
-    filepath_mat_info: str or pathlib.Path
-        Full path to XML File where the Match Information data in DFL format is saved.
-
-    Returns
-    -------
-    pitch: Pitch
-        Pitch object with actual pitch length and width.
-    """
-    # set up XML tree
-    tree = etree.parse(str(filepath_mat_info))
-    root = tree.getroot()
-
-    # parse pitch
-    length = root.find("MatchInformation").find("Environment").get("PitchX")
-    length = float(length) if length else None
-    width = root.find("MatchInformation").find("Environment").get("PitchY")
-    width = float(width) if width else None
-    pitch = Pitch.from_template(
-        "dfl",
-        length=length,
-        width=width,
-        sport="football",
-    )
-
-    return pitch
-
-
 def _create_periods_from_dat(
     filepath_dat: Union[str, Path]
 ) -> Tuple[Dict[str, Tuple[int, int]], int]:
@@ -350,6 +318,38 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     return team, player
 
 
+def read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
+    """Reads match_information XML file and returns the playing Pitch.
+
+    Parameters
+    ----------
+    filepath_mat_info: str or pathlib.Path
+        Full path to XML File where the Match Information data in DFL format is saved.
+
+    Returns
+    -------
+    pitch: Pitch
+        Pitch object with actual pitch length and width.
+    """
+    # set up XML tree
+    tree = etree.parse(str(filepath_mat_info))
+    root = tree.getroot()
+
+    # parse pitch
+    length = root.find("MatchInformation").find("Environment").get("PitchX")
+    length = float(length) if length else None
+    width = root.find("MatchInformation").find("Environment").get("PitchY")
+    width = float(width) if width else None
+    pitch = Pitch.from_template(
+        "dfl",
+        length=length,
+        width=width,
+        sport="football",
+    )
+
+    return pitch
+
+
 def read_events(filepath_events: Union[str, Path]):
     """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
     creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
@@ -524,7 +524,7 @@ def read_dfl_files(
 
     """
     # read metadata
-    pitch = _read_pitch_from_mat_info(filepath_mat_info)
+    pitch = read_pitch_from_mat_info(filepath_mat_info)
 
     # create or check links
     if links_jID_to_xID is None or links_pID_to_jID is None:
