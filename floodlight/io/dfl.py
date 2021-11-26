@@ -208,7 +208,7 @@ def _get_event_description(elem: etree.Element) -> Tuple[str, dict]:
     elif elem.find("OtherShot") is not None:
         nested_eID, nested_attrib = _get_event_description(elem.find("OtherShot"))
 
-    # update
+    # update nested elements
     if nested_eID is not None and nested_attrib is not None:
         eID += "_" + nested_eID
         attrib.update(nested_attrib)
@@ -234,31 +234,33 @@ def _get_event_outcome(eID, attrib):
     """
     outcome = None
 
-    if eID == "TacklingGame":
+    # well-defined outcome
+    if "TacklingGame" in eID:
         if attrib["WinnerRole"] == "withoutBallControl":
             outcome = 1
         elif attrib["WinnerRole"] == "withBallControl":
             outcome = 0
-        else:
-            pass
-    elif eID == "BallClaiming":
+    elif "BallClaiming" in eID:
         if "Type" in attrib:
             if attrib["Type"] in ["BallClaimed"]:
                 outcome = 1
             elif attrib["Type"] in ["BallHeld"]:
                 outcome = 0
-            else:
-                pass
-    elif eID == "Play":
-        if attrib["Successful"] == "true":
+    elif "Play" in eID:
+        if "Successful" in attrib:
+            if attrib["Successful"] == "true":
+                outcome = 1
+            elif attrib["Successful"] == "false":
+                outcome = 0
+    elif "ShotAtGoal" in eID:
+        if "SuccessfulShot" in eID:
             outcome = 1
-        elif attrib["Successful"] == "false":
-            outcome = 0
         else:
-            pass
+            outcome = 0
     # per definition no outcome
     elif eID in [
         "OwnGoal",
+        "PreventedOwnGoal",
         "DefensiveClearance",
         "Foul",
         "Offside",
@@ -273,10 +275,7 @@ def _get_event_outcome(eID, attrib):
         "OtherPlayerAction",
     ]:
         pass
-    # only defined as positive outcome -> necessary?
-    elif eID in ["PreventedOwnGoal"]:
-        outcome = 1
-    # nested structure with outcome in sub child
+    # missing sub child in event
     elif eID in [
         "FreeKick",
         "ThrowIn",
@@ -284,11 +283,15 @@ def _get_event_outcome(eID, attrib):
         "Penalty",
         "GoalKick",
         "Kickoff",
-        "ShotAtGoal",
     ]:
-        pass
+        warnings.warn(
+            "Standalone Event %s with missing child (e.g. Play, Pass or "
+            "ShotAtGoal). Assigning None to respective outcome." % eID
+        )
     else:
-        warnings.warn("Unknown Event Type %s" % eID)
+        warnings.warn(
+            "Unknown Event Type: %s. Assigning None to respective outcome." % eID
+        )
     return outcome
 
 
@@ -324,7 +327,7 @@ def read_events(filepath_events: Union[str, Path], framerate: int):
             whistle.getparent().get("EventTime")
         )
 
-    # define periods
+    # initialize periods
     segments = list(kickoff_whistles.keys())
     periods = {}
     for segment in segments:
@@ -341,28 +344,46 @@ def read_events(filepath_events: Union[str, Path], framerate: int):
         # check for structure that is an element Event with a single child
         if len(elem) != 1:
             warnings.warn(
-                "Access of an Element with multiple children! This can cause"
-                "unprecise Event descriptions and outcomes."
+                "An XML Event has multiple children. This likely causes imprecise "
+                "Event descriptions and outcomes."
             )
 
-        # time information: timestamp (absolute) and gameclock (relative)
+        # absolute time information (timestamp)
         event["timestamp"] = iso8601.parse_date(elem.get("EventTime"))
         event["gameclock"] = np.nan
+
+        # retrieve segment in which event took place
         segment = None
         for seg in segments:
             if periods[seg][0] <= event["timestamp"] <= periods[seg][1]:
-                event["gameclock"] = (
-                    event["timestamp"] - periods[segment][0]
-                ).total_seconds()
                 segment = seg
+        # assign to closest start point if not within any segments
+        if segment is None:
+            seg_ind = np.argmin(
+                [np.abs(event["timestamp"] - periods[seg][0]) for seg in segments]
+            )
+            segment = segments[int(seg_ind)]
+
+        # relative time information (gameclock & frameclock)
+        event["gameclock"] = round(
+            (event["timestamp"] - periods[segment][0]).total_seconds()
+        )
+        event["frameclock"] = round(event["gameclock"] * framerate)
 
         # description and outcome
         for child in elem:
             event["eID"], attrib = _get_event_description(child)
             event.update(attrib)
-            event["outcome"] = _get_event_outcome(child, attrib)
+            event["outcome"] = _get_event_outcome(event["eID"], attrib)
 
-        events[segment].append(event)
+        events[segment] = events[segment].append(event, ignore_index=True)
+
+    # sort by frameclock in ascending order
+    for segment in segments:
+        events[segment] = events[segment].sort_values("frameclock")
+        events[segment] = events[segment].reset_index(drop=True)
+
+    return events
 
 
 def read_dfl_files(
