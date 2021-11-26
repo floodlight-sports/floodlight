@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, Tuple, Union
 from pathlib import Path
 
@@ -102,8 +103,11 @@ def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int,
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
     ball_id = 4
-    # check
-    assert [ID in team_ids or ID == ball_id for ID in dat_df["team_id"].unique()]
+
+    # check for additional tIDs
+    for ID in dat_df["team_id"].unique():
+        if not (ID in team_ids.values() or ID == ball_id):
+            warnings.warn("Team ID %.1f did not match any of the standard IDs!" % ID)
 
     return _create_links_from_csv_df(dat_df, team_ids)
 
@@ -144,8 +148,11 @@ def read_open_statsperform_csv(
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
     ball_id = 4
-    # check
-    assert [ID in team_ids or ID == ball_id for ID in dat_df["team_id"].unique()]
+
+    # check for additional tIDs
+    for ID in dat_df["team_id"].unique():
+        if not (ID in team_ids.values() or ID == ball_id):
+            warnings.warn("Team ID %.1f did not match any of the standard IDs!" % ID)
 
     # create or check links
     if links is None:
