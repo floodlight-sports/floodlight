@@ -295,7 +295,62 @@ def _get_event_outcome(eID, attrib):
     return outcome
 
 
-def read_events(filepath_events: Union[str, Path], framerate: int):
+def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
+    """Returns the player and team of a single Event in the DFL format.
+
+    Parameters
+    ----------
+    eID: str
+        High-level description for the current event.
+    attrib: dict
+        Additional attributes for the current event in the form
+        ´attrib[category] = label´.
+
+    Returns
+    -------
+    team: str
+        DFL Team ID of the Event
+    player: str
+        DFL Player ID of the Event
+    """
+    # team
+    team = None
+    if "Team" in attrib:
+        team = attrib["Team"]
+    elif eID == "TacklingGame" and "WinnerTeam" in attrib and "LoserTeam" in attrib:
+        if attrib["WinnerRole"] == "withBallControl":
+            team = attrib["WinnerTeam"]
+        elif attrib["WinnerRole"] == "withoutBallControl":
+            team = attrib["LoserTeam"]
+    elif "TeamFouler" in attrib:
+        team = attrib["TeamFouler"]
+
+    # check
+    if eID not in ["KickoffWhistle", "FinalWhistle"]:  # events with no clear team
+        if team is None:
+            warnings.warn("Could not assign Team to Event %s" % eID)
+
+    # player
+    player = None
+    if "Player" in attrib:
+        player = attrib["Player"]
+    elif eID == "TacklingGame" and "Winner" in attrib and "Loser" in attrib:
+        if attrib["WinnerRole"] == "withBallControl":
+            player = attrib["Winner"]
+        elif attrib["WinnerRole"] == "withoutBallControl":
+            player = attrib["Loser"]
+    elif "Fouler" in attrib:
+        player = attrib["Fouler"]
+
+    # check
+    if eID not in ["KickoffWhistle", "FinalWhistle", "Substitution"]:
+        if player is None:
+            warnings.warn("Could not assign Player to Event %s" % eID)
+
+    return team, player
+
+
+def read_events(filepath_events: Union[str, Path]):
     """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
     creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
     ascending order.
@@ -352,7 +407,7 @@ def read_events(filepath_events: Union[str, Path], framerate: int):
         event["timestamp"] = iso8601.parse_date(elem.get("EventTime"))
         event["gameclock"] = np.nan
 
-        # retrieve segment in which event took place
+        # segment in which event took place
         segment = None
         for seg in segments:
             if periods[seg][0] <= event["timestamp"] <= periods[seg][1]:
@@ -364,26 +419,68 @@ def read_events(filepath_events: Union[str, Path], framerate: int):
             )
             segment = segments[int(seg_ind)]
 
-        # relative time information (gameclock & frameclock)
-        event["gameclock"] = round(
-            (event["timestamp"] - periods[segment][0]).total_seconds()
-        )
-        event["frameclock"] = round(event["gameclock"] * framerate)
+        # relative time information (gameclock)
+        event["gameclock"] = (event["timestamp"] - periods[segment][0]).total_seconds()
+        event["minute"] = np.floor(event["gameclock"] / 60)
+        event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
 
-        # description and outcome
+        # description, outcome, team, and player
         for child in elem:
             event["eID"], attrib = _get_event_description(child)
-            event.update(attrib)
+            event["qualifier"] = attrib
             event["outcome"] = _get_event_outcome(event["eID"], attrib)
+            event["tID"], event["pID"] = _get_event_team_and_player(
+                event["eID"], attrib
+            )
 
-        events[segment] = events[segment].append(event, ignore_index=True)
+        # insert to bin
+        if event["eID"] == "Substitution":  # split for the special case substitution
+            # in-sub
+            event["eID"] = "Insubstitution"
+            event["pID"] = event["qualifier"]["PlayerIn"]
+            events[segment] = events[segment].append(event, ignore_index=True)
+            # out-sub
+            event["eID"] = "Outsubstitution"
+            event["pID"] = event["qualifier"]["PlayerOut"]
+            events[segment] = events[segment].append(event, ignore_index=True)
+        else:
+            events[segment] = events[segment].append(event, ignore_index=True)
 
-    # sort by frameclock in ascending order
+    # reformatting DataFrame
+    teams = events[segments[0]]["tID"].unique()
+    team_events = {team: None for team in teams}
     for segment in segments:
-        events[segment] = events[segment].sort_values("frameclock")
+        # sort rows in ascending order
+        events[segment] = events[segment].sort_values("gameclock")
         events[segment] = events[segment].reset_index(drop=True)
 
-    return events
+        # columns to standard order
+        events[segment] = events[segment][
+            [
+                "eID",
+                "gameclock",
+                "tID",
+                "pID",
+                "outcome",
+                "timestamp",
+                "minute",
+                "second",
+                "qualifier",
+            ]
+        ]
+
+        # divide into teams
+        for team in teams:
+            team_events[segment][team] = events[segment][events[segment]["tID"] == team]
+
+    data_objects = (
+        team_events[segments[0]][teams[0]],
+        team_events[segments[1]][teams[0]],
+        team_events[segments[0]][teams[1]],
+        team_events[segments[1]][teams[1]],
+    )
+
+    return data_objects
 
 
 def read_dfl_files(
