@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from floodlight.core.code import Code
+from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
 
@@ -351,20 +352,31 @@ def read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
 
 
 def read_events(filepath_events: Union[str, Path]):
-    """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
-    creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
-    ascending order.
+    """Parses a DFL Match Event XML file and extracts the event data.
+
+    This function provides a high-level access to the particular DFL Match Event feed
+    and returns Event objects for both teams. The number of segments is inferred from
+    the data, yet data for each segment is stored in a separate object.
 
     Parameters
     ----------
     filepath_events: str or pathlib.Path
         Full path to XML File where the Event data in DFL format is saved
-    framerate: int
-        (Estimated) temporal resolution of data in frames per second/Hertz.
+
     Returns
     -------
-    events: List of Event
-        List of events for all segments.
+    data_objects: Tuple[Events, Events, Events, Events]
+        Events- and Pitch-objects for both teams and both halves.
+
+    Notes
+    -----
+    Opta's format of handling event data information involves an elaborate use of custom
+    event attributes, which attach additional information to certain events. There
+    also exist a number of mappings that define which attributes may be attached to
+    which kind of events. Parsing this information involves quite a bit of logic and is
+    planned to be included in further releases. As of now, qualifier information is
+    parsed as a string in the `qualifier` column of the returned DataFrame and can be
+    transformed to a dict of the form `{attribute: value}`.
     """
     # set up XML tree
     tree = etree.parse(str(filepath_events))
@@ -473,12 +485,20 @@ def read_events(filepath_events: Union[str, Path]):
         for team in teams:
             team_events[segment][team] = events[segment][events[segment]["tID"] == team]
 
-    data_objects = (
-        team_events[segments[0]][teams[0]],
-        team_events[segments[1]][teams[0]],
-        team_events[segments[0]][teams[1]],
-        team_events[segments[1]][teams[1]],
+    # assembly
+    t1_ht1 = Events(
+        events=team_events[segments[0]][teams[0]],
     )
+    t1_ht2 = Events(
+        events=team_events[segments[1]][teams[0]],
+    )
+    t2_ht1 = Events(
+        events=team_events[segments[0]][teams[1]],
+    )
+    t2_ht2 = Events(
+        events=team_events[segments[1]][teams[1]],
+    )
+    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
 
     return data_objects
 
