@@ -200,7 +200,7 @@ def _get_event_outcome(eID, attrib):
     outcome: int
         Outcome coded as 1 (success) or 0 (failure) of the current event.
     """
-    outcome = None
+    outcome = np.nan
 
     # well-defined outcome
     if "TacklingGame" in eID:
@@ -436,11 +436,11 @@ def read_events(filepath_events: Union[str, Path]):
         # insert to bin
         if event["eID"] == "Substitution":  # split for the special case substitution
             # in-sub
-            event["eID"] = "Insubstitution"
+            event["eID"] = "InSubstitution"
             event["pID"] = event["qualifier"]["PlayerIn"]
             events[segment] = events[segment].append(event, ignore_index=True)
             # out-sub
-            event["eID"] = "Outsubstitution"
+            event["eID"] = "OutSubstitution"
             event["pID"] = event["qualifier"]["PlayerOut"]
             events[segment] = events[segment].append(event, ignore_index=True)
         else:
