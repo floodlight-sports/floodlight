@@ -5,9 +5,10 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-from floodlight.core.xy import XY
-from floodlight.core.pitch import Pitch
 from floodlight.core.code import Code
+from floodlight.core.events import Events
+from floodlight.core.pitch import Pitch
+from floodlight.core.xy import XY
 
 
 def _create_metadata_from_dat_df(
@@ -131,6 +132,13 @@ def read_open_statsperform_event_csv(
     -------
     data_objects: Tuple[Events, Events, Events, Events]
         Events- and Pitch-objects for both teams and both halves.
+
+    Notes
+    -----
+    StatsPerform's open format of handling event data information involves certain
+    additional event attributes, which attach additional information to certain events.
+    As of now, these information are parsed as a string in the `qualifier` column of the
+    returned DataFrame and can be transformed to a dict of form `{attribute: value}`.
     """
     # initialize bin
     events = {}
@@ -198,12 +206,20 @@ def read_open_statsperform_event_csv(
                         event, ignore_index=True
                     )
 
-    data_objects = (
-        events["1.0"]["1"],
-        events["1.0"]["2"],
-        events["2.0"]["1"],
-        events["2.0"]["2"],
+    # assembly
+    t1_ht1 = Events(
+        events=events["1.0"]["1"],
     )
+    t1_ht2 = Events(
+        events=events["1.0"]["2"],
+    )
+    t2_ht1 = Events(
+        events=events["2.0"]["1"],
+    )
+    t2_ht2 = Events(
+        events=events["2.0"]["2"],
+    )
+    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
 
     return data_objects
 
