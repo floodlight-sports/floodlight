@@ -85,6 +85,63 @@ def _create_links_from_dat_df(
     return links
 
 
+def _read_event_single_line(
+    line: str,
+) -> Tuple[Dict[str, Union[str, int]], str, str]:
+    """Extracts all relevant information from a single line of StatsPerform's Event CSV
+    file (i.e. one single event in the data).
+
+    Parameters
+    ----------
+    line: str
+        One full line from StatsPerform's Event CSV file.
+
+    Returns
+    -------
+    event: Dict
+        Dictionary with relevant event information in the form:
+        `event[attribute] = value`.
+    """
+    event = {}
+    attrib = line.split(sep=",")
+
+    # absolute times
+    event["frameclock"] = attrib[2]
+    event["gameclock"] = attrib[4]
+
+    # description and outcome
+    event["eID"] = attrib[5].replace(" ", "")
+    event["outcome"] = np.nan
+    if "Won" in attrib[5].split(" "):
+        event["outcome"] = 1
+    elif "Lost" in attrib[5].split(" "):
+        event["outcome"] = 0
+
+    # segment, player and team
+    segment = attrib[3]
+    event["pID"] = attrib[8]
+    team = attrib[9]
+
+    # additional information (qualifier)
+    event["qualifier"] = {
+        "event_id": attrib[1],
+        "event_type_id": attrib[6],
+        "sequencenumber": attrib[7],
+        "jersey_no": attrib[10],
+        "is_pass": attrib[11],
+        "is_cross": attrib[12],
+        "is_corner": attrib[13],
+        "is_free_kick": attrib[14],
+        "is_goal_kick": attrib[15],
+        "passtypeid": attrib[16],
+        "wintypeid": attrib[17],
+        "savetypeid": attrib[18],
+        "possessionnumber": attrib[19],
+    }
+
+    return event, team, segment
+
+
 def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
     """Parses the entire StatsPerform CSV file for unique jIDs (jerseynumbers) and team
     Ids and creates a dictionary linking jIDs to xIDs in ascending order.
@@ -114,10 +171,9 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     return _create_links_from_dat_df(dat_df, team_ids)
 
 
-# Open CSV Format (e.g. Pro Forum '22)
 def read_open_statsperform_event_file(
     filepath_events: Union[str, Path],
-):
+) -> Tuple[Events, Events, Events, Events]:
     """Parses a StatsPerform Match Event CSV file and extracts the event data.
 
     This function provides a high-level access to the particular openly published
@@ -132,76 +188,43 @@ def read_open_statsperform_event_file(
     Returns
     -------
     data_objects: Tuple[Events, Events, Events, Events]
-        Events- and Pitch-objects for both teams and both halves.
+        Events-objects for both teams and both halves.
 
     Notes
     -----
-    StatsPerform's open format of handling event data information involves certain
-    additional event attributes, which attach additional information to certain events.
-    As of now, these information are parsed as a string in the `qualifier` column of the
-    returned DataFrame and can be transformed to a dict of form `{attribute: value}`.
+    StatsPerform's open format of handling provides certain additional event attributes,
+    which attach additional information to certain events. As of now, these information
+    are parsed as a string in the `qualifier` column of the returned DataFrame and can
+    be transformed to a dict of form `{attribute: value}`.
     """
-    # initialize bin
+    # initialize bin and variables
     events = {}
     teams = ["1.0", "2.0"]
     segments = ["1", "2"]
     for team in teams:
         events[team] = {segment: pd.DataFrame() for segment in segments}
 
+    # parse event data
     with open(str(filepath_events), "r") as f:
         while True:
-            event = {}
-            package = f.readline()
+            line = f.readline()
 
             # terminate if at end of file
-            if len(package) == 0:
+            if len(line) == 0:
                 break
-            attrib = package.split(sep=",")
+
+            event, team, segment = _read_event_single_line(line)
 
             # skip the head
-            if attrib[0] == "game_id":
+            if segment == "current_phase":
                 continue
-
-            # absolute times
-            event["frameclock"] = attrib[2]
-            event["gameclock"] = attrib[4]
-
-            # description and outcome
-            event["eID"] = attrib[5].replace(" ", "")
-            event["outcome"] = np.nan
-            if "Won" in attrib[5].split(" "):
-                event["outcome"] = 1
-            elif "Lost" in attrib[5].split(" "):
-                event["outcome"] = 0
-
-            # segment, player and team
-            event["pID"] = attrib[8]
-            segment = attrib[3]
-            team = attrib[9]
-
-            # additional information
-            event["qualifier"] = {
-                "event_id": attrib[1],
-                "event_type_id": attrib[6],
-                "sequencenumber": attrib[7],
-                "jersey_no": attrib[10],
-                "is_pass": attrib[11],
-                "is_cross": attrib[12],
-                "is_corner": attrib[13],
-                "is_free_kick": attrib[14],
-                "is_goal_kick": attrib[15],
-                "passtypeid": attrib[16],
-                "wintypeid": attrib[17],
-                "savetypeid": attrib[18],
-                "possessionnumber": attrib[19],
-            }
 
             # insert to bin
             if team:
                 events[team][segment] = events[team][segment].append(
                     event, ignore_index=True
                 )
-            else:  # no clear assignment possible, insert to bins for both teams
+            else:  # if no clear assignment possible, insert to bins for both teams
                 for team in teams:
                     events[team][segment] = events[team][segment].append(
                         event, ignore_index=True
@@ -225,7 +248,6 @@ def read_open_statsperform_event_file(
     return data_objects
 
 
-# Open CSV Format (e.g. Pro Forum '22)
 def read_open_statsperform_position_file(
     filepath_dat: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
