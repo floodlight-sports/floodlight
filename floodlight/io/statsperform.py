@@ -2,8 +2,9 @@ import warnings
 from typing import Dict, Tuple, Union
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 
 from floodlight.core.code import Code
 from floodlight.core.events import Events
@@ -114,7 +115,7 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
 
 
 # Open CSV Format (e.g. Pro Forum '22)
-def read_open_statsperform_event_csv(
+def read_open_statsperform_event_file(
     filepath_events: Union[str, Path],
 ):
     """Parses a StatsPerform Match Event CSV file and extracts the event data.
@@ -147,7 +148,7 @@ def read_open_statsperform_event_csv(
     for team in teams:
         events[team] = {segment: pd.DataFrame() for segment in segments}
 
-    with open(filepath_events, "r") as f:
+    with open(str(filepath_events), "r") as f:
         while True:
             event = {}
             package = f.readline()
@@ -225,7 +226,7 @@ def read_open_statsperform_event_csv(
 
 
 # Open CSV Format (e.g. Pro Forum '22)
-def read_open_statsperform_position_csv(
+def read_open_statsperform_position_file(
     filepath_dat: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
