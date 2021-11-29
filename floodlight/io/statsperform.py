@@ -87,7 +87,7 @@ def _create_links_from_dat_df(
 
 def _read_event_single_line(
     line: str,
-) -> Tuple[Dict[str, Union[str, int]], str, str]:
+) -> Tuple[Dict, str, str]:
     """Extracts all relevant information from a single line of StatsPerform's Event CSV
     file (i.e. one single event in the data).
 
@@ -171,7 +171,7 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     return _create_links_from_dat_df(dat_df, team_ids)
 
 
-def read_open_statsperform_event_file(
+def read_open_statsperform_event_data_csv(
     filepath_events: Union[str, Path],
 ) -> Tuple[Events, Events, Events, Events]:
     """Parses a StatsPerform Match Event CSV file and extracts the event data.
@@ -248,7 +248,7 @@ def read_open_statsperform_event_file(
     return data_objects
 
 
-def read_open_statsperform_position_file(
+def read_open_statsperform_position_data_csv(
     filepath_dat: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
