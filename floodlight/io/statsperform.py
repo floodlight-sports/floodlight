@@ -10,7 +10,7 @@ from floodlight.core.pitch import Pitch
 from floodlight.core.code import Code
 
 
-def _create_metadata_from_csv_df(
+def _create_metadata_from_dat_df(
     csv_df: pd.DataFrame,
 ) -> Tuple[Dict[int, tuple], Pitch]:
     """Creates meta information from the CSV file as parsed by pd.read_csv().
@@ -54,7 +54,7 @@ def _create_metadata_from_csv_df(
     return periods, pitch
 
 
-def _create_links_from_csv_df(
+def _create_links_from_dat_df(
     csv_df: pd.DataFrame, team_ids: Dict[str, float]
 ) -> Dict[str, Dict[int, int]]:
     """Checks the entire parsed StatsPerform CSV file for unique jIDs (jerseynumbers)
@@ -83,13 +83,13 @@ def _create_links_from_csv_df(
     return links
 
 
-def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int, int]]:
+def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
     """Parses the entire StatsPerform CSV file for unique jIDs (jerseynumbers) and team
     Ids and creates a dictionary linking jIDs to xIDs in ascending order.
 
     Parameters
     ----------
-    filepath_csv: str or pathlib.Path
+    filepath_dat: str or pathlib.Path
         CSV file where the position data in StatsPerform format is saved.
 
     Returns
@@ -98,7 +98,7 @@ def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int,
         A link dictionary of the form `links[team][jID] = xID`.
     """
     # read dat-file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_csv))
+    dat_df = pd.read_csv(str(filepath_dat))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -109,11 +109,108 @@ def create_links_from_csv(filepath_csv: Union[str, Path]) -> Dict[str, Dict[int,
         if not (ID in team_ids.values() or ID == ball_id):
             warnings.warn("Team ID %.1f did not match any of the standard IDs!" % ID)
 
-    return _create_links_from_csv_df(dat_df, team_ids)
+    return _create_links_from_dat_df(dat_df, team_ids)
 
 
-def read_open_statsperform_csv(
-    filepath_csv: Union[str, Path],
+# Open CSV Format (e.g. Pro Forum '22)
+def read_open_statsperform_event_csv(
+    filepath_events: Union[str, Path],
+):
+    """Parses a StatsPerform Match Event CSV file and extracts the event data.
+
+    This function provides a high-level access to the particular openly published
+    StatsPerform Match Events CSV file (e.g. for the Pro Forum '22) and returns Event
+    objects for both teams.
+
+    Parameters
+    ----------
+    filepath_events: str or pathlib.Path
+        Full path to XML File where the Event data in StatsPerform CSV format is
+        saved
+    Returns
+    -------
+    data_objects: Tuple[Events, Events, Events, Events]
+        Events- and Pitch-objects for both teams and both halves.
+    """
+    # initialize bin
+    events = {}
+    teams = ["1.0", "2.0"]
+    segments = ["1", "2"]
+    for team in teams:
+        events[team] = {segment: pd.DataFrame() for segment in segments}
+
+    with open(filepath_events, "r") as f:
+        while True:
+            event = {}
+            package = f.readline()
+
+            # terminate if at end of file
+            if len(package) == 0:
+                break
+            attrib = package.split(sep=",")
+
+            # skip the head
+            if attrib[0] == "game_id":
+                continue
+
+            # absolute times
+            event["frameclock"] = attrib[2]
+            event["gameclock"] = attrib[4]
+
+            # description and outcome
+            event["eID"] = attrib[5].replace(" ", "")
+            event["outcome"] = np.nan
+            if "Won" in attrib[5].split(" "):
+                event["outcome"] = 1
+            elif "Lost" in attrib[5].split(" "):
+                event["outcome"] = 0
+
+            # segment, player and team
+            event["pID"] = attrib[8]
+            segment = attrib[3]
+            team = attrib[9]
+
+            # additional information
+            event["qualifier"] = {
+                "event_id": attrib[1],
+                "event_type_id": attrib[6],
+                "sequencenumber": attrib[7],
+                "jersey_no": attrib[10],
+                "is_pass": attrib[11],
+                "is_cross": attrib[12],
+                "is_corner": attrib[13],
+                "is_free_kick": attrib[14],
+                "is_goal_kick": attrib[15],
+                "passtypeid": attrib[16],
+                "wintypeid": attrib[17],
+                "savetypeid": attrib[18],
+                "possessionnumber": attrib[19],
+            }
+
+            # insert to bin
+            if team:
+                events[team][segment] = events[team][segment].append(
+                    event, ignore_index=True
+                )
+            else:  # no clear assignment possible, insert to bins for both teams
+                for team in teams:
+                    events[team][segment] = events[team][segment].append(
+                        event, ignore_index=True
+                    )
+
+    data_objects = (
+        events["1.0"]["1"],
+        events["1.0"]["2"],
+        events["2.0"]["1"],
+        events["2.0"]["2"],
+    )
+
+    return data_objects
+
+
+# Open CSV Format (e.g. Pro Forum '22)
+def read_open_statsperform_position_csv(
+    filepath_dat: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
     """Parse a StatsPerform CSV file and extract position data and possession codes as
@@ -126,7 +223,7 @@ def read_open_statsperform_csv(
 
     Parameters
     ----------
-    filepath_csv: str or pathlib.Path
+    filepath_dat: str or pathlib.Path
         Full path to the CSV file.
     links: Dict[str, Dict[int, int]], optional
         A link dictionary of the form `links[team][jID] = xID`. Player's are identified
@@ -143,7 +240,7 @@ def read_open_statsperform_csv(
         possession_ht1, possession_ht2, pitch)
     """
     # parse the CSV file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_csv))
+    dat_df = pd.read_csv(str(filepath_dat))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -156,13 +253,13 @@ def read_open_statsperform_csv(
 
     # create or check links
     if links is None:
-        links = _create_links_from_csv_df(dat_df, team_ids)
+        links = _create_links_from_dat_df(dat_df, team_ids)
     else:
         pass
         # potential check vs jerseys in dat file
 
     # create periods and pitch
-    periods, pitch = _create_metadata_from_csv_df(dat_df)
+    periods, pitch = _create_metadata_from_dat_df(dat_df)
     segments = list(periods.keys())
 
     # infer data shapes
