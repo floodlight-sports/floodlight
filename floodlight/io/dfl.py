@@ -123,7 +123,9 @@ def create_links_from_mat_info(
     return links_jID_to_xID, links_pID_to_jID
 
 
-def _get_event_description(elem: etree.Element) -> Tuple[str, dict]:
+def _get_event_description(
+    elem: etree.Element,
+) -> Tuple[str, Dict[str, Union[str, int]]]:
     """Returns the full description of a single XML Event in the DFL format.
 
     Parameters
@@ -135,7 +137,7 @@ def _get_event_description(elem: etree.Element) -> Tuple[str, dict]:
     -------
     eID: str
         High-level description for the current event.
-    attrib: dict
+    attrib: Dict
         Additional attributes for the current event in the form
         ´attrib[category] = label´.
     """
@@ -185,21 +187,22 @@ def _get_event_description(elem: etree.Element) -> Tuple[str, dict]:
     return eID, attrib
 
 
-def _get_event_outcome(eID, attrib):
+def _get_event_outcome(eID, attrib) -> int:
     """Returns the outcome of a single Event in the DFL format.
 
     Parameters
     ----------
     eID: str
         High-level description for the current event.
-    attrib: dict
+    attrib: Dict
         Additional attributes for the current event in the form
         ´attrib[category] = label´.
 
     Returns
     -------
     outcome: int
-        Outcome coded as 1 (success) or 0 (failure) of the current event.
+        Outcome coded as 1 (success) or 0 (failure) of the current event or np.nan in
+        case no outcome is defined.
     """
     outcome = np.nan
 
@@ -271,7 +274,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     ----------
     eID: str
         High-level description for the current event.
-    attrib: dict
+    attrib: Dict
         Additional attributes for the current event in the form
         ´attrib[category] = label´.
 
@@ -319,7 +322,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     return team, player
 
 
-def read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
+def read_pitch_from_mat_info_xml(filepath_mat_info: Union[str, Path]) -> Pitch:
     """Reads match_information XML file and returns the playing Pitch.
 
     Parameters
@@ -351,7 +354,9 @@ def read_pitch_from_mat_info(filepath_mat_info: Union[str, Path]) -> Pitch:
     return pitch
 
 
-def read_events(filepath_events: Union[str, Path]):
+def read_event_data_xml(
+    filepath_events: Union[str, Path]
+) -> Tuple[Events, Events, Events, Events]:
     """Parses a DFL Match Event XML file and extracts the event data.
 
     This function provides a high-level access to the particular DFL Match Event feed
@@ -361,7 +366,7 @@ def read_events(filepath_events: Union[str, Path]):
     Parameters
     ----------
     filepath_events: str or pathlib.Path
-        Full path to XML File where the Event data in DFL format is saved
+        Full path to XML File where the Event data in DFL format is saved.
 
     Returns
     -------
@@ -370,13 +375,13 @@ def read_events(filepath_events: Union[str, Path]):
 
     Notes
     -----
-    Opta's format of handling event data information involves an elaborate use of custom
-    event attributes, which attach additional information to certain events. There
-    also exist a number of mappings that define which attributes may be attached to
-    which kind of events. Parsing this information involves quite a bit of logic and is
-    planned to be included in further releases. As of now, qualifier information is
-    parsed as a string in the `qualifier` column of the returned DataFrame and can be
-    transformed to a dict of the form `{attribute: value}`.
+    The DFL format of handling event data information involves an elaborate use of
+    certain event attributes, which attach additional information to certain events.
+    There also exist detailed definitions for these attributes. Parsing this information
+    involves quite a bit of logic and is planned to be included in further releases. As
+    of now, qualifier information is parsed as a string in the `qualifier` column of the
+    returned DataFrame and might be transformed to a dict of the form:
+    `{attribute: value}`.
     """
     # set up XML tree
     tree = etree.parse(str(filepath_events))
@@ -503,7 +508,7 @@ def read_events(filepath_events: Union[str, Path]):
     return data_objects
 
 
-def read_dfl_files(
+def read_position_data_xml(
     filepath_dat: Union[str, Path],
     filepath_mat_info: Union[str, Path],
     links_jID_to_xID: Dict[str, Dict[int, int]] = None,
@@ -544,7 +549,7 @@ def read_dfl_files(
 
     """
     # read metadata
-    pitch = read_pitch_from_mat_info(filepath_mat_info)
+    pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
 
     # create or check links
     if links_jID_to_xID is None or links_pID_to_jID is None:
