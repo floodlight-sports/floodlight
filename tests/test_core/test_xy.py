@@ -1,45 +1,10 @@
-import pytest
 import numpy as np
+import pytest
 from floodlight.core.xy import XY
 
 
-# Create example data with fixtures to test all the functions
-@pytest.fixture()
-def example_xy_data_pos_int() -> np.ndarray:
-    positions = np.array([[1, 2, 3, 4], [5, 6, 7, 8]])
-    return positions
-
-
-@pytest.fixture()
-def example_xy_data_none() -> np.ndarray:
-    positions = np.array([[None, None, None, None], [None, None, None, None]])
-    return positions
-
-
-@pytest.fixture()
-def example_xy_data_negative() -> np.ndarray:
-    positions = np.array([[-1, -2, -3, -4], [-5, -6, -7, -8]])
-    return positions
-
-
-@pytest.fixture()
-def example_xy_data_float() -> np.ndarray:
-    positions = np.array(
-        [
-            [1.0, 2.3333, 0.00000000000000001, 99999999999999999],
-            [2.32843476297480273847, 6.0, 7.5, 8],
-        ]
-    )
-    return positions
-
-
-@pytest.fixture()
-def example_xy_data_string() -> np.ndarray:
-    positions = np.array([["1", "2", "3", "4"], ["5", "6", "7", "8"]])
-    return positions
-
-
 # Test def x(self) function
+@pytest.mark.unit
 def test_x_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_pos_int)
@@ -51,6 +16,7 @@ def test_x_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     assert np.array_equal(x_position, np.array([[1, 3], [5, 7]]))
 
 
+@pytest.mark.unit
 def test_x_nan(example_xy_data_none: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_none)
@@ -62,6 +28,7 @@ def test_x_nan(example_xy_data_none: np.ndarray) -> None:
     assert np.array_equal(x_position, np.array([[None, None], [None, None]]))
 
 
+@pytest.mark.unit
 def test_x_neg_int(example_xy_data_negative: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_negative)
@@ -73,6 +40,7 @@ def test_x_neg_int(example_xy_data_negative: np.ndarray) -> None:
     assert np.array_equal(x_position, np.array([[-1, -3], [-5, -7]]))
 
 
+@pytest.mark.unit
 def test_x_pos_float(example_xy_data_float: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_float)
@@ -87,6 +55,7 @@ def test_x_pos_float(example_xy_data_float: np.ndarray) -> None:
     )
 
 
+@pytest.mark.unit
 def test_x_string(example_xy_data_string: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_string)
@@ -99,6 +68,7 @@ def test_x_string(example_xy_data_string: np.ndarray) -> None:
 
 
 # Test def translate(self, shift: Tuple[numeric, numeric]
+@pytest.mark.unit
 def test_translate_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_pos_int)
