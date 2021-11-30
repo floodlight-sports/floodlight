@@ -9,8 +9,10 @@ from floodlight.core.pitch import Pitch
 from floodlight.core.code import Code
 
 
-def _read_mat_info(filepath_mat_info: Union[str, Path]) -> Tuple[Pitch, Dict[str, int]]:
-    """Reads match_information XML file and returns the playing Pitch and kickoffs of
+def _read_mat_info_xml(
+    filepath_mat_info: Union[str, Path]
+) -> Tuple[Pitch, Dict[str, int]]:
+    """Reads Match Information XML file and returns the playing Pitch and kickoffs of
     each segment.
 
     Parameters
@@ -101,7 +103,7 @@ def _create_periods_from_dat(
     return periods, timedelta
 
 
-def create_links_from_mat_info(
+def create_links_from_mat_info_xml(
     filepath_mat_info: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[int, int]], Dict[str, Dict[str, int]]]:
     """Parses the SoccerBot Match Information XML file for unique jIDs (jerseynumbers)
@@ -143,7 +145,7 @@ def create_links_from_mat_info(
     return links, id_to_jrsy
 
 
-def read_dfl_files(
+def read_soccerbot_position_xml(
     filepath_dat: Union[str, Path],
     filepath_mat_info: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
@@ -152,10 +154,11 @@ def read_dfl_files(
     """Parse SoccerBot XML files and extract position data, possession and ballstatus
     codes as well as pitch information.
 
-     Data in the SoccerBot format is given as two separate files, a .dat file containing
-     the actual data as well as a metadata.xml containing information about pitch size
-     and start- and endframes of match periods. This function provides a high-level
-     access to SoccerBot data by parsing "the full match" given both files.
+     Data in the SoccerBot format is given as two separate files, a position data XML
+     file containing the actual data as well as a Match Information XML containing
+     information about pitch size, players, teams, and start- and endframes of match
+     periods. This function provides a high-level access to SoccerBot data by parsing
+     "the full match" given both files.
 
     Parameters
     ----------
@@ -184,13 +187,13 @@ def read_dfl_files(
     # checks?
 
     # read metadata
-    pitch, kickoffs = _read_mat_info(filepath_mat_info)
+    pitch, kickoffs = _read_mat_info_xml(filepath_mat_info)
     periods, timedelta = _create_periods_from_dat(filepath_dat, kickoffs)
     segments = list(periods.keys())
 
     # create or check links
     if links is None:
-        links, id_to_jrsy = create_links_from_mat_info(filepath_mat_info)
+        links, id_to_jrsy = create_links_from_mat_info_xml(filepath_mat_info)
     else:
         pass
         # potential check
