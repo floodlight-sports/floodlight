@@ -105,22 +105,29 @@ def _read_event_single_line(
     event = {}
     attrib = line.split(sep=",")
 
-    # absolute times
-    event["frameclock"] = attrib[2]
-    event["gameclock"] = attrib[4]
-
-    # description and outcome
+    # description
     event["eID"] = attrib[5].replace(" ", "")
+
+    # relative time
+    event["gameclock"] = float(attrib[4])
+    event["frameclock"] = float(attrib[2])
+
+    # segment, player and team
+    segment = attrib[3]
+    team = attrib[9]
+    event["tID"] = team
+    event["pID"] = attrib[8]
+
+    # outcome
     event["outcome"] = np.nan
     if "Won" in attrib[5].split(" "):
         event["outcome"] = 1
     elif "Lost" in attrib[5].split(" "):
         event["outcome"] = 0
 
-    # segment, player and team
-    segment = attrib[3]
-    event["pID"] = attrib[8]
-    team = attrib[9]
+    # minute and second of game
+    event["minute"] = np.floor(event["gameclock"] / 60)
+    event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
 
     # additional information (qualifier)
     event["qualifier"] = {
@@ -213,11 +220,12 @@ def read_open_statsperform_event_data_csv(
             if len(line) == 0:
                 break
 
-            event, team, segment = _read_event_single_line(line)
-
             # skip the head
-            if segment == "current_phase":
+            if line.split(sep=",")[3] == "current_phase":
                 continue
+
+            # read single line
+            event, team, segment = _read_event_single_line(line)
 
             # insert to bin
             if team:
