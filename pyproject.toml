@@ -53,3 +53,8 @@ exclude = '''
                      # the root of the project
 )
 '''
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: marks unit tests (deselect with '-m \"not unit\"')",
+]
