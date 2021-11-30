@@ -50,16 +50,13 @@ def _create_periods_from_dat(
                 framerate_est = int(round(1 / delta.total_seconds()))
             elif framerate_est != int(round(1 / delta.total_seconds())):
                 warnings.warn(
-                    "Framerate estimation yielded diverging results."
-                    "The originally estimated framerate of %d Hz did not "
-                    "match the current estimation of %d Hz. This might be "
-                    "caused by missing frame(s) in the position data."
-                    "Continuing by choosing the latest estimation of %d Hz"
-                    % (
-                        framerate_est,
-                        int(round(1 / delta.total_seconds())),
-                        int(round(1 / delta.total_seconds())),
-                    )
+                    f"Framerate estimation yielded diverging results."
+                    f"The originally estimated framerate of {framerate_est} Hz did not "
+                    f"match the current estimation of "
+                    f"{int(round(1 / delta.total_seconds()))} Hz. This might be "
+                    f"caused by missing frame(s) in the position data."
+                    f"Continuing by choosing the latest estimation of "
+                    f"{int(round(1 / delta.total_seconds()))} Hz"
                 )
                 framerate_est = int(round(1 / delta.total_seconds()))
 
@@ -257,12 +254,12 @@ def _get_event_outcome(eID, attrib) -> int:
         "Kickoff",
     ]:
         warnings.warn(
-            "Standalone Event %s with missing child (e.g. Play, Pass or "
-            "ShotAtGoal). Assigning None to respective outcome." % eID
+            f"Standalone Event {eID} with missing child (e.g. Play, Pass or "
+            f"ShotAtGoal). Assigning None to respective outcome."
         )
     else:
         warnings.warn(
-            "Unknown Event Type: %s. Assigning None to respective outcome." % eID
+            "Unknown Event Type: {eID}. Assigning None to respective outcome."
         )
     return outcome
 
@@ -300,7 +297,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     # check
     if eID not in ["KickoffWhistle", "FinalWhistle"]:  # events with no clear team
         if team is None:
-            warnings.warn("Could not assign Team to Event %s" % eID)
+            warnings.warn("Could not assign Team to Event {eID}")
 
     # player
     player = None
@@ -317,8 +314,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     # check
     if eID not in ["KickoffWhistle", "FinalWhistle", "Substitution"]:
         if player is None:
-            warnings.warn("Could not assign Player to Event %s" % eID)
-
+            warnings.warn("Could not assign Player to Event {eID}")
     return team, player
 
 
