@@ -26,7 +26,7 @@ def _create_metadata_from_dat_df(
     -------
     periods: Dict[int, int]
         Dictionary with start and endframes:
-            `periods[segment] = (startframe, endframe)`.
+            ``periods[segment] = (startframe, endframe)``.
     pitch: Pitch
         Playing Pitch object.
     """
@@ -72,7 +72,7 @@ def _create_links_from_dat_df(
     Returns
     -------
     links: Dict[str, Dict[int, int]]
-        A link dictionary of the form `links[team][jID] = xID`.
+        A link dictionary of the form ``links[team][jID] = xID``.
     """
     links = {}
     for team in team_ids:
@@ -100,7 +100,7 @@ def _read_event_single_line(
     -------
     event: Dict
         Dictionary with relevant event information in the form:
-        `event[attribute] = value`.
+        ``event[attribute] = value``.
     """
     event = {}
     attrib = line.split(sep=",")
@@ -161,7 +161,7 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        A link dictionary of the form `links[team][jID] = xID`.
+        A link dictionary of the form ``links[team][jID] = xID``.
     """
     # read dat-file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath_dat))
@@ -201,8 +201,8 @@ def read_open_statsperform_event_data_csv(
     -----
     StatsPerform's open format of handling provides certain additional event attributes,
     which attach additional information to certain events. As of now, these information
-    are parsed as a string in the `qualifier` column of the returned DataFrame and can
-    be transformed to a dict of form `{attribute: value}`.
+    are parsed as a string in the ``qualifier`` column of the returned DataFrame and can
+    be transformed to a dict of form ``{attribute: value}``.
     """
     # initialize bin and variables
     events = {}
@@ -273,11 +273,11 @@ def read_open_statsperform_position_data_csv(
     filepath_dat: str or pathlib.Path
         Full path to the CSV file.
     links: Dict[str, Dict[int, int]], optional
-        A link dictionary of the form `links[team][jID] = xID`. Player's are identified
-        in StatsPerform files via jID, and this dictionary is used to map them to a
-        specific xID in the respective XY objects. Should be supplied if that order
-        matters. If None is given (default), the links are automatically extracted from
-        the CSV file at the cost of a second pass through the entire file.
+        A link dictionary of the form ``links[team][jID] = xID``. Player's are
+        identified in StatsPerform files via jID, and this dictionary is used to map
+        them to a specific xID in the respective XY objects. Should be supplied if that
+        order matters. If None is given (default), the links are automatically extracted
+        from the CSV file at the cost of a second pass through the entire file.
 
     Returns
     -------
