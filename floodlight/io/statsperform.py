@@ -149,13 +149,15 @@ def _read_event_single_line(
     return event, team, segment
 
 
-def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
+def create_links_from_tracking_file(
+    filepath_tracking: Union[str, Path]
+) -> Dict[str, Dict[int, int]]:
     """Parses the entire StatsPerform CSV file for unique jIDs (jerseynumbers) and team
     Ids and creates a dictionary linking jIDs to xIDs in ascending order.
 
     Parameters
     ----------
-    filepath_dat: str or pathlib.Path
+    filepath_tracking: str or pathlib.Path
         CSV file where the position data in StatsPerform format is saved.
 
     Returns
@@ -164,7 +166,7 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
         A link dictionary of the form ``links[team][jID] = xID``.
     """
     # read dat-file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_dat))
+    dat_df = pd.read_csv(str(filepath_tracking))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -256,8 +258,8 @@ def read_open_statsperform_event_data_csv(
     return data_objects
 
 
-def read_open_statsperform_position_data_csv(
-    filepath_dat: Union[str, Path],
+def read_open_statsperform_tracking_data_csv(
+    filepath_tracking: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
     """Parse a StatsPerform CSV file and extract position data and possession codes as
@@ -270,7 +272,7 @@ def read_open_statsperform_position_data_csv(
 
     Parameters
     ----------
-    filepath_dat: str or pathlib.Path
+    filepath_tracking: str or pathlib.Path
         Full path to the CSV file.
     links: Dict[str, Dict[int, int]], optional
         A link dictionary of the form ``links[team][jID] = xID``. Player's are
@@ -287,7 +289,7 @@ def read_open_statsperform_position_data_csv(
         possession_ht1, possession_ht2, pitch)
     """
     # parse the CSV file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_dat))
+    dat_df = pd.read_csv(str(filepath_tracking))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
