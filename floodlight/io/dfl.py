@@ -14,14 +14,14 @@ from floodlight.core.xy import XY
 
 
 def _create_periods_from_dat(
-    filepath_dat: Union[str, Path]
+    filepath_positions: Union[str, Path]
 ) -> Tuple[Dict[str, Tuple[int, int]], int]:
     """Parses over position file and returns dictionary with periods as well as an
     estimate of the framerate based on the timedelta between multiple frames.
 
     Parameters
     ----------
-    filepath_dat: str or pathlib.Path
+    filepath_positions: str or pathlib.Path
         Path to XML File where the Position data in DFL format is saved.
 
     Returns
@@ -36,7 +36,7 @@ def _create_periods_from_dat(
     framerate_est = None
 
     # retrieve information from ball frame sets
-    for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
+    for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
         if frame_set.get("TeamId") == "Ball":
             frames = [frame for frame in frame_set.iterfind("Frame")]
             periods[frame_set.get("GameSection")] = (
@@ -505,7 +505,7 @@ def read_event_data_xml(
 
 
 def read_position_data_xml(
-    filepath_dat: Union[str, Path],
+    filepath_positions: Union[str, Path],
     filepath_mat_info: Union[str, Path],
     links_jID_to_xID: Dict[str, Dict[int, int]] = None,
     links_pID_to_jID: Dict[str, Dict[int, int]] = None,
@@ -522,7 +522,7 @@ def read_position_data_xml(
 
     Parameters
     ----------
-    filepath_dat: str or pathlib.Path
+    filepath_positions: str or pathlib.Path
         Full path to XML File where the Position data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
@@ -557,7 +557,7 @@ def read_position_data_xml(
         # potential check
 
     # create periods
-    periods, framerate_est = _create_periods_from_dat(filepath_dat)
+    periods, framerate_est = _create_periods_from_dat(filepath_positions)
     segments = list(periods.keys())
 
     # infer data array shapes
@@ -594,7 +594,7 @@ def read_position_data_xml(
     }
 
     # loop over frame sets containing player & ball positions for all segments
-    for _, frame_set in etree.iterparse(filepath_dat, tag="FrameSet"):
+    for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
 
         # ball
         if frame_set.get("TeamId") == "Ball":
