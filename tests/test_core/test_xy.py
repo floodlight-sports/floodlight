@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from floodlight.core.xy import XY
 
 
@@ -17,7 +18,7 @@ def test_x_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
 
 
 @pytest.mark.unit
-def test_x_nan(example_xy_data_none: np.ndarray) -> None:
+def test_x_none(example_xy_data_none: np.ndarray) -> None:
     # Arrange
     data = XY(example_xy_data_none)
 
