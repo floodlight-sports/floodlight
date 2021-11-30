@@ -175,7 +175,7 @@ def create_links_from_tracking_file(
     # check for additional tIDs
     for ID in dat_df["team_id"].unique():
         if not (ID in team_ids.values() or ID == ball_id):
-            warnings.warn("Team ID %.1f did not match any of the standard IDs!" % ID)
+            warnings.warn(f"Team ID {ID} did not match any of the standard IDs!")
 
     return _create_links_from_dat_df(dat_df, team_ids)
 
@@ -298,7 +298,7 @@ def read_open_statsperform_tracking_data_csv(
     # check for additional tIDs
     for ID in dat_df["team_id"].unique():
         if not (ID in team_ids.values() or ID == ball_id):
-            warnings.warn("Team ID %.1f did not match any of the standard IDs!" % ID)
+            warnings.warn(f"Team ID {ID} did not match any of the standard IDs!")
 
     # create or check links
     if links is None:
