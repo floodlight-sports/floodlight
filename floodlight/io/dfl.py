@@ -28,7 +28,7 @@ def _create_periods_from_dat(
     -------
     periods: Dict[str, Tuple[int, int]
         Dictionary with times for the segment:
-        `periods[segment] = (starttime, endtime)`
+        ``periods[segment] = (starttime, endtime)``
     est_framerate: int
         Estimated temporal resolution of data in frames per second/Hertz.
     """
@@ -139,7 +139,7 @@ def _get_event_description(
         High-level description for the current event.
     attrib: Dict
         Additional attributes for the current event in the form
-        ´attrib[category] = label´.
+        ``attrib[category] = label``.
     """
     # read description
     eID = elem.tag
@@ -196,7 +196,7 @@ def _get_event_outcome(eID, attrib) -> int:
         High-level description for the current event.
     attrib: Dict
         Additional attributes for the current event in the form
-        ´attrib[category] = label´.
+        ``attrib[category] = label``.
 
     Returns
     -------
@@ -276,7 +276,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
         High-level description for the current event.
     attrib: Dict
         Additional attributes for the current event in the form
-        ´attrib[category] = label´.
+        ``attrib[category] = label``.
 
     Returns
     -------
