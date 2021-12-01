@@ -297,7 +297,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     # check
     if eID not in ["KickoffWhistle", "FinalWhistle"]:  # events with no clear team
         if team is None:
-            warnings.warn("Could not assign Team to Event {eID}")
+            warnings.warn(f"Could not assign Team to Event {eID}")
 
     # player
     player = None
@@ -314,7 +314,7 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     # check
     if eID not in ["KickoffWhistle", "FinalWhistle", "Substitution"]:
         if player is None:
-            warnings.warn("Could not assign Player to Event {eID}")
+            warnings.warn(f"Could not assign Player to Event {eID}")
     return team, player
 
 
