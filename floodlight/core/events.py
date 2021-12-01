@@ -8,6 +8,7 @@ class Events:
     """"""
 
     events: pd.DataFrame
+    direction: str = None
 
     def __str__(self):
         pass
