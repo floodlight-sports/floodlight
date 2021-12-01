@@ -11,3 +11,4 @@ Collection of parsing modules for different provider data.
    dfl
    opta
    tracab
+   statsperform
