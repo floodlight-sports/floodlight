@@ -105,8 +105,8 @@ class Pitch:
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
                     "For an exact DFL (German Football League) "
-                    "Pitch object, `length` and `width` of the pitch need 
-                    "to be passed as keyworded arguments"
+                    "Pitch object, `length` and `width` of the pitch need"
+                    "to be passed as keyworded arguments")
         elif template_name == "statsperform":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
