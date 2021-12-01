@@ -11,4 +11,6 @@ That's the idea:
    :caption: Data-Level Objects
 
    xy
+   events
    pitch
+   code

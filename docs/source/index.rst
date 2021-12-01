@@ -21,6 +21,7 @@ Hi there, glad you're reading the docs! Oh, and good luck...
    :caption: Module Reference
 
    modules/core/core
+   modules/io/io
 
 Indices and tables
 ==================
