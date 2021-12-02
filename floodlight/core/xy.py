@@ -37,6 +37,12 @@ class XY:
     def __len__(self):
         return len(self.xy)
 
+    def __getitem__(self, key):
+        return self.xy[key]
+
+    def __setitem__(self, key, value):
+        self.xy[key] = value
+
     @property
     def x(self):
         return self.xy[:, ::2]

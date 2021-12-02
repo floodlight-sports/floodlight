@@ -33,6 +33,12 @@ class Code:
     def __len__(self):
         return len(self.code)
 
+    def __getitem__(self, key):
+        return self.code[key]
+
+    def __setitem__(self, key, value):
+        self.code[key] = value
+
     @property
     def token(self) -> list:
         token = list(np.unique(self.code))
