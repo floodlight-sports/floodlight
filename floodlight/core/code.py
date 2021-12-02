@@ -18,6 +18,8 @@ class Code:
         or explained.
     framerate: int, optional
         Temporal resolution of data in frames per second/Hertz.
+    token: list
+        A list of all tokens used in game code, in ascending order.
     """
 
     code: np.ndarray
@@ -30,3 +32,10 @@ class Code:
 
     def __len__(self):
         return len(self.code)
+
+    @property
+    def token(self) -> list:
+        token = list(np.unique(self.code))
+        token.sort()
+
+        return token
