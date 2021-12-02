@@ -36,10 +36,10 @@ class Events:
     direction: str = None
 
     def __str__(self):
-        pass
+        return f"Floodlight Events object of shape {self.events.shape}"
 
     def __len__(self):
-        pass
+        return len(self.events)
 
     @property
     def essential(self):
