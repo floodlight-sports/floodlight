@@ -61,3 +61,34 @@ class Events:
         )
 
         return custom
+
+    def check_essential(self):
+        check = True
+        for col in self.essential:
+            check *= self.check_col(col)
+        return check
+
+    def check_protected(self):
+        check = True
+        for col in self.protected:
+            check *= self.check_col(col)
+        return check
+
+    def check_col(self, col):
+        # assign definitions
+        check = True
+        if col in self.essential:
+            defs = essential_events_columns
+        elif col in self.protected:
+            defs = protected_columns
+        else:  # integrate custom checks?
+            return check
+        # check dtypes
+        check *= self.events.dtypes[col] in defs[col]["dtypes"]
+        # check value range
+        val_range = defs[col]["value_range"]
+        if val_range is not None:
+            check *= (val_range[0] <= self.events[col]).all()
+            check *= (self.events[col] <= val_range[1]).all()
+        # check for disallowed values (e.g. NaN)?
+        return check
