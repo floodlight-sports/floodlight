@@ -7,15 +7,17 @@ from floodlight.core.xy import XY
 
 
 def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
-    """
+    """Reads first line of a Kinexon and extracts the column names.
 
     Parameters
     ----------
-    filepath_data
+    filepath_data: str or pathlib.Path
+        Full path to Kinexon.csv-file.
 
     Returns
     -------
-
+    parameters: List[str]
+        List with every column name of the .csv-file.
     """
 
     with open(filepath_data) as f:
@@ -24,15 +26,32 @@ def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
     return parameters
 
 
-def _get_parameter_links(filepath_data: Union[str, Path]) -> Dict[str, int]:
-    """
+def _get_parameter_links(
+    filepath_data: Union[str, Path]
+) -> Union[None, Dict[str, int]]:
+    """Creates a dictionary with the relevant recorded parameters and their
+    corresponding column index in the Kinexon.csv-file.
 
     Parameters
     ----------
-    filepath_data:
+    filepath_data: str of pathlib.Path
+        Full path to Kinexon.csv-file.
+
 
     Returns
     -------
+    parameter_links: Dict[str, int]
+        Dictionary with column index for relevant recorded parameters.
+        'parameter_links[parameter] = index'
+        The following parameters are currently considered relevant:
+              floodligth id: 'column name in Kinexon.csv-file
+            - time: 'ts in ms'
+            - sensor_id: 'sensor id'
+            - mapped_id: 'mapped id'
+            - name: 'full name'
+            - group_id: 'group id'
+            - x_coord: 'x in m'
+            - y_coord: 'y in m'
 
     """
 
@@ -71,18 +90,31 @@ def _get_parameter_links(filepath_data: Union[str, Path]) -> Dict[str, int]:
 def get_meta_data(
     filepath_data: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
-    """
+    """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
+    length and framerate
 
     Parameters
     ----------
-    filepath_data
+    filepath_data: str of pathlib.Path
+        Full path to Kinexon.csv-file.
 
     Returns
     -------
-
+    team_infos: Dict[str, Dict[str, List[str]]],
+        Nested dictionary that stores information about the ids from every identifier
+        in every group. Identifier are sensor_id, mapped_id, name. If the respective
+        id-type is not in the recorded parameters, it is not listed in team_infos.
+        'team_info[group][identifier] = [id1, id2, ..., idn]'
+    number_of_frames: int
+        Number of frames from the first to the last recorded frame.
+    frame_rate: int
+        Estimated framerate in frames per second. Estimated from the smallest difference
+        between two consecutive frames.
+    t_null: int
+        Timestamp of the first recorded frame
     """
 
-    parameter_links = _get_parameter_links(filepath_data)
+    parameter_links = _get_parameter_links(str(filepath_data))
 
     sensor_links = parameter_links.copy()
     for key in ["time", "group_id", "x_coord", "y_coord"]:
@@ -152,53 +184,74 @@ def get_meta_data(
 
 
 def create_links_from_meta_data(
-    team_infos: Dict[str, Dict[str, List[str]]], identificator: str = None
+    team_infos: Dict[str, Dict[str, List[str]]], identifier: str = None
 ) -> Dict[str, Dict[str, int]]:
-    """
+    """Creates a dictionary from the team_info dict linking the identifier to the xID.
 
     Parameters
     ----------
-    team_infos
-    identificator
+    team_infos: Dict[str, Dict[str, List[str]]],
+        Nested dictionary that stores information about the ids from every identifier
+        in every group. Identifier are sensor_id, mapped_id, name. If the respective
+        id-type is not in the recorded parameters, it is not listed in team_infos.
+        'team_info[group][identifier] = [id1, id2, ..., idn]'
+    identifier: str
+        Column-name of personal identifier in Kinexon.csv-file.
+        Can be one of:
+            - 'sensor_id'
+            - 'mapped_id'
+            - 'name'
 
     Returns
     -------
-
+    links: Dict[str, Dict[str, int]]
+        Link-dictionary of the form `links[group][idenier-ID] = xID`.
     """
 
     for player_id in ["name", "mapped_id", "sensor_id"]:
-        if identificator is None:
+        if identifier is None:
             if player_id in list(team_infos.values())[0]:
-                identificator = player_id
+                identifier = player_id
                 break
 
     links = {}
     for gID in team_infos:
         links.update(
-            {gID: {ID: xID for xID, ID in enumerate(team_infos[gID][identificator])}}
+            {gID: {ID: xID for xID, ID in enumerate(team_infos[gID][identifier])}}
         )
 
     return links
 
 
-def read_kinexon_file(
-    filepath_data: Union[str, Path], identificator: str = None
-) -> Tuple[Dict[str, Dict[str, List[str]]], XY]:
-    """
+def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -> XY:
+    """Parse Kinexon files and extract position data.
+
+    Kinexon's local positioning system delivers one .csv file containing the position
+    data. This function provides a high-level access to Kinexon data by parsing "the
+    full file" given the path to the file.
 
     Parameters
     ----------
-    filepath_data
-    mapped_id
+    filepath_data: str of pathlib.Path
+        Full path to Kinexon.csv-file.
+    identifier: str
+        Column-name of personal identifier in Kinexon.csv-file.
+        Can be one of:
+            - 'sensor_id'
+            - 'mapped_id'
+            - 'name'
 
     Returns
     -------
-
+    positions: XY
+        XY-Object for the whole game. The order of groups is ascending according to
+        their group id. The order inside the groups is ascending according to their
+        appearance in the data.
     """
 
     team_infos, number_of_frames, frame_rate, t_null = get_meta_data(filepath_data)
 
-    links = create_links_from_meta_data(team_infos, identificator)
+    links = create_links_from_meta_data(team_infos, identifier)
     parameter_links = _get_parameter_links(filepath_data)
 
     number_of_sensors = {}
@@ -248,12 +301,13 @@ def read_kinexon_file(
 
     positions = XY(xy=xy)
 
-    return team_infos, positions
+    return positions
 
 
-filepath_data = "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\Data\\SSG_3v3.csv"
-filepath_data = (
-    "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\"
-    "Data\\Handball\\HBL_Positions\\edit\\Game_1.csv"
-)
-team_infos, xy = read_kinexon_file(filepath_data)
+#
+# filepath_data = "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\Data\\SSG_3v3.csv"
+# filepath_data = (
+#     "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\"
+#     "Data\\Handball\\HBL_Positions\\edit\\Game_1.csv"
+# )
+# xy = read_kinexon_file(filepath_data)
