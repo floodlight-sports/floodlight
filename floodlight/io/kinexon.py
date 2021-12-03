@@ -1,64 +1,42 @@
 from pathlib import Path
 from typing import List, Dict, Tuple, Union
 
-import csv
 import numpy as np
-
 
 from floodlight.core.xy import XY
 
 
-def _csv_to_dict_generator(filename_path: Union[str, Path]) -> Dict[str, str]:
-    """
-    Wraps incoming .csv file into a generator to loop over.
-
-    Parameters
-    ----------
-    filename_path: str
-        path to .csv file.
-
-    Returns
-    -------
-    row: dict
-        Yields one row of the .csv file with each iteration.
-    """
-    with open(filename_path) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            yield row
-
-
-def get_recorded_parameters(filename_path: Union[str, Path]) -> List[str]:
+def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
     """
 
     Parameters
     ----------
-    filename_path
+    filepath_data
 
     Returns
     -------
 
     """
 
-    with open(filename_path) as f:
+    with open(filepath_data) as f:
         parameters = f.readline().split(",")
 
     return parameters
 
 
-def get_parameter_links(filename_path: Union[str, Path]) -> Dict[str, int]:
+def _get_parameter_links(filepath_data: Union[str, Path]) -> Dict[str, int]:
     """
 
     Parameters
     ----------
-    filename_path
+    filepath_data:
 
     Returns
     -------
 
     """
 
-    recorded_parameters = get_recorded_parameters(str(filename_path))
+    recorded_parameters = get_column_names_from_csv(str(filepath_data))
 
     mapping = {
         "time": "ts in ms",
@@ -91,20 +69,20 @@ def get_parameter_links(filename_path: Union[str, Path]) -> Dict[str, int]:
 
 
 def get_meta_data(
-    filename_path: Union[str, Path]
+    filepath_data: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """
 
     Parameters
     ----------
-    filename_path
+    filepath_data
 
     Returns
     -------
 
     """
 
-    parameter_links = get_parameter_links(filename_path)
+    parameter_links = _get_parameter_links(filepath_data)
 
     sensor_links = parameter_links.copy()
     for key in ["time", "group_id", "x_coord", "y_coord"]:
@@ -114,7 +92,7 @@ def get_meta_data(
     t = []
 
     if parameter_links["group_id"] is not None:
-        with open(str(filename_path), "r") as f:
+        with open(str(filepath_data), "r") as f:
             while True:
                 line_string = f.readline()
                 # terminate if at end of file
@@ -141,7 +119,7 @@ def get_meta_data(
                             )
     else:
         print("Since no groups exist in data, artificial group '0' is created!")
-        with open(str(filename_path), "r") as f:
+        with open(str(filepath_data), "r") as f:
             while True:
                 line_string = f.readline()
                 # terminate if at end of file
@@ -174,37 +152,43 @@ def get_meta_data(
 
 
 def create_links_from_meta_data(
-    team_infos: Dict[str, Dict[str, List[str]]], mapped_id: str = "name"
+    team_infos: Dict[str, Dict[str, List[str]]], identificator: str = None
 ) -> Dict[str, Dict[str, int]]:
     """
 
     Parameters
     ----------
     team_infos
-    mapped_id
+    identificator
 
     Returns
     -------
 
     """
 
+    for player_id in ["name", "mapped_id", "sensor_id"]:
+        if identificator is None:
+            if player_id in list(team_infos.values())[0]:
+                identificator = player_id
+                break
+
     links = {}
     for gID in team_infos:
         links.update(
-            {gID: {ID: xID for xID, ID in enumerate(team_infos[gID][mapped_id])}}
+            {gID: {ID: xID for xID, ID in enumerate(team_infos[gID][identificator])}}
         )
 
     return links
 
 
 def read_kinexon_file(
-    filename_path: Union[str, Path], mapped_id: str = None
+    filepath_data: Union[str, Path], identificator: str = None
 ) -> Tuple[Dict[str, Dict[str, List[str]]], XY]:
     """
 
     Parameters
     ----------
-    filename_path
+    filepath_data
     mapped_id
 
     Returns
@@ -212,10 +196,10 @@ def read_kinexon_file(
 
     """
 
-    team_infos, number_of_frames, frame_rate, t_null = get_meta_data(filename_path)
+    team_infos, number_of_frames, frame_rate, t_null = get_meta_data(filepath_data)
 
-    links = create_links_from_meta_data(team_infos, mapped_id="name")
-    parameter_links = get_parameter_links(filename_path)
+    links = create_links_from_meta_data(team_infos, identificator)
+    parameter_links = _get_parameter_links(filepath_data)
 
     number_of_sensors = {}
     xydata = {}
@@ -229,7 +213,7 @@ def read_kinexon_file(
             }
         )
 
-    with open(str(filename_path), "r") as f:
+    with open(str(filepath_data), "r") as f:
         while True:
             line_string = f.readline()
             # terminate if at end of file
@@ -267,5 +251,9 @@ def read_kinexon_file(
     return team_infos, positions
 
 
-# filename_path = "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\Data\\SSG_3v3.csv"
-# team_infos, xy = read_kinexon_file(filename_path)
+filepath_data = "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\Data\\SSG_3v3.csv"
+filepath_data = (
+    "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\"
+    "Data\\Handball\\HBL_Positions\\edit\\Game_1.csv"
+)
+team_infos, xy = read_kinexon_file(filepath_data)
