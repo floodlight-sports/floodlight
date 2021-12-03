@@ -57,6 +57,7 @@ def _get_parameter_links(
 
     recorded_parameters = get_column_names_from_csv(str(filepath_data))
 
+    # relevant columns
     mapping = {
         "time": "ts in ms",
         "sensor_id": "sensor id",
@@ -70,13 +71,17 @@ def _get_parameter_links(
     necessary_columns = ["time", "x_coord", "y_coord"]
 
     parameter_links = {}
+    # loop
     for key in mapping:
+        # create links
         if mapping[key] in recorded_parameters:
             parameter_links.update({key: recorded_parameters.index(mapping[key])})
 
+    # insert group_id if its missing
     if "group_id" not in parameter_links:
         parameter_links.update({"group_id": None})
 
+    # check if necessary columns are available
     if not all(params in parameter_links for params in necessary_columns):
         print(
             "Data file lacks critical information! "
@@ -116,14 +121,16 @@ def get_meta_data(
 
     parameter_links = _get_parameter_links(str(filepath_data))
 
+    # sensor-identifier
     sensor_links = parameter_links.copy()
     for key in ["time", "group_id", "x_coord", "y_coord"]:
         del sensor_links[key]
 
     team_infos = {}
     t = []
-
+    # check for group id
     if parameter_links["group_id"] is not None:
+        # loop
         with open(str(filepath_data), "r") as f:
             while True:
                 line_string = f.readline()
@@ -133,22 +140,31 @@ def get_meta_data(
                 line = line_string.split(",")
                 # skip the header of the file
                 if line[parameter_links["time"]].isdecimal():
+                    # extract group id
                     t.append(int(line[parameter_links["time"]]))
                     if line[parameter_links["group_id"]] not in team_infos:
                         team_infos.update({line[parameter_links["group_id"]]: {}})
-
-                    for param in sensor_links:
-                        if param not in team_infos[line[parameter_links["group_id"]]]:
-                            team_infos[line[parameter_links["group_id"]]].update(
-                                {param: []}
-                            )
+                    # create links
+                    for identifier in sensor_links:
+                        # extract identifier
                         if (
-                            line[parameter_links[param]]
-                            not in team_infos[line[parameter_links["group_id"]]][param]
+                            identifier
+                            not in team_infos[line[parameter_links["group_id"]]]
                         ):
-                            team_infos[line[parameter_links["group_id"]]][param].append(
-                                line[parameter_links[param]]
+                            team_infos[line[parameter_links["group_id"]]].update(
+                                {identifier: []}
                             )
+                        # extract ids
+                        if (
+                            line[parameter_links[identifier]]
+                            not in team_infos[line[parameter_links["group_id"]]][
+                                identifier
+                            ]
+                        ):
+                            team_infos[line[parameter_links["group_id"]]][
+                                identifier
+                            ].append(line[parameter_links[identifier]])
+    # no group id in data
     else:
         print("Since no groups exist in data, artificial group '0' is created!")
         with open(str(filepath_data), "r") as f:
@@ -163,20 +179,30 @@ def get_meta_data(
                     t.append(int(line[parameter_links["time"]]))
                     if "0" not in team_infos:
                         team_infos.update({"0": {}})
+                    # create links
+                    for identifier in sensor_links:
+                        # extract identifier
+                        if identifier not in team_infos["0"]:
+                            team_infos["0"].update({identifier: []})
+                        # extract ids
+                        if (
+                            line[parameter_links[identifier]]
+                            not in team_infos["0"][identifier]
+                        ):
+                            team_infos["0"][identifier].append(
+                                line[parameter_links[identifier]]
+                            )
 
-                    for param in sensor_links:
-                        if param not in team_infos["0"]:
-                            team_infos["0"].update({param: []})
-                        if line[parameter_links[param]] not in team_infos["0"][param]:
-                            team_infos["0"][param].append(line[parameter_links[param]])
-
+    # sort dict
     team_infos = dict(sorted(team_infos.items()))
 
+    # estimate framerate
     timestamps = list(set(t))
     timestamps.sort()
     timestamps = np.array(timestamps)
     minimum_time_step = np.min(np.diff(timestamps))
     frame_rate = int(1000 / minimum_time_step)
+
     number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / frame_rate))
     t_null = timestamps[0]
 
@@ -205,7 +231,7 @@ def create_links_from_meta_data(
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        Link-dictionary of the form `links[group][idenier-ID] = xID`.
+        Link-dictionary of the form `links[group][identifier-ID] = xID`.
     """
 
     for player_id in ["name", "mapped_id", "sensor_id"]:
@@ -249,11 +275,15 @@ def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -
         appearance in the data.
     """
 
+    # get metadata
     team_infos, number_of_frames, frame_rate, t_null = get_meta_data(filepath_data)
 
+    # get links
     links = create_links_from_meta_data(team_infos, identifier)
+    # get parameter-links
     parameter_links = _get_parameter_links(filepath_data)
 
+    # create np.array for data
     number_of_sensors = {}
     xydata = {}
     for group in links:
@@ -266,6 +296,7 @@ def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -
             }
         )
 
+    # loop
     with open(str(filepath_data), "r") as f:
         while True:
             line_string = f.readline()
@@ -276,22 +307,26 @@ def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -
             # skip the header of the file
             if line[parameter_links["time"]].isdecimal():
                 timestamp = int(line[parameter_links["time"]])
+                # set group
                 group = line[parameter_links["group_id"]]
-                x_col = (
-                    links[group][line[parameter_links["name"]]] * 2
-                )  # build generic for ID used in create links
+                # set column
+                x_col = links[group][line[parameter_links["name"]]] * 2
                 y_col = x_col + 1
+                # set row
                 row = int((timestamp - t_null) / (1000 / frame_rate))
 
+                # set (x, y)-data
                 x_coordinate = line[parameter_links["x_coord"]]
                 y_coordinate = line[parameter_links["y_coord"]]
 
+                # insert (x, y)-data into column and row of respective array
                 if x_coordinate != "":
                     xydata[group][row, x_col] = x_coordinate
 
                 if y_coordinate != "":
                     xydata[group][row, y_col] = y_coordinate
 
+    # join group arrays
     xy = None
     for group in xydata:
         if xy is None:
@@ -299,6 +334,7 @@ def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -
         else:
             xy = np.concatenate((xy, xydata[group]), axis=1)
 
+    # create XY-object
     positions = XY(xy=xy)
 
     return positions
