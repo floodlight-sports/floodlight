@@ -36,6 +36,15 @@ Hi there, glad you're reading the docs! Oh, and good luck...
 
    modules/core/core
 
+.. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Testing
+
+   Testing in general <tests/testing>
+   Pytest framework <tests/pytest>
+
+
 Indices and tables
 ==================
 
