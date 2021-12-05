@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 
 import pandas as pd
@@ -35,11 +36,25 @@ class Events:
     events: pd.DataFrame
     direction: str = None
 
+    def __post_init__(self):
+        init_check = True
+        # check for missing essential columns
+        init_check *= self.check_for_essential_cols()
+        # check for ranges and dtypes
+        init_check *= self.check_essential_cols()
+        init_check *= self.check_protected_cols()
+
     def __str__(self):
         return f"Floodlight Events object of shape {self.events.shape}"
 
     def __len__(self):
         return len(self.events)
+
+    def __getitem__(self, key):
+        return self.events[key]
+
+    def __setitem__(self, key, value):
+        self.events[key] = value
 
     @property
     def essential(self):
@@ -62,33 +77,59 @@ class Events:
 
         return custom
 
-    def check_essential(self):
+    def check_for_essential_cols(self):
+        check = True
+
+        if "eID" not in self.essential:
+            check = False
+            warnings.warn("Events Object is missing the essential event column eID!")
+        if "gameclock" not in self.essential:
+            check = False
+            warnings.warn(
+                "Events Object is missing the essential event column gameclock!"
+            )
+
+        return check
+
+    def check_essential_cols(self):
         check = True
         for col in self.essential:
-            check *= self.check_col(col)
+            check *= self.definition_check(col, essential_events_columns)
+
         return check
 
-    def check_protected(self):
+    def check_protected_cols(self):
         check = True
         for col in self.protected:
-            check *= self.check_col(col)
+            check *= self.definition_check(col, protected_columns)
+
         return check
 
-    def check_col(self, col):
-        # assign definitions
+    def definition_check(self, col, definitions):
         check = True
-        if col in self.essential:
-            defs = essential_events_columns
-        elif col in self.protected:
-            defs = protected_columns
-        else:  # integrate custom checks?
-            return check
         # check dtypes
-        check *= self.events.dtypes[col] in defs[col]["dtypes"]
+        if self.events.dtypes[col] not in definitions[col]["dtypes"]:
+            check = False
+            warnings.warn(
+                f"Events column {col} having illegal dtype {self.events.dtypes[col]}, "
+                f"should be {definitions[col]['dtypes']}!"
+            )
         # check value range
-        val_range = defs[col]["value_range"]
-        if val_range is not None:
-            check *= (val_range[0] <= self.events[col]).all()
-            check *= (self.events[col] <= val_range[1]).all()
-        # check for disallowed values (e.g. NaN)?
+        val_range = definitions[col]["value_range"]
+
+        if val_range is None:
+            return check
+
+        if not (val_range[0] <= self.events[col]).all():
+            warnings.warn(
+                f"Events column {col} has at least one value smaller than "
+                f"{val_range[0]}!"
+            )
+
+        if not (self.events[col] <= val_range[1]).all():
+            warnings.warn(
+                f"Events column {col} has at least one value larger than "
+                f"{val_range[1]}!"
+            )
+
         return check
