@@ -65,6 +65,7 @@ Within a segment (e.g. relative to its start), list-based objects can be time-id
 With a synced frameclock (i.e. by making sure all frame-based objects are scaled to the same framerate), many cross-object manipulations become clear and intuitive one-liners
 
 .. code-block:: python
+
     # Indexing position data to those segments where the team is in possession
     home.xy[possession.code == "Home"]
 
