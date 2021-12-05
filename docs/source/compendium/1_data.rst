@@ -34,8 +34,8 @@ Oh, and so far we've only talked about data for single matches. What we haven't 
 Let's get serious again. Sports data analysis is awesome, but it can become quickly complicated and rather tedious on the implementation level. All this complication leads to - in line with good ol' data analysis tradition - massive overhead time needed for data parsing, pre-processing and wrangling. Furthermore, the formal incompatibility of different data sources is a noticeable hindrance on unfolding the data's full potential. There's a good reason why hardly any applications or scientific publications exist that combine two of the aforementioned data sources (with a few exceptions).
 
 
-Core Data Objects
-=================
+Core Objects
+============
 
 We aim to tackle this challenge with this package. The basic idea is rather simple: To formalize the logic behind team sport data and break down inherent complexity into standalone data structures by *abstraction* and *generalization*. The resulting objects should be independent from any data provider or source. They should be clear and intuitive to use and allow a clean interface to data loading and processing. That way, any data processing is - in typical object-oriented fashion - attached to the data objects. And effectively decoupled from any provider specifics.
 
@@ -43,7 +43,7 @@ To realize this idea, we've tried to break down all that information you can ext
 
 1. **Data level objects** store raw data such as player positions, events, or the used coordinate system. These are essentially independent data fragments that in itself do not carry any further information of where they come from. They are pure data structures with methods concerned with data manipulation: spatial or temporal transforms, clipping and slicing, modifications, visualizations, and so on.
 
-2. **Observation level objects** are concerned with bundling and enriching data level objects into "meaningful" data structures. Each observation, such as a match or training drill, can contain a number of data level objects for each *segment* (such as half times) and *team* (such as the home and away team). It further incorporates objects regarding match or player information.
+2. **Observation level objects** are concerned with bundling and enriching data level objects into "meaningful" data structures. Each observation, such as a match or training drill, can contain a number of data level objects for each *segment* (such as half times) and *team* (such as the home and away team). An observation-level object contains all these data-level objects and further incorporates objects regarding match or player information.
 
 3. **Analysis level objects** contain analysis-related objects such as performance metrics or high-level models of match play.
 
