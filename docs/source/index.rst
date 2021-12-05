@@ -27,7 +27,7 @@ Hi there, glad you're reading the docs! Oh, and good luck...
     Design <compendium/2_design>
     Time <compendium/3_time>
     Space <compendium/4_space>
-    Identities <compendium/5_identities>
+    Identifier <compendium/5_identifier>
 
 .. toctree::
    :glob:
