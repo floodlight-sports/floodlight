@@ -30,24 +30,30 @@ There are a few pre-requisites for using this guide:
     This guide was designed and tested on Windows. If you use a different OS, the basics still apply, although the specific steps during setup might differ. We try to include sources for all these steps so that you can check for yourself if there are OS-dependent changes on how to proceed.
 
 
-Installation in *dev* mode
-==========================
+Developing
+==========
 
-Now, lets install our repository in *dev*-mode. This installation differs from *production*-mode. The latter describes the ready-to-use version of the package as you would install it e.g. from PyPI. *Dev*-mode, on the contrary, refers to the direct copy of the repository as you would find it on GitHub, including tools used for developing, testing, quality assurance and all (public) branches where new features are developed. This mode has more dependencies which change regularly as we develop the next release, i.e., a snapshot of a publishable version of the code. Dependency management (and packaging) used to be inconvenient in Python, yet it is important that every contributor works on the same environment when collaborating on code. Luckily, there's a tool called *poetry* which simplifies a lot. Thus, the first step is to install poetry!
+Now, lets install our repository in *dev*-mode to start developing. This installation differs from *production*-mode. The latter describes the ready-to-use version of the package as you would install it e.g. from PyPI. *Dev*-mode, on the contrary, refers to the direct copy of the repository as you would find it on GitHub, including tools used for developing, testing, quality assurance and all (public) branches where new features are developed. This mode has more dependencies which change regularly as we develop the next release, i.e., a snapshot of a publishable version of the code. Dependency management (and packaging) used to be inconvenient in Python, yet it is important that every contributor works on the same environment when collaborating on code. Luckily, there's a tool called *poetry* which simplifies this a lot. Thus, the first step is to install poetry!
 
 Poetry requires a system-wide installation that's different on Windows and MacOS. The full installation instructions can be found on `the official page <https://python-poetry.org/docs/master/#installation>`_. The quick four-step-version goes:
 
 1. Open Windows PowerShell
 2. Copy, paste and execute
 
-.. code-block::
+.. code-block:: shell
 
     (Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py -UseBasicParsing).Content | python -
 
 
 3. The installer will tell you the path of the installed executable. Add the path to your system ``PATH`` if that's not done automatically.
 
-4. Re-open PowerShell and execute `poetry --version` to check if the installation was successful
+4. Re-open PowerShell and execute
+
+.. code-block:: shell
+
+    poetry --version
+
+to check if the installation was successful
 
 With poetry and git, getting the right environment is now rather easy. First, you need to get a copy of the original repository. To do so, follow these steps:
 
@@ -55,13 +61,17 @@ With poetry and git, getting the right environment is now rather easy. First, yo
 2. Hit the **Fork** Button on the top right of the page. This will create a personal blueprint in your github account. Compared to the base repository, you have the permission to manage this repository in whatever way you like
 3. Clone the repository to your local machine as usual.
 
-You've now got your own "version" of the original repository on your machine. The last step is to install all the necessary dependencies. Go the repo's directory and just run `poetry install` (e.g. in git bash)! Poetry will then create a `virtualenv` and install all necessary dependencies. This is basically everything you need to start contributing. However, we follow a number of conventions to ensure code quality. Make sure you know and follow these conventions so that your code fits nicely into the existing codebase!
+You've now got your own "version" of the original repository on your machine. The last step is to install all the necessary dependencies. Go the repo's directory and just run
+
+.. code-block:: shell
+
+    poetry install
+
+(e.g. in git bash)! Poetry will then create a ``virtualenv`` and install all necessary dependencies. This is basically everything you need to start contributing. However, we follow a number of standards to ensure code quality. Make sure you know and follow these conventions so that your code fits nicely into the existing codebase!
 
 
-Conventions
-===========
-
-These are:
+Standards
+=========
 
 1. Codestyle
 
@@ -76,22 +86,26 @@ These are:
     * Semantic Versioning `SemVer <https://semver.org/>`_ for versioning
 
 
-Local workflows
-===============
+Workflows
+=========
+
+Local Workflows
+---------------
 
 Most of these conventions are enforced through the contributing workflow
 (fork - clone - edit - pull request) as well as automatically with GitHub Actions used for
 continuous integration purposes. However, you may want to ensure a local dev environment that
 actively facilitates these conventions. There are a number of tools you can use to do so:
 
-#### Pre-Commit Hooks
+Pre-Commit Hooks
+~~~~~~~~~~~~~~~~
 
 You can install pre-defined pre-commit hooks by running:
 
-````
-poetry run pre-commit install
-poetry run pre-commit install --hook-type commit-msg
-````
+.. code-block:: shell
+
+    poetry run pre-commit install
+    poetry run pre-commit install --hook-type commit-msg
 
 These hooks will automatically get activated whenever you commit any code, and check for code style
 (via black and flake8) as well as commit message structure. You can also activate each of these tools
@@ -105,8 +119,8 @@ manually by running the following commands (see the respective docs for full int
 - update hooks: `pre-commit autoupdate`
 - check a commit message: `cz check -m "my commit message"`
 
-
-#### PyCharm
+IDEs
+~~~~
 
 Additionally, if you use an IDE like PyCharm, you can set up your favorite tool to help you right
 during coding. For example:
@@ -117,21 +131,16 @@ during coding. For example:
 4. Setting > Tools > Python Integrated Tools: Set default tester and docstring format
 
 
-
 Global Workflows
-================
+----------------
 
 Once you have made your fork and clone of the original repository, there are three copies that are of interest:
 
-- the original repostiry, hereafter called `base` or `upstream`
+- the original repository, hereafter called `base` or `upstream`
 - your fork that's stored on GitHub (`origin`)
 - the local clone on your machine (`local`)
 
-Up to this point, you're set up so that you can develop on `local`. The remaining question is: once you've done some work and coded that cool new feature, how do you get your changes into `base`? There are two major ways of doing so.
-
-### Develop locally, merge remotely
-
-This is the standard way for contributing to an open source repository without having direct write access. In a nutshell, you want to keep your `local` up to date with `base`, develop a new feature on `local`, and request to merge it into `base` once you're finished. The long story goes like this:
+Up to this point, you're set up so that you can develop on `local`. The remaining question is: once you've done some work and coded that cool new feature, how do you get your changes into `base`? The standard way for contributing to an open source repository without having direct write access is to develop locally, then merge globally. In a nutshell, you want to keep your `local` up to date with `base`, develop a new feature on `local`, and request to merge it into `base` once you're finished. The long story goes like this:
 
 Remember that we follow a (slim-fit) version of the git-flow model, which gives the `main` and `develop` branch a special role. These are reserved for stable snapshots of the code (`main`) as well as (potentially unstable) checkpoints during development of a new version (`develop`). There's two implications here:
 
@@ -201,15 +210,8 @@ So much of the theory, let's see how one can perform all these steps in practice
 8. Go to the [repository page](https://github.com/floodlight-sports/floodlight) and do a PR. Make sure you ask to merge your changes from `origin:my_feat_branch` into `base:develop`.
 
 
-
-## Resources
-
-https://git-scm.com/book/de/v2/GitHub-Mitwirken-an-einem-Projekt
-
-
 Testing
 =======
-
 
 Why testing code?
 -----------------
@@ -429,3 +431,8 @@ Testing workflow
     #. After or before writing a class or method write the according tests and fixtures to keep your test suite always up to date.
     #. After finishing your coding session :ref:`run pytest <How to execute pytest>` again.
     #. If you have not finished your task write a test that points to were you ended the last time.
+
+
+References
+==========
+https://git-scm.com/book/de/v2/GitHub-Mitwirken-an-einem-Projekt
