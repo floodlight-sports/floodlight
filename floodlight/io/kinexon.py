@@ -200,15 +200,17 @@ def get_meta_data(
     minimum_time_step = np.min(np.diff(timestamps))
     # timestamps are in milliseconds. Magic number 1000 is needed for conversion to
     # seconds.
-    frame_rate = int(1000 / minimum_time_step)
+    frame_rate = 1000 / minimum_time_step
 
     # non-integer framerate
     if not frame_rate.is_integer():
         warnings.warn(
             f"Non-integer frame rate: Minimum time step of "
-            f"{minimum_time_step} detected. Framerate was round to "
-            f"{frame_rate}."
+            f"{minimum_time_step} detected. Framerate is round to "
+            f"{int(frame_rate)}."
         )
+
+    frame_rate = int(frame_rate)
 
     # 1000 again needed to account for millisecond to second conversion.
     number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / frame_rate))
@@ -257,7 +259,9 @@ def create_links_from_meta_data(
     return links
 
 
-def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -> XY:
+def read_kinexon_file(
+    filepath_data: Union[str, Path], identifier: str = None
+) -> List[XY]:
     """Parse Kinexon files and extract position data.
 
     Kinexon's local positioning system delivers one .csv file containing the position
@@ -334,24 +338,8 @@ def read_kinexon_file(filepath_data: Union[str, Path], identifier: str = None) -
                 if y_coordinate != "":
                     xydata[group][row, y_col] = y_coordinate
 
-    # join group arrays
-    xy = None
+    data_objects = []
     for group in xydata:
-        if xy is None:
-            xy = xydata[group]
-        else:
-            xy = np.concatenate((xy, xydata[group]), axis=1)
+        data_objects.append(XY(xy=xydata[group]))
 
-    # create XY-object
-    positions = XY(xy=xy)
-
-    return positions
-
-
-#
-# filepath_data = "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\Data\\SSG_3v3.csv"
-# filepath_data = (
-#     "C:\\Users\\ke6564\\Desktop\\Studium\\Promotion\\"
-#     "Data\\Handball\\HBL_Positions\\edit\\Game_1.csv"
-# )
-# xy = read_kinexon_file(filepath_data)
+    return data_objects
