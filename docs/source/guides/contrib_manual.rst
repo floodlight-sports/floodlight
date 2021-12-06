@@ -206,13 +206,13 @@ So much of the theory, let's see how one can perform all these steps in practice
 
 https://git-scm.com/book/de/v2/GitHub-Mitwirken-an-einem-Projekt
 
-============================
-About Testing In General
-============================
+
+Testing
+=======
 
 
 Why testing code?
-=================
+-----------------
 
 * The programmer has to focus on the requirements before writing code.
 * Ensures and improves the quality of your code (number of bugs will be reduced).
@@ -220,7 +220,7 @@ Why testing code?
 * Notice whether changes in one place might break the code in another place.
 
 General rules
-=============
+-------------
 .. _General rules:
 .. TIP::
 
@@ -243,23 +243,22 @@ General rules
     * Every unit test should follow the **Arrange-Act-Assert model** (see below).
 
 Tests types
-===========
+-----------
+
 Generally tests can be structured based on the complexity of code that they are testing.
 
 Unit test
----------
-Unit tests make sure that on the lowest layer classes and functions behave as they should.
+    Unit tests make sure that on the lowest layer classes and functions behave as they should.
 
 Integration test
-----------------
-Integration tests combine multiple modules, classes or methods to test if they are all working together.
+    Integration tests combine multiple modules, classes or methods to test if they are all working together.
 
 System test
------------
-System tests operate on the highest layer and test whether completely integrated systems fulfill the specified requirements.
+    System tests operate on the highest layer and test whether completely integrated systems fulfill the specified requirements.
 
 Testing layout
-==============
+--------------
+
 To ensure that the structure of the testing suite remains clear the tests are stored in a separate ``/test`` folder. The structure below this folder is then simply a mirror image of the actual folder structure with the difference that the various modules have a ``test_*.py`` in front of their normal file name. Here is a shortened example of the described structure::
 
 
@@ -277,7 +276,7 @@ To ensure that the structure of the testing suite remains clear the tests are st
         test_utils/
 
 Arrange-Act-Assert model
-========================
+------------------------
 
 Every unit test should follow the Arrange-Act-Assert model.
     #. Arrange (set up) the input or conditions for the test
@@ -303,16 +302,16 @@ To clarify this structure here is a very simple example:
 	    #Assert
 	    assert result == 0, "assert message that will be shown if the assert statement is false"
 
-============================
-About The Pytest Framework
-============================
+
+The Pytest Framework
+--------------------
 The pytest framework provides a feature-rich, plugin-based ecosystem that helps to easily write small as well as readable tests and it can also scale to support complex functional testing. To make sure that you can use the full functionality of pytest this section provides you some conventions and commands that are useful. If you want to get more into the whole framework you can find further information `here <https://docs.pytest.org/en/6.2.x/contents.html#toc>`__.
 As described in the :ref:`general rules <General rules>` pytest follows a strict naming convention for files (``test_*.py``) and methods (``def test_*()``).
 
 .. _How to execute pytest:
 
 How to execute pytest
-=====================
+---------------------
 As part of the continuous integration pipeline build into the floodlight repository all the tests are going to be executed when making the pull request. Irrespective of this, tests should be carried out internally on a regular basis.
 In order to test files, classes or methods in the current directory and subdirectories there are some helpful `commands <https://docs.pytest.org/en/6.2.x/usage.html#calling-pytest-through-python-m-pytest>`_ to execute from the terminal:
 
@@ -343,14 +342,9 @@ In order to test files, classes or methods in the current directory and subdirec
 
 In order to understand the test report provided by pytest in detail this `link <https://docs.pytest.org/en/latest/how-to/output.html>`__ is recommended.
 
-
-Useful features
-===============
-
-Pytest provides multiple features that are very useful to simplify the testing procedure and keep your tests organized and structured.
-
 Fixtures
----------
+--------
+
 Most of the tests depend on some sort of input. With `fixtures <https://docs.pytest.org/en/6.2.x/fixture.html>`_ pytest provides a feature with which data, test doubles or some system state can be created. Fixtures are reusable and can be used for multiple tests. In order to create a fixture you have to build a function that returns the data or system state that is needed for your testing. To do that just decorate this function with ``@pytest.fixture``. The function name can now get passed to a testing method as an argument. As the number of fixtures increases with the project, it makes sense to put them into a structure to keep track of them. Pytest provides a solution to keep everything structured (:ref:`Where to create fixtures? <Where to create fixtures?>`). You can basically store fixtures in the same files where you use them. However, it is also possible to store them in a separated ``conftest.py`` file on which every testing file in the same layer or in a subdirectory has access without any import. The following example should clarify how fixtures work:
 Here you can see an example of how fixtures can be implemented:
 
@@ -401,7 +395,8 @@ With the pytest framework there are different possibilities where the fixtures c
 The ``conftest.py`` file just follows a naming convention of pytest and enables to share fixtures across multiple files. The fixtures implemented inside the ``conftest.py`` file can be accessed from testing files laying in the same folder layer or in a subdirectory without any import. For more detailed information (especially on option 3.) have a look on this `link <https://docs.pytest.org/en/6.2.x/fixture.html>`_.
 
 Marks
-------
+-----
+
 Marks can be used to categorize your tests. To do so you need to decorate the method with ``@pytest.mark.<mark_name>``. When executing the ``pytest -m <mark_name>`` command (see :ref:`how to execute pytest <How to execute pytest>`) only methods decorated with ``@pytest.mark.<mark_name>`` will be selected for the testing. This can be advantageous if you have tests that are slower because they are for example accessing a database but you want to quickly run your test suite.
 
 .. code-block:: python
@@ -428,7 +423,8 @@ Pytest comes with a few marks out of the box which can bee seen `here <https://d
     ]
 
 Testing workflow
-================
+----------------
+
     #. Before starting the coding session :ref:`run pytest <How to execute pytest>` in your terminal to see if everything works or you get some errors which have to be fixed.
     #. After or before writing a class or method write the according tests and fixtures to keep your test suite always up to date.
     #. After finishing your coding session :ref:`run pytest <How to execute pytest>` again.
