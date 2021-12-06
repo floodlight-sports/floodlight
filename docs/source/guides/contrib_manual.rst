@@ -221,24 +221,26 @@ Why testing code?
 
 General rules
 =============
+.. _General rules:
+.. TIP::
 
-* Test files follow a certain naming convention: ``test_<module_Name>.py``
-* Test methods follow the same convention:
+    * Test files follow a certain naming convention: ``test_<module_Name>.py``
+    * Test methods follow the same convention:
 
-.. code-block:: python
+    .. code-block:: python
 
-    def test_method_name():
-        # some testing code
+        def test_method_name():
+            # some testing code
 
-* Tests should be **easy to understand**.
-* Tests should only test a **tiny bit of functionality**.
-* Tests should run alone and **independent**.
-* Tests should **run fast**.
-* Tests should be **run frequently** (at least before and after every coding session).
-* After or before writing a class or method write the according tests (keep your test suite always **up to date**).
-* You should write broken tests when you have to interrupt your work. When coming back you will have a pointer to where you have finished the last time.
-* The test methods should have long and **descriptive names**.
-* Every unit test should follow the Arrange-Act-Assert model (see below).
+    * Tests should be **easy to understand**.
+    * Tests should only test a **tiny bit of functionality**.
+    * Tests should run alone and **independent**.
+    * Tests should **run fast**.
+    * Tests should be **run frequently** (at least before and after every coding session).
+    * After or before writing a class or method write the according tests (keep your test suite always **up to date**).
+    * You should write broken tests when you have to interrupt your work. When coming back you will have a pointer to where you have finished the last time.
+    * The test methods should have long and **descriptive names**.
+    * Every unit test should follow the **Arrange-Act-Assert model** (see below).
 
 Tests types
 ===========
@@ -281,6 +283,7 @@ Every unit test should follow the Arrange-Act-Assert model.
     #. Arrange (set up) the input or conditions for the test
     #. Act by calling a method
     #. Assert whether some end condition is true
+
 To clarify this structure here is a very simple example:
 
 .. code-block:: python
@@ -304,11 +307,13 @@ To clarify this structure here is a very simple example:
 About The Pytest Framework
 ============================
 The pytest framework provides a feature-rich, plugin-based ecosystem that helps to easily write small as well as readable tests and it can also scale to support complex functional testing. To make sure that you can use the full functionality of pytest this section provides you some conventions and commands that are useful. If you want to get more into the whole framework you can find further information `here <https://docs.pytest.org/en/6.2.x/contents.html#toc>`__.
-As described in the :doc:`previous section </tests/testing>` pytest follows a strict naming convention for files (``test_*.py``) and methods (``def test_*()``).
+As described in the :ref:`general rules <General rules>` pytest follows a strict naming convention for files (``test_*.py``) and methods (``def test_*()``).
+
+.. _How to execute pytest:
 
 How to execute pytest
 =====================
-As part of the `continuous integration <https://www.atlassian.com/continuous-delivery/continuous-integration>`_ pipeline build into the floodlight repository all the tests are going to be executed when making the pull request. Irrespective of this, tests should be carried out internally on a regular basis.
+As part of the continuous integration pipeline build into the floodlight repository all the tests are going to be executed when making the pull request. Irrespective of this, tests should be carried out internally on a regular basis.
 In order to test files, classes or methods in the current directory and subdirectories there are some helpful `commands <https://docs.pytest.org/en/6.2.x/usage.html#calling-pytest-through-python-m-pytest>`_ to execute from the terminal:
 
 .. code-block:: shell
@@ -336,8 +341,6 @@ In order to test files, classes or methods in the current directory and subdirec
 
     $ pytest <filename>.py::<methode_name> # to run a specific test (<method_name>) within a module (<filename>)
 
-# Should I exclude this examples and just reference the part of the documentation of pytest which contains all these commands
-
 In order to understand the test report provided by pytest in detail this `link <https://docs.pytest.org/en/latest/how-to/output.html>`__ is recommended.
 
 
@@ -348,15 +351,14 @@ Pytest provides multiple features that are very useful to simplify the testing p
 
 Fixtures
 ---------
-Most of the tests depend on some sort of input. With `fixtures <https://docs.pytest.org/en/6.2.x/fixture.html>`_ pytest provides a feature with which data, test doubles or some system state can be created. Fixtures are reusable and can be used for multiple tests. In order to create a fixture you have to build a function that returns the data or system state that is needed for your testing. To do that just decorate this function with ``@pytest.fixture``. The function name can now get passed to a testing method as an argument. Here you can see an example of how fixtures can be implemented:
+Most of the tests depend on some sort of input. With `fixtures <https://docs.pytest.org/en/6.2.x/fixture.html>`_ pytest provides a feature with which data, test doubles or some system state can be created. Fixtures are reusable and can be used for multiple tests. In order to create a fixture you have to build a function that returns the data or system state that is needed for your testing. To do that just decorate this function with ``@pytest.fixture``. The function name can now get passed to a testing method as an argument. As the number of fixtures increases with the project, it makes sense to put them into a structure to keep track of them. Pytest provides a solution to keep everything structured (:ref:`Where to create fixtures? <Where to create fixtures?>`). You can basically store fixtures in the same files where you use them. However, it is also possible to store them in a separated ``conftest.py`` file on which every testing file in the same layer or in a subdirectory has access without any import. The following example should clarify how fixtures work:
+Here you can see an example of how fixtures can be implemented:
 
 .. code-block:: python
 
-    ''' tests.test_core.test_xy '''
+    ''' tests.test_core.conftest '''
     import pytest
     import numpy as np
-
-    from floodlight.core.xy import XY
 
     # creation of the fixture
     @pytest.fixture()
@@ -364,6 +366,11 @@ Most of the tests depend on some sort of input. With `fixtures <https://docs.pyt
         positions = np.array([[1, 2, 3, 4], [5, 6, 7, 8]])
         return positions
 
+    ''' tests.test_core.test_xy '''
+    import pytest
+    import numpy as np
+
+    from floodlight.core.xy import XY
     # testing a function with the fixture being passed as an argument
     def test_x_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
         # Arrange
@@ -375,11 +382,13 @@ Most of the tests depend on some sort of input. With `fixtures <https://docs.pyt
         # Assert
         assert np.array_equal(x_position, np.array([[1, 3], [5, 7]]))
 
-Fixtures are a quite powerful tool since they are modular and can also request other fixtures.
+Fixtures are a quite powerful tool since they are modular and can also request other fixtures. In a nutshell they can be understood as minimal examples of e.g. data-level objects such as XY, Events, or Code. But compared to the normal objects, they are much clearer and are still able to test the full functionality of the methods. Of course, they look different depending on the method tested.
 
 When to create fixtures?
 ~~~~~~~~~~~~~~~~~~~~~~~~
 In case you are writing multiple tests that all make use of the same underlying test data, then it can be advantageous to create a fixture. Otherwise it is common to arrange the data inside your testing function.
+
+.. _Where to create fixtures?:
 
 Where to create fixtures?
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -393,7 +402,7 @@ The ``conftest.py`` file just follows a naming convention of pytest and enables 
 
 Marks
 ------
-Marks can be used to categorize your tests. To do so you need to decorate the method with ``@pytest.mark.<mark_name>``. When executing the ``pytest -m <mark_name>`` command (:doc:`see here </tests/testing>`) only methods decorated with ``@pytest.mark.<mark_name>`` will be selected for the testing. This can be advantageous if you have tests that are slower because they are for example accessing a database but you want to quickly run your test suite.
+Marks can be used to categorize your tests. To do so you need to decorate the method with ``@pytest.mark.<mark_name>``. When executing the ``pytest -m <mark_name>`` command (see :ref:`how to execute pytest <How to execute pytest>`) only methods decorated with ``@pytest.mark.<mark_name>`` will be selected for the testing. This can be advantageous if you have tests that are slower because they are for example accessing a database but you want to quickly run your test suite.
 
 .. code-block:: python
 
@@ -415,13 +424,12 @@ Pytest comes with a few marks out of the box which can bee seen `here <https://d
     [tool.pytest.ini_options]
     markers = [
         "<mark_name1>: description",
-        "<mark_name12: description"
+        "<mark_name2: description"
     ]
 
 Testing workflow
 ================
-    #. Before starting the coding session :doc:`run pytest </tests/testing>` in your terminal to see if everything works or you get some errors which have to be fixed.
+    #. Before starting the coding session :ref:`run pytest <How to execute pytest>` in your terminal to see if everything works or you get some errors which have to be fixed.
     #. After or before writing a class or method write the according tests and fixtures to keep your test suite always up to date.
-    #. After finishing your coding session :doc:`run pytest </tests/testing>` again.
+    #. After finishing your coding session :ref:`run pytest <How to execute pytest>` again.
     #. If you have not finished your task write a test that points to were you ended the last time.
-git
