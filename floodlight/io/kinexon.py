@@ -7,7 +7,7 @@ from floodlight.core.xy import XY
 
 
 def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
-    """Reads first line of a Kinexon and extracts the column names.
+    """Reads first line of a Kinexon.csv-file and extracts the column names.
 
     Parameters
     ----------
