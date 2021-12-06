@@ -100,14 +100,14 @@ def get_meta_data(
 
     Returns
     -------
-    team_infos: Dict[str, Dict[str, List[str]]],
+    pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
         identifying column in every team.
         'team_info[team][identifying_column] = [pID1, pID, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
-        listed in team_infos.
+        listed in pID_dict.
     number_of_frames: int
         Number of frames from the first to the last recorded frame.
     framerate: int
@@ -124,7 +124,7 @@ def get_meta_data(
     for key in ["time", "team_id", "x_coord", "y_coord"]:
         del sensor_links[key]
 
-    team_infos = {}
+    pID_dict = {}
     t = []
     # check for team id
     if "team_id" in column_links:
@@ -140,23 +140,23 @@ def get_meta_data(
                 if line[column_links["time"]].isdecimal():
                     # extract team id
                     t.append(int(line[column_links["time"]]))
-                    if line[column_links["team_id"]] not in team_infos:
-                        team_infos.update({line[column_links["team_id"]]: {}})
+                    if line[column_links["team_id"]] not in pID_dict:
+                        pID_dict.update({line[column_links["team_id"]]: {}})
                     # create links
                     for identifier in sensor_links:
                         # extract identifier
-                        if identifier not in team_infos[line[column_links["team_id"]]]:
-                            team_infos[line[column_links["team_id"]]].update(
+                        if identifier not in pID_dict[line[column_links["team_id"]]]:
+                            pID_dict[line[column_links["team_id"]]].update(
                                 {identifier: []}
                             )
                         # extract ids
                         if (
                             line[column_links[identifier]]
-                            not in team_infos[line[column_links["team_id"]]][identifier]
+                            not in pID_dict[line[column_links["team_id"]]][identifier]
                         ):
-                            team_infos[line[column_links["team_id"]]][
-                                identifier
-                            ].append(line[column_links[identifier]])
+                            pID_dict[line[column_links["team_id"]]][identifier].append(
+                                line[column_links[identifier]]
+                            )
     # no team id in data
     else:
         print("Since no teams exist in data, artificial team '0' is created!")
@@ -170,24 +170,24 @@ def get_meta_data(
                 # skip the header of the file
                 if line[column_links["time"]].isdecimal():
                     t.append(int(line[column_links["time"]]))
-                    if "0" not in team_infos:
-                        team_infos.update({"0": {}})
+                    if "0" not in pID_dict:
+                        pID_dict.update({"0": {}})
                     # create links
                     for identifier in sensor_links:
                         # extract identifier
-                        if identifier not in team_infos["0"]:
-                            team_infos["0"].update({identifier: []})
+                        if identifier not in pID_dict["0"]:
+                            pID_dict["0"].update({identifier: []})
                         # extract ids
                         if (
                             line[column_links[identifier]]
-                            not in team_infos["0"][identifier]
+                            not in pID_dict["0"][identifier]
                         ):
-                            team_infos["0"][identifier].append(
+                            pID_dict["0"][identifier].append(
                                 line[column_links[identifier]]
                             )
 
     # sort dict
-    team_infos = dict(sorted(team_infos.items()))
+    pID_dict = dict(sorted(pID_dict.items()))
 
     # estimate framerate
     timestamps = list(set(t))
@@ -212,17 +212,17 @@ def get_meta_data(
     number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / framerate))
     t_null = timestamps[0]
 
-    return team_infos, number_of_frames, framerate, t_null
+    return pID_dict, number_of_frames, framerate, t_null
 
 
 def create_links_from_meta_data(
-    team_infos: Dict[str, Dict[str, List[str]]], identifier: str = None
+    pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None
 ) -> Dict[str, Dict[str, int]]:
     """Creates a dictionary from the team_info dict linking the identifier to the xID.
 
     Parameters
     ----------
-    team_infos: Dict[str, Dict[str, List[str]]],
+    pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
         identifying column in every team.
         'team_info[team][identifying_column] = [pID1, pID, ..., pIDn]'
@@ -249,14 +249,14 @@ def create_links_from_meta_data(
 
     for player_id in ["name", "mapped_id", "sensor_id"]:
         if identifier is None:
-            if player_id in list(team_infos.values())[0]:
+            if player_id in list(pID_dict.values())[0]:
                 identifier = player_id
                 break
 
     links = {}
-    for gID in team_infos:
+    for gID in pID_dict:
         links.update(
-            {gID: {ID: xID for xID, ID in enumerate(team_infos[gID][identifier])}}
+            {gID: {ID: xID for xID, ID in enumerate(pID_dict[gID][identifier])}}
         )
 
     return links
@@ -283,10 +283,10 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     """
 
     # get metadata
-    team_infos, number_of_frames, framerate, t_null = get_meta_data(filepath_data)
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(filepath_data)
 
     # get links
-    links = create_links_from_meta_data(team_infos)
+    links = create_links_from_meta_data(pID_dict)
     # get column-links
     column_links = _get_column_links(filepath_data)
 
