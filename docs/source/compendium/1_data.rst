@@ -58,19 +58,3 @@ At this point you might be rightfully asking yourself: Why? Why do we need anoth
 The answer is, while we love those packages out there, that we did not find a solution that did fit our needs. Available packages are either tightly connected to a certain data format, or solve *one* particular problem. Ultimately, this means that each of these isolated solutions has their own interface. And this still leaves us with the core problem discussed on this page: connecting all those, partly incompatible, interfaces.
 
 We felt that as long as there is no underlying, high-level framework, each and every use case again and again needs its own implementation. At last, we found ourselves refactoring the same code - and there are certain data processing or plotting routines that are required in *almost every* project - over and over again just to fit the particular data structures we we're dealing with at that time.
-
-
-Design Principles
-=================
-
-At last, let's summarize a few design principles that we build our package around. These are problem-specific and on top of any general software design principles. We've encountered many little questions on how to solve *this* or how to incorporate *that* special case. Often then, half a dozen possible solutions come to mind, none of which appears to be clearly right or wrong. If you've decided to contribute and find yourself in this situation, these principles hopefully come in handy.
-
-1. **Provider Independence** -
-
-2. **Intuitive High-Level Interfaces** -
-
-3. **Sensible Defaults** -
-
-4. **Flexibility and Modularity** -
-
-5. **Soft Convention Enforcement** -
