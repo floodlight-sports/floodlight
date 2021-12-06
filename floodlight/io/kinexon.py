@@ -48,7 +48,7 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
             - sensor_id: 'sensor id'
             - mapped_id: 'mapped id'
             - name: 'full name'
-            - group_id: 'group id'
+            - team_id: 'group id'
             - x_coord: 'x in m'
             - y_coord: 'y in m'
 
@@ -62,7 +62,7 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
         "sensor_id": "sensor id",
         "mapped_id": "mapped id",
         "name": "full name",
-        "group_id": "group id",
+        "team_id": "group id",
         "x_coord": "x in m",
         "y_coord": "y in m",
     }
@@ -90,7 +90,7 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
 def get_meta_data(
     filepath_data: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
-    """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
+    """Reads Kinexon's position data file and extracts meta-data about teams, sensors,
     length and framerate.
 
     Parameters
@@ -102,8 +102,8 @@ def get_meta_data(
     -------
     team_infos: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
-        identifying column in every group.
-        'team_info[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        identifying column in every team.
+        'team_info[team][identifying_column] = [pID1, pID, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
@@ -121,13 +121,13 @@ def get_meta_data(
 
     # sensor-identifier
     sensor_links = column_links.copy()
-    for key in ["time", "group_id", "x_coord", "y_coord"]:
+    for key in ["time", "team_id", "x_coord", "y_coord"]:
         del sensor_links[key]
 
     team_infos = {}
     t = []
-    # check for group id
-    if "group_id" in column_links:
+    # check for team id
+    if "team_id" in column_links:
         # loop
         with open(str(filepath_data), "r") as f:
             while True:
@@ -138,30 +138,28 @@ def get_meta_data(
                 line = line_string.split(",")
                 # skip the header of the file
                 if line[column_links["time"]].isdecimal():
-                    # extract group id
+                    # extract team id
                     t.append(int(line[column_links["time"]]))
-                    if line[column_links["group_id"]] not in team_infos:
-                        team_infos.update({line[column_links["group_id"]]: {}})
+                    if line[column_links["team_id"]] not in team_infos:
+                        team_infos.update({line[column_links["team_id"]]: {}})
                     # create links
                     for identifier in sensor_links:
                         # extract identifier
-                        if identifier not in team_infos[line[column_links["group_id"]]]:
-                            team_infos[line[column_links["group_id"]]].update(
+                        if identifier not in team_infos[line[column_links["team_id"]]]:
+                            team_infos[line[column_links["team_id"]]].update(
                                 {identifier: []}
                             )
                         # extract ids
                         if (
                             line[column_links[identifier]]
-                            not in team_infos[line[column_links["group_id"]]][
-                                identifier
-                            ]
+                            not in team_infos[line[column_links["team_id"]]][identifier]
                         ):
-                            team_infos[line[column_links["group_id"]]][
+                            team_infos[line[column_links["team_id"]]][
                                 identifier
                             ].append(line[column_links[identifier]])
-    # no group id in data
+    # no team id in data
     else:
-        print("Since no groups exist in data, artificial group '0' is created!")
+        print("Since no teams exist in data, artificial team '0' is created!")
         with open(str(filepath_data), "r") as f:
             while True:
                 line_string = f.readline()
@@ -226,8 +224,8 @@ def create_links_from_meta_data(
     ----------
     team_infos: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
-        identifying column in every group.
-        'team_info[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        identifying column in every team.
+        'team_info[team][identifying_column] = [pID1, pID, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
@@ -246,7 +244,7 @@ def create_links_from_meta_data(
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        Link-dictionary of the form `links[group][identifier-ID] = xID`.
+        Link-dictionary of the form `links[team][identifier-ID] = xID`.
     """
 
     for player_id in ["name", "mapped_id", "sensor_id"]:
@@ -279,8 +277,8 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     Returns
     -------
     positions: List[XY]
-        XY-Object for the whole game. The order of groups is ascending according to
-        their group id. The order inside the groups is ascending according to their
+        XY-Object for the whole game. The order of teams is ascending according to
+        their team id. The order inside the teams is ascending according to their
         appearance in the data.
     """
 
@@ -295,14 +293,10 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     # create np.array for data
     number_of_sensors = {}
     xydata = {}
-    for group in links:
-        number_of_sensors.update({group: len(links[group])})
+    for team in links:
+        number_of_sensors.update({team: len(links[team])})
         xydata.update(
-            {
-                group: np.full(
-                    [number_of_frames + 1, number_of_sensors[group] * 2], np.nan
-                )
-            }
+            {team: np.full([number_of_frames + 1, number_of_sensors[team] * 2], np.nan)}
         )
 
     # loop
@@ -316,10 +310,10 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
             # skip the header of the file
             if line[column_links["time"]].isdecimal():
                 timestamp = int(line[column_links["time"]])
-                # set group
-                group = line[column_links["group_id"]]
+                # set team
+                team = line[column_links["team_id"]]
                 # set column
-                x_col = links[group][line[column_links["name"]]] * 2
+                x_col = links[team][line[column_links["name"]]] * 2
                 y_col = x_col + 1
                 # set row
                 row = int((timestamp - t_null) / (1000 / frame_rate))
@@ -330,13 +324,13 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
 
                 # insert (x, y)-data into column and row of respective array
                 if x_coordinate != "":
-                    xydata[group][row, x_col] = x_coordinate
+                    xydata[team][row, x_col] = x_coordinate
 
                 if y_coordinate != "":
-                    xydata[group][row, y_col] = y_coordinate
+                    xydata[team][row, y_col] = y_coordinate
 
     data_objects = []
-    for group in xydata:
-        data_objects.append(XY(xy=xydata[group]))
+    for team in xydata:
+        data_objects.append(XY(xy=xydata[team]))
 
     return data_objects
