@@ -76,6 +76,10 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
         if mapping[key] in recorded_columns:
             column_links.update({key: recorded_columns.index(mapping[key])})
 
+    # insert team_id if tis missing
+    if "team_id" not in column_links:
+        column_links.update({"team_id": None})
+
     # check if necessary columns are available
     if not all(columns in column_links for columns in necessary_columns):
         print(
@@ -127,7 +131,7 @@ def get_meta_data(
     pID_dict = {}
     t = []
     # check for team id
-    if "team_id" in column_links:
+    if column_links["team_id"] is not None:
         # loop
         with open(str(filepath_data), "r") as f:
             while True:
