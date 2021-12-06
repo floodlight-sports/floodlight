@@ -37,12 +37,21 @@ class Events:
     direction: str = None
 
     def __post_init__(self):
-        init_check = True
+
         # check for missing essential columns
-        init_check *= self.check_for_essential_cols()
+        assert (
+            self.check_for_essential_cols()
+        ), "Could not create Events object, missing essential columns!"
+
         # check for ranges and dtypes
-        init_check *= self.check_essential_cols()
-        init_check *= self.check_protected_cols()
+        assert self.check_essential_cols(), (
+            "Could not create Events object, at least one essential column does not "
+            "satisfy the general conditions!"
+        )
+        assert self.check_protected_cols(), (
+            "Could not create Events object, at least one protected column does not "
+            "satisfy the general conditions!"
+        )
 
     def __str__(self):
         return f"Floodlight Events object of shape {self.events.shape}"
@@ -55,6 +64,9 @@ class Events:
 
     def __setitem__(self, key, value):
         self.events[key] = value
+        print("Checks")
+        self.check_essential_cols()
+        self.check_protected_cols()
 
     @property
     def essential(self):
@@ -107,6 +119,7 @@ class Events:
 
     def definition_check(self, col, definitions):
         check = True
+
         # check dtypes
         if self.events.dtypes[col] not in definitions[col]["dtypes"]:
             check = False
@@ -114,22 +127,29 @@ class Events:
                 f"Events column {col} having illegal dtype {self.events.dtypes[col]}, "
                 f"should be {definitions[col]['dtypes']}!"
             )
-        # check value range
-        val_range = definitions[col]["value_range"]
 
-        if val_range is None:
+        # check if value range is defined
+        if definitions[col]["value_range"] is None:
             return check
 
-        if not (val_range[0] <= self.events[col]).all():
+        # skip extra allowed values
+        check_col = self.events[col]
+        if len(definitions[col]["value_range"]) == 3:
+            if definitions[col]["value_range"][2] is None:
+                check_col = check_col.dropna()
+            else:
+                check_col = check_col[check_col != definitions[col]["value_range"][2]]
+
+        # check value range for remaining values
+        if not (definitions[col]["value_range"][0] <= check_col).all():
             warnings.warn(
                 f"Events column {col} has at least one value smaller than "
-                f"{val_range[0]}!"
+                f"{definitions[col]['value_range'][0]}!"
             )
-
-        if not (self.events[col] <= val_range[1]).all():
+        if not (check_col <= definitions[col]["value_range"][1]).all():
             warnings.warn(
                 f"Events column {col} has at least one value larger than "
-                f"{val_range[1]}!"
+                f"{definitions[col]['value_range'][1]}!"
             )
 
         return check
