@@ -103,10 +103,13 @@ def get_meta_data(
     Returns
     -------
     team_infos: Dict[str, Dict[str, List[str]]],
-        Nested dictionary that stores information about the ids from every identifier
-        in every group. Identifier are sensor_id, mapped_id, name. If the respective
-        id-type is not in the recorded parameters, it is not listed in team_infos.
-        'team_info[group][identifier] = [id1, id2, ..., idn]'
+        Nested dictionary that stores information about the pIDs from every player-
+        identifying column in every group.
+        'team_info[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        When recording and exporting Kinexon data, the pID can be stored
+        in different columns. Player-identifying columns are "sensor_id", "mapped_id",
+        and "full_name". If the respective column is in the recorded data, its pIDs are
+        listed in team_infos.
     number_of_frames: int
         Number of frames from the first to the last recorded frame.
     frame_rate: int
