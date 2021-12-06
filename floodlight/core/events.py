@@ -1,5 +1,6 @@
-import warnings
 from dataclasses import dataclass
+from typing import Dict
+import warnings
 
 import pandas as pd
 
@@ -37,21 +38,7 @@ class Events:
     direction: str = None
 
     def __post_init__(self):
-
-        # check for missing essential columns
-        assert (
-            self.check_for_essential_cols()
-        ), "Could not create Events object, missing essential columns!"
-
-        # check for ranges and dtypes
-        assert self.check_essential_cols(), (
-            "Could not create Events object, at least one essential column does not "
-            "satisfy the general conditions!"
-        )
-        assert self.check_protected_cols(), (
-            "Could not create Events object, at least one protected column does not "
-            "satisfy the general conditions!"
-        )
+        self.check()
 
     def __str__(self):
         return f"Floodlight Events object of shape {self.events.shape}"
@@ -64,9 +51,7 @@ class Events:
 
     def __setitem__(self, key, value):
         self.events[key] = value
-        print("Checks")
-        self.check_essential_cols()
-        self.check_protected_cols()
+        self.__post_init__()
 
     @property
     def essential(self):
@@ -89,21 +74,54 @@ class Events:
 
         return custom
 
-    def check_for_essential_cols(self):
+    def check(self):
+        """Checks an Event object for essential columns after initialization
+
+        It is checked if the Event object contains the essential columns (defined in
+        floodlight.core.definitions.py) and the values in these columns match the
+        desired dtypes and value ranges. If any of these checks fails, an error is
+        thrown. Additionally, all protected columns from the Event object are checked
+        against the definitions, however, if these checks fail there is only a warning
+        at runtime.
+        """
+        # check essential columns
+        assert (
+            self.check_for_essential_cols()
+        ), "Could not create Events object, missing essential columns!"
+        assert self.check_essential_cols(), (
+            "Could not create Events object, at least one essential column does not "
+            "satisfy the general conditions!"
+        )
+        # check protected columns
+        self.check_protected_cols()
+
+    def check_for_essential_cols(self) -> bool:
+        """Checks if the essential columns exist in the inner events DataFrame
+
+        Returns
+        -------
+        check: bool
+            True if all essential columns are in self.events and False otherwise
+        """
         check = True
-
-        if "eID" not in self.essential:
-            check = False
-            warnings.warn("Events Object is missing the essential event column eID!")
-        if "gameclock" not in self.essential:
-            check = False
-            warnings.warn(
-                "Events Object is missing the essential event column gameclock!"
-            )
-
+        for col in essential_events_columns:
+            if col not in self.essential:
+                check = False
+                warnings.warn(
+                    f"Events Object is missing the essential event column {col}!"
+                )
         return check
 
-    def check_essential_cols(self):
+    def check_essential_cols(self) -> bool:
+        """Perform the checks against the definitions (from
+        floodlight.core.definitions.py) for all essential columns in the inner events
+        DataFrame
+
+        Returns
+        -------
+        check: bool
+            True if the checks for all essential columns pass and False otherwise
+        """
         check = True
         for col in self.essential:
             check *= self.definition_check(col, essential_events_columns)
@@ -111,15 +129,43 @@ class Events:
         return check
 
     def check_protected_cols(self):
+        """Perform the checks against the definitions (from
+        floodlight.core.definitions.py) for all protected columns in the inner events
+        DataFrame
+
+        Returns
+        -------
+        check: bool
+            True if the checks for all protected columns pass and False otherwise
+        """
         check = True
         for col in self.protected:
             check *= self.definition_check(col, protected_columns)
 
         return check
 
-    def definition_check(self, col, definitions):
-        check = True
+    def definition_check(self, col: str, definitions: Dict[str, Dict]) -> bool:
+        """Perform the checks for dtype and value range for a single column of the inner
+        event DataFrame
 
+        Parameters
+        ----------
+        col: str
+            Column to be checked
+        definitions: Dict
+            Dictionary for each column name to be checked. Each entry is a Dictionary
+            containing definitions for allowed dtypes and value ranges of the respective
+            column. Information about dtypes is given as List of either str or object.
+            Information about value_range is given as a List of the form [min_value,
+            max_value, extra_value] where the extra_value indicates an additionally
+            allowed value that does not fit within the defined value range (e.g. None).
+
+        Returns
+        -------
+        check: bool
+            True if the checks for dtype and value range pass and False otherwise
+        """
+        check = True
         # check dtypes
         if self.events.dtypes[col] not in definitions[col]["dtypes"]:
             check = False
