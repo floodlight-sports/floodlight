@@ -51,7 +51,7 @@ class Events:
 
     def __setitem__(self, key, value):
         self.events[key] = value
-        self.__post_init__()
+        self.check()
 
     @property
     def essential(self):
@@ -77,26 +77,27 @@ class Events:
     def check(self):
         """Checks an Event object for essential columns after initialization
 
-        It is checked if the Event object contains the essential columns (defined in
-        floodlight.core.definitions.py) and the values in these columns match the
-        desired dtypes and value ranges. If any of these checks fails, an error is
-        thrown. Additionally, all protected columns from the Event object are checked
-        against the definitions, however, if these checks fail there is only a warning
-        at runtime.
+        It is checked if the Event object contains the mandatory columns (defined in
+        floodlight.core.definitions) and the values in these columns match the desired
+        dtypes and value ranges. If any of these checks fails, an error is thrown.
+        Additionally, all protected columns from the Event object are checked against
+        the definitions, however, if these checks fail there is only a warning  at
+        runtime.
         """
-        # check essential columns
+        # check essential columns and throw errors if checks fail
         assert (
             self.check_for_essential_cols()
-        ), "Could not create Events object, missing essential columns!"
+        ), "Found irregular Events object missing at least one essential column!"
         assert self.check_essential_cols(), (
-            "Could not create Events object, at least one essential column does not "
-            "satisfy the general conditions!"
+            "Found irregular Events object with at least one essential column not "
+            "satisfying the given conditions!"
         )
+
         # check protected columns
         self.check_protected_cols()
 
     def check_for_essential_cols(self) -> bool:
-        """Checks if the essential columns exist in the inner events DataFrame
+        """Checks if the mandatory essential columns exist in the inner events DataFrame
 
         Returns
         -------
@@ -113,9 +114,8 @@ class Events:
         return check
 
     def check_essential_cols(self) -> bool:
-        """Perform the checks against the definitions (from
-        floodlight.core.definitions.py) for all essential columns in the inner events
-        DataFrame
+        """Perform the checks against the definitions (from floodlight.core.definitions)
+        for all essential columns in the inner events DataFrame
 
         Returns
         -------
@@ -128,7 +128,7 @@ class Events:
 
         return check
 
-    def check_protected_cols(self):
+    def check_protected_cols(self) -> bool:
         """Perform the checks against the definitions (from
         floodlight.core.definitions.py) for all protected columns in the inner events
         DataFrame
