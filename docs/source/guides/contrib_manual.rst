@@ -64,13 +64,16 @@ Conventions
 These are:
 
 1. Codestyle
-    - [PEP8](https://www.python.org/dev/peps/pep-0008/) and the [Zen of Python](https://www.python.org/dev/peps/pep-0020/).
-    - [Typing](https://docs.python.org/3/library/typing.html)
-    - [Docstrings](https://www.python.org/dev/peps/pep-0257/) in [numpy-style](https://numpydoc.readthedocs.io/en/latest/format.html) (as in this [example](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html))
+
+    * `PEP8 <https://www.python.org/dev/peps/pep-0008/>`_ and the `Zen of Python <https://www.python.org/dev/peps/pep-0008/>`_
+    * `Typing <https://docs.python.org/3/library/typing.html>`_
+    * `Docstrings <https://www.python.org/dev/peps/pep-0257/>`_ in `numpy-style <https://numpydoc.readthedocs.io/en/latest/format.html>`_ (as in this `example <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html>`_)
+
 2. DevOps
-    - Structured commit messages with [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-    - The [git-flow](https://nvie.com/posts/a-successful-git-branching-model/) branching model
-    - Semantic Versioning ([SemVer](https://semver.org/)) for versioning
+
+    * Structured commit messages with `Conventional Commits <https://www.conventionalcommits.org/en/v1.0.0/>`_
+    * The `git-flow <https://nvie.com/posts/a-successful-git-branching-model/>`_ branching model
+    * Semantic Versioning `SemVer <https://semver.org/>`_ for versioning
 
 
 Local workflows
@@ -202,4 +205,3 @@ So much of the theory, let's see how one can perform all these steps in practice
 ## Resources
 
 https://git-scm.com/book/de/v2/GitHub-Mitwirken-an-einem-Projekt
-
