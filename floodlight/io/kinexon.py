@@ -77,10 +77,6 @@ def _get_parameter_links(
         if mapping[key] in recorded_parameters:
             parameter_links.update({key: recorded_parameters.index(mapping[key])})
 
-    # insert group_id if its missing
-    if "group_id" not in parameter_links:
-        parameter_links.update({"group_id": None})
-
     # check if necessary columns are available
     if not all(params in parameter_links for params in necessary_columns):
         print(
@@ -129,7 +125,7 @@ def get_meta_data(
     team_infos = {}
     t = []
     # check for group id
-    if parameter_links["group_id"] is not None:
+    if "group_id" in parameter_links:
         # loop
         with open(str(filepath_data), "r") as f:
             while True:
