@@ -331,6 +331,6 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
 
     data_objects = []
     for team in xydata:
-        data_objects.append(XY(xy=xydata[team]))
+        data_objects.append(XY(xy=xydata[team], framerate=framerate))
 
     return data_objects
