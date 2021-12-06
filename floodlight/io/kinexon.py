@@ -234,13 +234,17 @@ def create_links_from_meta_data(
         in every group. Identifier are sensor_id, mapped_id, name. If the respective
         id-type is not in the recorded parameters, it is not listed in team_infos.
         'team_info[group][identifier] = [id1, id2, ..., idn]'
-    identifier: str
+    identifier: str, default None
         Column-name of personal identifier in Kinexon.csv-file.
         Can be one of:
             - 'sensor_id'
             - 'mapped_id'
             - 'name'
-
+        When recording and exporting Kinexon data, the pID can be stored
+        in different columns. Player-identifying columns are "sensor_id", "mapped_id",
+        and "full_name". If specified to one of the above, keys in links will be the
+        pIDs in that column. If not specified, it will use one of the columns, favoring
+        "name" over "mapped_id" over "sensor_id".
     Returns
     -------
     links: Dict[str, Dict[str, int]]
@@ -262,9 +266,7 @@ def create_links_from_meta_data(
     return links
 
 
-def read_kinexon_file(
-    filepath_data: Union[str, Path], identifier: str = None
-) -> List[XY]:
+def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     """Parse Kinexon files and extract position data.
 
     Kinexon's local positioning system delivers one .csv file containing the position
@@ -275,12 +277,6 @@ def read_kinexon_file(
     ----------
     filepath_data: str of pathlib.Path
         Full path to Kinexon.csv-file.
-    identifier: str
-        Column-name of personal identifier in Kinexon.csv-file.
-        Can be one of:
-            - 'sensor_id'
-            - 'mapped_id'
-            - 'name'
 
     Returns
     -------
@@ -294,7 +290,7 @@ def read_kinexon_file(
     team_infos, number_of_frames, frame_rate, t_null = get_meta_data(filepath_data)
 
     # get links
-    links = create_links_from_meta_data(team_infos, identifier)
+    links = create_links_from_meta_data(team_infos)
     # get parameter-links
     parameter_links = _get_parameter_links(filepath_data)
 
