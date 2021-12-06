@@ -34,8 +34,8 @@ Oh, and so far we've only talked about data for single matches. What we haven't 
 Let's get serious again. Sports data analysis is awesome, but it can become quickly complicated and rather tedious on the implementation level. All this complication leads to - in line with good ol' data analysis tradition - massive overhead time needed for data parsing, pre-processing and wrangling. Furthermore, the formal incompatibility of different data sources is a noticeable hindrance on unfolding the data's full potential. There's a good reason why hardly any applications or scientific publications exist that combine two of the aforementioned data sources (with a few exceptions).
 
 
-Core Data Objects
-=================
+Core Objects
+============
 
 We aim to tackle this challenge with this package. The basic idea is rather simple: To formalize the logic behind team sport data and break down inherent complexity into standalone data structures by *abstraction* and *generalization*. The resulting objects should be independent from any data provider or source. They should be clear and intuitive to use and allow a clean interface to data loading and processing. That way, any data processing is - in typical object-oriented fashion - attached to the data objects. And effectively decoupled from any provider specifics.
 
@@ -43,7 +43,7 @@ To realize this idea, we've tried to break down all that information you can ext
 
 1. **Data level objects** store raw data such as player positions, events, or the used coordinate system. These are essentially independent data fragments that in itself do not carry any further information of where they come from. They are pure data structures with methods concerned with data manipulation: spatial or temporal transforms, clipping and slicing, modifications, visualizations, and so on.
 
-2. **Observation level objects** are concerned with bundling and enriching data level objects into "meaningful" data structures. Each observation, such as a match or training drill, can contain a number of data level objects for each *segment* (such as half times) and *team* (such as the home and away team). It further incorporates objects regarding match or player information.
+2. **Observation level objects** are concerned with bundling and enriching data level objects into "meaningful" data structures. Each observation, such as a match or training drill, can contain a number of data level objects for each *segment* (such as half times) and *team* (such as the home and away team). An observation-level object contains all these data-level objects and further incorporates objects regarding match or player information.
 
 3. **Analysis level objects** contain analysis-related objects such as performance metrics or high-level models of match play.
 
@@ -58,19 +58,3 @@ At this point you might be rightfully asking yourself: Why? Why do we need anoth
 The answer is, while we love those packages out there, that we did not find a solution that did fit our needs. Available packages are either tightly connected to a certain data format, or solve *one* particular problem. Ultimately, this means that each of these isolated solutions has their own interface. And this still leaves us with the core problem discussed on this page: connecting all those, partly incompatible, interfaces.
 
 We felt that as long as there is no underlying, high-level framework, each and every use case again and again needs its own implementation. At last, we found ourselves refactoring the same code - and there are certain data processing or plotting routines that are required in *almost every* project - over and over again just to fit the particular data structures we we're dealing with at that time.
-
-
-Design Principles
-=================
-
-At last, let's summarize a few design principles that we build our package around. These are problem-specific and on top of any general software design principles. We've encountered many little questions on how to solve *this* or how to incorporate *that* special case. Often then, half a dozen possible solutions come to mind, none of which appears to be clearly right or wrong. If you've decided to contribute and find yourself in this situation, these principles hopefully come in handy.
-
-1. **Provider Independence** -
-
-2. **Intuitive High-Level Interfaces** -
-
-3. **Sensible Defaults** -
-
-4. **Flexibility and Modularity** -
-
-5. **Soft Convention Enforcement** -
