@@ -110,7 +110,7 @@ def get_meta_data(
         listed in team_infos.
     number_of_frames: int
         Number of frames from the first to the last recorded frame.
-    frame_rate: int
+    framerate: int
         Estimated framerate in frames per second. Estimated from the smallest difference
         between two consecutive frames.
     t_null: int
@@ -196,23 +196,23 @@ def get_meta_data(
     minimum_time_step = np.min(np.diff(timestamps))
     # timestamps are in milliseconds. Magic number 1000 is needed for conversion to
     # seconds.
-    frame_rate = 1000 / minimum_time_step
+    framerate = 1000 / minimum_time_step
 
     # non-integer framerate
-    if not frame_rate.is_integer():
+    if not framerate.is_integer():
         warnings.warn(
             f"Non-integer frame rate: Minimum time step of "
             f"{minimum_time_step} detected. Framerate is round to "
-            f"{int(frame_rate)}."
+            f"{int(framerate)}."
         )
 
-    frame_rate = int(frame_rate)
+    framerate = int(framerate)
 
     # 1000 again needed to account for millisecond to second conversion.
-    number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / frame_rate))
+    number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / framerate))
     t_null = timestamps[0]
 
-    return team_infos, number_of_frames, frame_rate, t_null
+    return team_infos, number_of_frames, framerate, t_null
 
 
 def create_links_from_meta_data(
@@ -283,7 +283,7 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     """
 
     # get metadata
-    team_infos, number_of_frames, frame_rate, t_null = get_meta_data(filepath_data)
+    team_infos, number_of_frames, framerate, t_null = get_meta_data(filepath_data)
 
     # get links
     links = create_links_from_meta_data(team_infos)
@@ -316,7 +316,7 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
                 x_col = links[team][line[column_links["name"]]] * 2
                 y_col = x_col + 1
                 # set row
-                row = int((timestamp - t_null) / (1000 / frame_rate))
+                row = int((timestamp - t_null) / (1000 / framerate))
 
                 # set (x, y)-data
                 x_coordinate = line[column_links["x_coord"]]
