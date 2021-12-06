@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import List, Dict, Tuple, Union
 
@@ -197,8 +198,19 @@ def get_meta_data(
     timestamps.sort()
     timestamps = np.array(timestamps)
     minimum_time_step = np.min(np.diff(timestamps))
+    # timestamps are in milliseconds. Magic number 1000 is needed for conversion to
+    # seconds.
     frame_rate = int(1000 / minimum_time_step)
 
+    # non-integer framerate
+    if not frame_rate.is_integer():
+        warnings.warn(
+            f"Non-integer frame rate: Minimum time step of "
+            f"{minimum_time_step} detected. Framerate was round to "
+            f"{frame_rate}."
+        )
+
+    # 1000 again needed to account for millisecond to second conversion.
     number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / frame_rate))
     t_null = timestamps[0]
 
