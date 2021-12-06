@@ -92,11 +92,11 @@ def get_meta_data(
     filepath_data: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
-    length and framerate
+    length and framerate.
 
     Parameters
     ----------
-    filepath_data: str of pathlib.Path
+    filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
 
     Returns
