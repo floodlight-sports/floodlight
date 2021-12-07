@@ -9,7 +9,7 @@ essential_events_columns = {
                       "type. The resulting system can either be provider specific, or "
                       "customary. However, a link between eID and the event "
                       "definitions/descriptions should be available",
-        "dtypes": [str, int, object, 'int64'],
+        "dtypes": [str, int, object, 'int64', 'float64'],
         "value_range": None,
     },
     "gameclock": {
