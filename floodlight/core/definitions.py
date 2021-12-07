@@ -5,12 +5,12 @@ import datetime
 # fmt: off
 essential_events_columns = {
     "eID": {
-        "definition": "Event ID - unqiue number or string that identifies the event "
+        "definition": "Event ID - unique number or string that identifies the event "
                       "type. The resulting system can either be provider specific, or "
                       "customary. However, a link between eID and the event "
                       "definitions/descriptions should be available",
         "dtypes": [str, int],
-        "value_range": None
+        "value_range": None,
     },
     "gameclock": {
         "definition": "Elapsed time relative to segment start in seconds",
@@ -72,9 +72,10 @@ protected_columns = {
     },
     "outcome": {
         "definition": "Result of an event as included by many data providers. "
-                      "Positive/Successful is 1, Negative/Unsuccessful is 0",
+                      "Positive/Successful is 1, Negative/Unsuccessful is 0, may be"
+                      "None if no outcome can be defined",
         "dtypes": [int],
-        "value_range": [0, 1]
+        "value_range": [0, 1, None]
     },
     "at_x": {
         "definition": "The x position (longitudinal) where the event took place or "
