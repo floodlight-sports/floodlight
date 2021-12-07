@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-from floodlight.utils.typing import Numeric
+from floodlight.utils.types import Numeric
 
 
 @dataclass

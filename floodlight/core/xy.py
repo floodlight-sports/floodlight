@@ -3,7 +3,7 @@ from typing import Tuple
 
 import numpy as np
 
-from floodlight.utils.typing import Numeric
+from floodlight.utils.types import Numeric
 
 
 @dataclass
