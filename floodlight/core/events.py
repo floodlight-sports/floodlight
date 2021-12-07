@@ -75,25 +75,21 @@ class Events:
         return custom
 
     def check(self):
-        """Checks an Event object for essential columns after initialization
+        """Checks an Event object and throws an error if any mandatory column misses
 
         It is checked if the Event object contains the mandatory columns (defined in
-        floodlight.core.definitions) and the values in these columns match the desired
-        dtypes and value ranges. If any of these checks fails, an error is thrown.
-        Additionally, all protected columns from the Event object are checked against
-        the definitions, however, if these checks fail there is only a warning  at
-        runtime.
+        floodlight.core.definitions) and an error is thrown if this check fails.
+        Additionally, all essential and all protected columns from the Event object are
+        checked for dtypes and value ranges from the definitions, however, if these
+        checks fail there is only a warning at runtime.
         """
-        # check essential columns and throw errors if checks fail
+        # check for essential columns and throw error if check fails
         assert (
             self.check_for_essential_cols()
         ), "Found irregular Events object missing at least one essential column!"
-        assert self.check_essential_cols(), (
-            "Found irregular Events object with at least one essential column not "
-            "satisfying the given conditions!"
-        )
 
-        # check protected columns
+        # check dtypes and value range of essential and protected columns
+        self.check_essential_cols()
         self.check_protected_cols()
 
     def check_for_essential_cols(self) -> bool:
@@ -188,11 +184,13 @@ class Events:
 
         # check value range for remaining values
         if not (definitions[col]["value_range"][0] <= check_col).all():
+            check = False
             warnings.warn(
                 f"Events column {col} has at least one value smaller than "
                 f"{definitions[col]['value_range'][0]}!"
             )
         if not (check_col <= definitions[col]["value_range"][1]).all():
+            check = False
             warnings.warn(
                 f"Events column {col} has at least one value larger than "
                 f"{definitions[col]['value_range'][1]}!"
