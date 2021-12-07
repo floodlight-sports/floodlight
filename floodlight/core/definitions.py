@@ -5,11 +5,11 @@ import datetime
 # fmt: off
 essential_events_columns = {
     "eID": {
-        "definition": "Event ID - unqiue number or string that identifies the event "
+        "definition": "Event ID - unique number or string that identifies the event "
                       "type. The resulting system can either be provider specific, or "
                       "customary. However, a link between eID and the event "
                       "definitions/descriptions should be available",
-        "dtypes": [str, int, object, 'int64', 'float64'],
+        "dtypes": [str, int],
         "value_range": None,
     },
     "gameclock": {
@@ -23,12 +23,12 @@ essential_events_columns = {
 protected_columns = {
     "pID": {
         "definition": "Player ID - unique number or string for player identification ",
-        "dtypes": [str, int, object, 'int64'],
+        "dtypes": [str, int],
         "value_range": None
     },
     "jID": {
         "definition": "Jersey ID - a players jersey number in a single observation",
-        "dtypes": [int, 'int64'],
+        "dtypes": [int],
         "value_range": [0, np.inf]
     },
     "xID": {
@@ -36,45 +36,45 @@ protected_columns = {
                       "for a given match (starts counting at 1). This is primarily used"
                       " for locating players data in XY objects, but can also be "
                       "helpful iterating or displaying all players of a team",
-        "dtypes": [int, 'int64'],
+        "dtypes": [int],
         "value_range": [1, np.inf]
     },
     "tID": {
         "definition": "Team ID - unique number or string for team identification ",
-        "dtypes": [str, int, object, 'int64'],
+        "dtypes": [str, int],
         "value_range": None
     },
     "mID": {
         "definition": "Match ID - unique number or string for match identification ",
-        "dtypes": [str, int, object, 'int64'],
+        "dtypes": [str, int],
         "value_range": None
     },
     "cID": {
         "definition": "Competition ID - unique number or string for competition (e.g. "
                       "league or cup) identification",
-        "dtypes": [str, int, object, 'int64'],
+        "dtypes": [str, int],
         "value_range": None
     },
     "timestamp": {
         "definition": "Datetime timestamp. Should be aware and carry a pytz timezone",
-        "dtypes": [datetime.datetime, 'datetime64[ns, UTC]'],
+        "dtypes": [datetime.datetime],
         "value_range": None
     },
     "minute": {
         "definition": "Minute of the segment the event took place",
-        "dtypes": [int, 'int64'],
+        "dtypes": [int],
         "value_range": [0, np.inf]
     },
     "second": {
         "definition": "Second of the minute of the segment the event took place",
-        "dtypes": [int, 'int64'],
+        "dtypes": [int],
         "value_range": [0, np.inf]
     },
     "outcome": {
         "definition": "Result of an event as included by many data providers. "
                       "Positive/Successful is 1, Negative/Unsuccessful is 0, may be"
                       "None if no outcome can be defined",
-        "dtypes": [int, 'int64', 'float64'],
+        "dtypes": [int],
         "value_range": [0, 1, None]
     },
     "at_x": {

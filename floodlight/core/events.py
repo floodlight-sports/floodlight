@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Any
 import warnings
 
+import numpy as np
 import pandas as pd
 
 from floodlight.core.definitions import essential_events_columns, protected_columns
@@ -84,9 +85,10 @@ class Events:
         checks fail there is only a warning at runtime.
         """
         # check for essential columns and throw error if check fails
-        assert (
-            self.check_for_essential_cols()
-        ), "Found irregular Events object missing at least one essential column!"
+        if not self.check_for_essential_cols():
+            raise TypeError(
+                "Found irregular Events object missing at least one essential column!"
+            )
 
         # check dtypes and value range of essential and protected columns
         self.check_essential_cols()
@@ -126,7 +128,7 @@ class Events:
 
     def check_protected_cols(self) -> bool:
         """Perform the checks against the definitions (from
-        floodlight.core.definitions.py) for all protected columns in the inner events
+        floodlight.core.definitions) for all protected columns in the inner events
         DataFrame
 
         Returns
@@ -141,34 +143,26 @@ class Events:
         return check
 
     def definition_check(self, col: str, definitions: Dict[str, Dict]) -> bool:
-        """Perform the checks for dtype and value range for a single column of the inner
-        event DataFrame
+        """Perform the checks for value range for a single column of the inner event
+        DataFrame using the specifications from floodlight.core.definitions.
 
         Parameters
         ----------
         col: str
-            Column to be checked
+            Column of the inner event DataFrame to be checked
         definitions: Dict
             Dictionary for each column name to be checked. Each entry is a Dictionary
-            containing definitions for allowed dtypes and value ranges of the respective
-            column. Information about dtypes is given as List of either str or object.
-            Information about value_range is given as a List of the form [min_value,
-            max_value, extra_value] where the extra_value indicates an additionally
-            allowed value that does not fit within the defined value range (e.g. None).
+            containing definitions for allowed value ranges of the respective
+            column. Information about value_range is given as a List of the form
+            [min_value, max_value, extra_value] where the extra_value indicates an
+            additionally allowed value that does not fit within the defined value range.
 
         Returns
         -------
         check: bool
-            True if the checks for dtype and value range pass and False otherwise
+            True if the checks for value range pass and False otherwise
         """
         check = True
-        # check dtypes
-        if self.events.dtypes[col] not in definitions[col]["dtypes"]:
-            check = False
-            warnings.warn(
-                f"Events column {col} having illegal dtype {self.events.dtypes[col]}, "
-                f"should be {definitions[col]['dtypes']}!"
-            )
 
         # check if value range is defined
         if definitions[col]["value_range"] is None:
@@ -197,3 +191,38 @@ class Events:
             )
 
         return check
+
+    def add_frameclock(self, framerate: int):
+        """Add the column frameclock, computed as the rounded multiplication of
+        gameclock and framerate to the inner events DataFrame.
+
+        Parameters
+        ----------
+        framerate: int
+            Temporal resolution of data in frames per second/Hertz.
+        """
+        frameclock = np.full((len(self.events)), -1, dtype=int)
+        frameclock[:] = np.round(self.events["gameclock"].values * framerate)
+        self.events["frameclock"] = frameclock
+
+    def find(self, col: str, value: Any) -> pd.Series:
+        """Return all elements with the given value from the specified column of the
+        inner events DataFrame.
+
+        Parameters
+        ----------
+        col: str
+            Column of the inner event DataFrame to be searched
+        value: Any
+            Value used to filter the entries from the specified column
+
+        Returns
+        -------
+        pd.Series
+            Series with all entries from the specified column that match the given
+            value, is empty if no entry with the given value is found in the column.
+        """
+        if value is None:
+            return self.events[col][self.events[col].isna()]
+        else:
+            return self.events[self.events[col] == value][col]
