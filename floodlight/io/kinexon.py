@@ -48,7 +48,7 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
             - sensor_id: 'sensor id'
             - mapped_id: 'mapped id'
             - name: 'full name'
-            - team_id: 'group id'
+            - group_id: 'group id'
             - x_coord: 'x in m'
             - y_coord: 'y in m'
 
@@ -58,13 +58,15 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
 
     # relevant columns
     mapping = {
-        "time": "ts in ms",
-        "sensor_id": "sensor id",
-        "mapped_id": "mapped id",
-        "name": "full name",
-        "team_id": "group id",
-        "x_coord": "x in m",
-        "y_coord": "y in m",
+        "ts in ms": "time",
+        "sensor id": "sensor_id",
+        "mapped id": "mapped_id",
+        "full name": "name",
+        "number": "number",
+        "group id": "group_id",
+        "group name": "group_name",
+        "x in m": "x_coord",
+        "y in m": "y_coord",
     }
 
     necessary_columns = ["time", "x_coord", "y_coord"]
@@ -73,16 +75,12 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
     # loop
     for key in mapping:
         # create links
-        if mapping[key] in recorded_columns:
-            column_links.update({key: recorded_columns.index(mapping[key])})
-
-    # insert team_id if tis missing
-    if "team_id" not in column_links:
-        column_links.update({"team_id": None})
+        if key in recorded_columns:
+            column_links.update({mapping[key]: recorded_columns.index(key)})
 
     # check if necessary columns are available
     if not all(columns in column_links for columns in necessary_columns):
-        print(
+        warnings.warn(
             "Data file lacks critical information! "
             "No timestamp or coordinates found."
         )
@@ -94,7 +92,7 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
 def get_meta_data(
     filepath_data: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
-    """Reads Kinexon's position data file and extracts meta-data about teams, sensors,
+    """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
     length and framerate.
 
     Parameters
@@ -106,8 +104,8 @@ def get_meta_data(
     -------
     pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
-        identifying column in every team.
-        'team_info[team][identifying_column] = [pID1, pID, ..., pIDn]'
+        identifying column in every group.
+        'pID_dict[group][identifying_column] = [pID1, pID, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
@@ -122,73 +120,62 @@ def get_meta_data(
     """
 
     column_links = _get_column_links(str(filepath_data))
+    sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
+    column_links_set = set(column_links)
+    recorded_sensor_identifier = list(column_links_set & sensor_identifier)
+    sensor_links = {
+        key: index
+        for (key, index) in column_links.items()
+        if key in recorded_sensor_identifier
+    }
 
-    # sensor-identifier
-    sensor_links = column_links.copy()
-    for key in ["time", "team_id", "x_coord", "y_coord"]:
-        del sensor_links[key]
-
+    # dict for pIDs
     pID_dict = {}
+    # list for timestamps
     t = []
-    # check for team id
-    if column_links["team_id"] is not None:
-        # loop
-        with open(str(filepath_data), "r") as f:
-            while True:
-                line_string = f.readline()
-                # terminate if at end of file
-                if len(line_string) == 0:
-                    break
-                line = line_string.split(",")
-                # skip the header of the file
-                if line[column_links["time"]].isdecimal():
-                    # extract team id
-                    t.append(int(line[column_links["time"]]))
-                    if line[column_links["team_id"]] not in pID_dict:
-                        pID_dict.update({line[column_links["team_id"]]: {}})
-                    # create links
-                    for identifier in sensor_links:
-                        # extract identifier
-                        if identifier not in pID_dict[line[column_links["team_id"]]]:
-                            pID_dict[line[column_links["team_id"]]].update(
-                                {identifier: []}
-                            )
-                        # extract ids
-                        if (
-                            line[column_links[identifier]]
-                            not in pID_dict[line[column_links["team_id"]]][identifier]
-                        ):
-                            pID_dict[line[column_links["team_id"]]][identifier].append(
-                                line[column_links[identifier]]
-                            )
-    # no team id in data
+    # check for group id
+    has_groups = "group_id" in column_links
+    if has_groups:
+
+        def get_group_id(single_line):
+            return single_line[column_links["group_id"]]
+
+    # no groups
     else:
-        print("Since no teams exist in data, artificial team '0' is created!")
-        with open(str(filepath_data), "r") as f:
-            while True:
-                line_string = f.readline()
-                # terminate if at end of file
-                if len(line_string) == 0:
-                    break
-                line = line_string.split(",")
-                # skip the header of the file
-                if line[column_links["time"]].isdecimal():
-                    t.append(int(line[column_links["time"]]))
-                    if "0" not in pID_dict:
-                        pID_dict.update({"0": {}})
-                    # create links
-                    for identifier in sensor_links:
-                        # extract identifier
-                        if identifier not in pID_dict["0"]:
-                            pID_dict["0"].update({identifier: []})
-                        # extract ids
-                        if (
-                            line[column_links[identifier]]
-                            not in pID_dict["0"][identifier]
-                        ):
-                            pID_dict["0"][identifier].append(
-                                line[column_links[identifier]]
-                            )
+
+        def get_group_id(single_line):
+            return "0"
+
+        warnings.warn("Since no group exist in data, artificial group '0' is created!")
+
+    # loop
+    with open(str(filepath_data), "r") as f:
+        # skip the header of the file
+        _ = f.readline()
+        while True:
+            line_string = f.readline()
+            # terminate if at end of file
+            if len(line_string) == 0:
+                break
+            # split str
+            line = line_string.split(",")
+            # extract frames timestamp
+            t.append(int(line[column_links["time"]]))
+            # extract group_id
+            group_id = get_group_id(line)
+            # create group dict in pID_dict
+            if group_id not in pID_dict:
+                pID_dict.update({group_id: {}})
+            # create links
+            for identifier in sensor_links:
+                # extract identifier
+                if identifier not in pID_dict[group_id]:
+                    pID_dict[group_id].update({identifier: []})
+                # extract ids
+                if line[column_links[identifier]] not in pID_dict[group_id][identifier]:
+                    pID_dict[group_id][identifier].append(
+                        line[column_links[identifier]]
+                    )
 
     # sort dict
     pID_dict = dict(sorted(pID_dict.items()))
@@ -222,18 +209,18 @@ def get_meta_data(
 def create_links_from_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None
 ) -> Dict[str, Dict[str, int]]:
-    """Creates a dictionary from the team_info dict linking the identifier to the xID.
+    """Creates a dictionary from the pID_dict linking the identifier to the xID.
 
     Parameters
     ----------
     pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
-        identifying column in every team.
-        'team_info[team][identifying_column] = [pID1, pID, ..., pIDn]'
+        identifying column in every group.
+        'pID_dict[group][identifying_column] = [pID1, pID, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
-        listed in team_infos.
+        listed in pID_dict.
     identifier: str, default None
         Column-name of personal identifier in Kinexon.csv-file.
         Can be one of:
@@ -248,7 +235,7 @@ def create_links_from_meta_data(
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        Link-dictionary of the form `links[team][identifier-ID] = xID`.
+        Link-dictionary of the form `links[group][identifier-ID] = xID`.
     """
 
     for player_id in ["name", "mapped_id", "sensor_id"]:
@@ -281,8 +268,8 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     Returns
     -------
     positions: List[XY]
-        XY-Object for the whole game. The order of teams is ascending according to
-        their team id. The order inside the teams is ascending according to their
+        XY-Object for the whole game. The order of groups is ascending according to
+        their group_id. The order inside the groups is ascending according to their
         appearance in the data.
     """
 
@@ -297,11 +284,27 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     # create np.array for data
     number_of_sensors = {}
     xydata = {}
-    for team in links:
-        number_of_sensors.update({team: len(links[team])})
+    for group in links:
+        number_of_sensors.update({group: len(links[group])})
         xydata.update(
-            {team: np.full([number_of_frames + 1, number_of_sensors[team] * 2], np.nan)}
+            {
+                group: np.full(
+                    [number_of_frames + 1, number_of_sensors[group] * 2], np.nan
+                )
+            }
         )
+
+    has_groups = "group_id" in column_links
+    if has_groups:
+
+        def get_group_id(single_line):
+            return single_line[column_links["group_id"]]
+
+    # no groups
+    else:
+
+        def get_group_id(single_line):
+            return "0"
 
     # loop
     with open(str(filepath_data), "r") as f:
@@ -314,27 +317,26 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
             # skip the header of the file
             if line[column_links["time"]].isdecimal():
                 timestamp = int(line[column_links["time"]])
-                # set team
-                team = line[column_links["team_id"]]
+                # set group
+                group_id = get_group_id(line)
                 # set column
-                x_col = links[team][line[column_links["name"]]] * 2
+                x_col = links[group_id][line[column_links["name"]]] * 2
                 y_col = x_col + 1
                 # set row
                 row = int((timestamp - t_null) / (1000 / framerate))
-
                 # set (x, y)-data
                 x_coordinate = line[column_links["x_coord"]]
                 y_coordinate = line[column_links["y_coord"]]
 
                 # insert (x, y)-data into column and row of respective array
                 if x_coordinate != "":
-                    xydata[team][row, x_col] = x_coordinate
+                    xydata[group_id][row, x_col] = x_coordinate
 
                 if y_coordinate != "":
-                    xydata[team][row, y_col] = y_coordinate
+                    xydata[group_id][row, y_col] = y_coordinate
 
     data_objects = []
-    for team in xydata:
-        data_objects.append(XY(xy=xydata[team], framerate=framerate))
+    for group_id in xydata:
+        data_objects.append(XY(xy=xydata[group_id], framerate=framerate))
 
     return data_objects
