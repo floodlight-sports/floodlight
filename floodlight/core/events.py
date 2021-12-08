@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Dict, List, Tuple, Any
 import warnings
 
 import numpy as np
@@ -110,6 +110,12 @@ class Events:
     def incorrect_value_ranges(self):
         """Returns columns from the inner events DataFrame with value ranges violating
         the specifications from floodlight.core.definitions.
+
+        Returns
+        -------
+        incorrect_columns: List or None
+            List of columns that violate the definitions or None if all columns match
+            the definitions.
         """
 
         incorrect_columns = []
@@ -189,24 +195,31 @@ class Events:
         frameclock[:] = int(self.events["gameclock"].values * framerate)
         self.events["frameclock"] = frameclock
 
-    def find(self, col: str, value: Any) -> pd.Series:
-        """Return all elements with the given value from the specified column of the
-        inner events DataFrame.
+    def find(self, conditions: List[Tuple[str, Any]]) -> pd.DataFrame:
+        """Returns a DataFrame containing all entries from the inner events DataFrame
+         that satisfy all given conditions.
 
         Parameters
         ----------
-        col: str
-            Column of the inner event DataFrame to be searched
-        value: Any
-            Value used to filter the entries from the specified column
-
+        conditions: List[Tuple[str, Any]]
+            Conditions used to filter the columns. Conditions need to have the form
+            (column, value) where column specifies the column of the inner events
+            DataFrame and value specifies the desired value of the column entries.
         Returns
         -------
-        pd.Series
-            Series with all entries from the specified column that match the given
-            value, is empty if no entry with the given value is found in the column.
+        filtered_events: pd.DataFrame
+            A copy of the inner events DataFrame where all entries fulfill all criteria
+            specified in conditions. The DataFrame can be empty if no entry with the
+            given value is found in the column.
         """
-        if value is None:
-            return self.events[col][self.events[col].isna()]
-        else:
-            return self.events[self.events[col] == value][col]
+        filtered_events = self.events.copy()
+
+        for condition in conditions:
+            if condition[1] is None:
+                filtered_events = filtered_events[filtered_events[condition[0]].isna()]
+            else:
+                filtered_events = filtered_events[
+                    filtered_events[condition[0]] == condition[1]
+                ]
+
+        return filtered_events
