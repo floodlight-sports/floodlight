@@ -80,7 +80,7 @@ pip install floodlight
 
 ### Contributing [![Contributions][contrib-image]][contrib-url]
 
-Check out [Contributing.md]([contrib-url]) for a quick rundown of what you need to
+Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
 know to get started. We also provide an extended, beginner-friendly guide on how to
 start contributing in our documentation.
 
