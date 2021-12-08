@@ -192,7 +192,7 @@ class Events:
             Temporal resolution of data in frames per second/Hertz.
         """
         frameclock = np.full((len(self.events)), -1, dtype=int)
-        frameclock[:] = int(self.events["gameclock"].values * framerate)
+        frameclock[:] = np.floor(self.events["gameclock"].values * framerate)
         self.events["frameclock"] = frameclock
 
     def find(self, conditions: List[Tuple[str, Any]]) -> pd.DataFrame:
