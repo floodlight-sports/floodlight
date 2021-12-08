@@ -11,9 +11,23 @@ Hi there, glad you're reading the docs! Oh, and good luck...
 .. toctree::
    :glob:
    :maxdepth: 1
-   :caption: Guides
+   :caption: Package Guide
 
     Getting started <guides/getting_started>
+    Contributing <guides/contrib_manual>
+
+
+.. toctree::
+   :glob:
+   :maxdepth: 0
+   :caption: Compendium
+
+    Intro <compendium/0_compendium>
+    Data <compendium/1_data>
+    Design <compendium/2_design>
+    Time <compendium/3_time>
+    Space <compendium/4_space>
+    Identifier <compendium/5_identifier>
 
 .. toctree::
    :glob:
