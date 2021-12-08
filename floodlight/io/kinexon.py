@@ -105,11 +105,14 @@ def get_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
         identifying column in every group.
-        'pID_dict[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        'pID_dict[group_identifier][identifying_column] = [pID1, pID, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
         listed in pID_dict.
+        As with pID, group ids can be stored in different columns. Group-identifying
+        columns are "group_name" and "group_id". If both are available, group_name will
+        be favored over group_id as the group_identifier.
     number_of_frames: int
         Number of frames from the first to the last recorded frame.
     framerate: int
@@ -128,17 +131,24 @@ def get_meta_data(
         for (key, index) in column_links.items()
         if key in recorded_sensor_identifier
     }
+    group_identifier_set = {"group_id", "group_name"}
+    recorded_group_identifier = list(column_links_set & group_identifier_set)
 
     # dict for pIDs
     pID_dict = {}
     # list for timestamps
     t = []
-    # check for group id
-    has_groups = "group_id" in column_links
+    # check for group identifier
+    has_groups = len(recorded_group_identifier) > 0
+    # extract group identifier
     if has_groups:
+        if "group_name" in recorded_group_identifier:
+            group_identifier = "group_name"
+        elif "group_id" in recorded_group_identifier:
+            group_identifier = "group_id"
 
         def get_group_id(single_line):
-            return single_line[column_links["group_id"]]
+            return single_line[column_links[group_identifier]]
 
     # no groups
     else:
@@ -238,8 +248,8 @@ def create_links_from_meta_data(
         Link-dictionary of the form `links[group][identifier-ID] = xID`.
     """
 
-    for player_id in ["name", "mapped_id", "sensor_id"]:
-        if identifier is None:
+    if identifier is None:
+        for player_id in ["name", "mapped_id", "sensor_id"]:
             if player_id in list(pID_dict.values())[0]:
                 identifier = player_id
                 break
@@ -280,6 +290,9 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     links = create_links_from_meta_data(pID_dict)
     # get column-links
     column_links = _get_column_links(filepath_data)
+    column_links_set = set(column_links)
+    group_identifier_set = {"group_id", "group_name"}
+    recorded_group_identifier = list(column_links_set & group_identifier_set)
 
     # create np.array for data
     number_of_sensors = {}
@@ -294,11 +307,15 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
             }
         )
 
-    has_groups = "group_id" in column_links
+    has_groups = len(recorded_group_identifier) > 0
     if has_groups:
+        if "group_name" in recorded_group_identifier:
+            group_identifier = "group_name"
+        elif "group_id" in recorded_group_identifier:
+            group_identifier = "group_id"
 
         def get_group_id(single_line):
-            return single_line[column_links["group_id"]]
+            return single_line[column_links[group_identifier]]
 
     # no groups
     else:
