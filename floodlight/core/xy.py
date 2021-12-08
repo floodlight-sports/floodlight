@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -180,3 +181,36 @@ class XY:
     def fill_nan(self):
         """"""
         pass
+
+    def slice(
+        self, startframe: int = None, endframe: int = None, inplace: bool = False
+    ):
+        """Return copy of object with sliced data. Mimics numpy's array slicing.
+
+        Parameters
+        ----------
+        startframe : int, optional
+            Start of slice. Defaults to beginning of segment.
+        endframe : int, optional
+            End of slice (endframe is excluded). Defaults to end of segment.
+        inplace: bool, optional
+            If set to ``False`` (default), a new object is returned, otherwise the
+            operation is performed in place on the called object.
+
+        Returns
+        -------
+        xy_sliced: Union[XY, None]
+        """
+        sliced_data = self.xy[startframe:endframe, :].copy()
+        xy_sliced = None
+
+        if inplace:
+            self.xy = sliced_data
+        else:
+            xy_sliced = XY(
+                xy=sliced_data,
+                framerate=deepcopy(self.framerate),
+                direction=deepcopy(self.direction),
+            )
+
+        return xy_sliced
