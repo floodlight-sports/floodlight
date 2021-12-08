@@ -39,7 +39,22 @@ class Events:
     direction: str = None
 
     def __post_init__(self):
-        self.check()
+        # check for missing essential columns
+        missing_columns = self.missing_essential_columns()
+        if missing_columns is not None:
+            raise ValueError(
+                f"Floodlight Events object is missing the essential "
+                f"column(s) {missing_columns}!"
+            )
+
+        # warn if value ranges are violated
+        incorrect_columns = self.incorrect_value_ranges()
+        if incorrect_columns is not None:
+            for col in incorrect_columns:
+                warnings.warn(
+                    f"Floodlight Events column {col} violating the defined value range!"
+                    f" See floodlight.core.definitions for details."
+                )
 
     def __str__(self):
         return f"Floodlight Events object of shape {self.events.shape}"
@@ -52,7 +67,6 @@ class Events:
 
     def __setitem__(self, key, value):
         self.events[key] = value
-        self.check()
 
     @property
     def essential(self):
@@ -75,74 +89,53 @@ class Events:
 
         return custom
 
-    def check(self):
-        """Checks an Event object and throws an error if any mandatory column misses
-
-        It is checked if the Event object contains the mandatory columns (defined in
-        floodlight.core.definitions) and an error is thrown if this check fails.
-        Additionally, all essential and all protected columns from the Event object are
-        checked for dtypes and value ranges from the definitions, however, if these
-        checks fail there is only a warning at runtime.
-        """
-        # check for essential columns and throw error if check fails
-        if not self.check_for_essential_cols():
-            raise TypeError(
-                "Found irregular Events object missing at least one essential column!"
-            )
-
-        # check dtypes and value range of essential and protected columns
-        self.check_essential_cols()
-        self.check_protected_cols()
-
-    def check_for_essential_cols(self) -> bool:
-        """Checks if the mandatory essential columns exist in the inner events DataFrame
+    def missing_essential_columns(self):
+        """Returns columns from essential_events_column that are missing in the inner
+        events DataFrame().
 
         Returns
         -------
-        check: bool
-            True if all essential columns are in self.events and False otherwise
+        missing_columns: List or None
+            List of missing columns or None if no columns are missing.
         """
-        check = True
-        for col in essential_events_columns:
-            if col not in self.essential:
-                check = False
-                warnings.warn(
-                    f"Events Object is missing the essential event column {col}!"
-                )
-        return check
+        missing_columns = [
+            col for col in essential_events_columns if col not in self.essential
+        ]
 
-    def check_essential_cols(self) -> bool:
-        """Perform the checks against the definitions (from floodlight.core.definitions)
-        for all essential columns in the inner events DataFrame
+        if not missing_columns:
+            missing_columns = None
 
-        Returns
-        -------
-        check: bool
-            True if the checks for all essential columns pass and False otherwise
+        return missing_columns
+
+    def incorrect_value_ranges(self):
+        """Returns columns from the inner events DataFrame with value ranges violating
+        the specifications from floodlight.core.definitions.
         """
-        check = True
-        for col in self.essential:
-            check *= self.definition_check(col, essential_events_columns)
 
-        return check
+        incorrect_columns = []
 
-    def check_protected_cols(self) -> bool:
-        """Perform the checks against the definitions (from
-        floodlight.core.definitions) for all protected columns in the inner events
-        DataFrame
+        # essential columns
+        incorrect_columns += [
+            col
+            for col in self.essential
+            if not self.check_single_column_value_range(col, essential_events_columns)
+        ]
 
-        Returns
-        -------
-        check: bool
-            True if the checks for all protected columns pass and False otherwise
-        """
-        check = True
-        for col in self.protected:
-            check *= self.definition_check(col, protected_columns)
+        # protected columns
+        incorrect_columns += [
+            col
+            for col in self.protected
+            if not self.check_single_column_value_range(col, protected_columns)
+        ]
 
-        return check
+        if not incorrect_columns:
+            incorrect_columns = None
 
-    def definition_check(self, col: str, definitions: Dict[str, Dict]) -> bool:
+        return incorrect_columns
+
+    def check_single_column_value_range(
+        self, col: str, definitions: Dict[str, Dict]
+    ) -> bool:
         """Perform the checks for value range for a single column of the inner event
         DataFrame using the specifications from floodlight.core.definitions.
 
@@ -159,14 +152,12 @@ class Events:
 
         Returns
         -------
-        check: bool
+        bool
             True if the checks for value range pass and False otherwise
         """
-        check = True
-
         # check if value range is defined
         if definitions[col]["value_range"] is None:
-            return check
+            return True
 
         # skip extra allowed values
         check_col = self.events[col]
@@ -178,19 +169,12 @@ class Events:
 
         # check value range for remaining values
         if not (definitions[col]["value_range"][0] <= check_col).all():
-            check = False
-            warnings.warn(
-                f"Events column {col} has at least one value smaller than "
-                f"{definitions[col]['value_range'][0]}!"
-            )
+            return False
         if not (check_col <= definitions[col]["value_range"][1]).all():
-            check = False
-            warnings.warn(
-                f"Events column {col} has at least one value larger than "
-                f"{definitions[col]['value_range'][1]}!"
-            )
+            return False
 
-        return check
+        # all checks passed
+        return True
 
     def add_frameclock(self, framerate: int):
         """Add the column "frameclock", computed as the rounded multiplication of
@@ -202,7 +186,7 @@ class Events:
             Temporal resolution of data in frames per second/Hertz.
         """
         frameclock = np.full((len(self.events)), -1, dtype=int)
-        frameclock[:] = np.round(self.events["gameclock"].values * framerate)
+        frameclock[:] = int(self.events["gameclock"].values * framerate)
         self.events["frameclock"] = frameclock
 
     def find(self, col: str, value: Any) -> pd.Series:
