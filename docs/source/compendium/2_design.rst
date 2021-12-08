@@ -21,7 +21,7 @@ The scope of this package is the second reason we explicitly worked out these pr
 
 3. **Provider Independence**
 
-    Our :doc:`IO submodule </modules/io>` handles all necessary heavy lifting to parse provider data into core objects. They are intended to provide a clear interface to data loading, and anything that is *not* related to parsing should be implemented completely provider independent.
+    Our :doc:`io <../modules/io/io>` submodule handles all necessary heavy lifting to parse provider data into core objects. They are intended to provide a clear interface to data loading, and anything that is *not* related to parsing should be implemented completely provider independent.
 
     Obviously, there is functionality that requires certain data flavours specific to individual providers. We welcome these additions, and have some included already. However, they should be based off core objects and enforce necessary conditions to match provider-specific requirements.
 
@@ -29,7 +29,7 @@ The scope of this package is the second reason we explicitly worked out these pr
 
     To fit as many data flavours and use cases as possible, we design all core objects with minimal requirements on the data. All the conventions we include are the ones we found to be absolutely essential to abstract the data and provide a common ground to operate on. However, this does not prevent us from introducing "soft conventions". Any constraints on data or functionality that exceeds the basics is included not as an absolute requirement, but rather as an prerequisite for certain functionality.
 
-    For example, event-related information comes in various scopes and shapes, and is handled via columns within the :doc:`Events </modules/core/events` objects ``DataFrame``. You can put anything you like into these ``DataFrame``\s, and there is no limitation on column names. However, there are two *essential columns* ("eID" and "gameclock") that are the absolute minimum to describe and locate events (hard constraints), and are necessary for construction.
+    For example, event-related information comes in various scopes and shapes, and is handled via columns within the :doc:`Events <../modules/core/events>` objects ``DataFrame``. You can put anything you like into these ``DataFrame``\s, and there is no limitation on column names. However, there are two *essential columns* ("eID" and "gameclock") that are the absolute minimum to describe and locate events (hard constraints), and are necessary for construction.
 
     Now to handle event properties beyond those two descriptors, we do not enforce any definitions or mappings. Instead, we provide a short list of *protected columns* that are unambiguous to standardize, such as "at_x" and "at_y" to include event locations. You may use the object as you like, but any method that requires this information then checks if the respective column names are available, and throws and error if not (soft constraints).
 

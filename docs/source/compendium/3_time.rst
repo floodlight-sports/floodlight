@@ -16,11 +16,10 @@ The key advantage of this separation is an sports-independent handling of the di
 
 In terms of indexing, there are a few naming conventions we use throughout the code. As an example, for matches that are organized in half times, we use ``segments = ["HT1", "HT2"]``. This list is extended with ``["HT3", "HT4"]`` if we go into overtime.
 
-
 Data-level
 ==========
 
-Let's move on to the data-level handling of time. There's a major distinction to be made here between *frame-based* objects such as ``xy`` and ``code`` and *list-based* objects such as ``events``\.
+Let's move on to the data-level handling of time. There's a major distinction to be made here between *frame-based* objects such as :doc:`XY <../modules/core/xy>`  and :doc:`Code <../modules/core/code>` and *list-based* objects such as :doc:`Events <../modules/core/events>`.
 
 Frame-based objects represent consistent signals that run through an entire segment, such as player positions. Each frame refers to all data at one particular point in time. All these objects are based on *numpy*\'s ``ndarray``\s, where **the first dimenion always encodes the time dimension**\.
 
@@ -47,7 +46,7 @@ Frame-based
 
 Frame-based objects depend on a ``framerate``\, which is an attribute in the respective classes. The frame rate denotes the number of frames per second, and typically ranges from one up to a hundred for tracking data. It is obviously important to know if anyone ever wanted to do any analysis that is time-sensitive. Each frame thus has a frame number, which can be used for indexing.
 
-The clou, however, is that we made the frame number the *only* reference for time in frame-based objects. There are no timestamps or anything attached to single frames. Instead, the timestamp of a frame is *implicitly* encoded by its index position in the array. For example, tracking data stored in a ``xy`` object is just a big array where rows are frames, and columns are player's *x*\- and *y*\-coordinates.
+The clou, however, is that we made the frame number the *only* reference for time in frame-based objects. There are no timestamps or anything attached to single frames. Instead, the timestamp of a frame is *implicitly* encoded by its index position in the array. For example, tracking data stored in a :doc:`XY <../modules/core/xy>` object is just a big array where rows are frames, and columns are player's *x*\- and *y*\-coordinates.
 
 .. TIP::
     You can rely on (and need to take care of) frame-based objects spanning the entire segment at a given frame rate. If your segment is 10 seconds long, and you have a frame rate of 25, there should be a total of 250 frames. Missing data such as skipped frames during data acquisition or player's missing half the segment due to substitutions are instead replaced by *numpy*'s ``np.nan``\s.
