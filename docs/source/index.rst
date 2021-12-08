@@ -37,7 +37,6 @@ Hi there, glad you're reading the docs! Oh, and good luck...
    modules/core/core
    modules/io/io
 
-
 Indices and tables
 ==================
 
