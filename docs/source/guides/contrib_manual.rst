@@ -10,11 +10,11 @@ Do you consider contributing to our project? That's great! We welcome all kinds 
 
 We're firm believers of open source and want to create an inclusive environment around our project where everybody is welcome to join! In this spirit, you don't need a lot of experience in Python to contribute, and we try hard to provide all necessary information to anybody not familiar with all this DevOps stuff. This guide is an extended manual that aims to cover all topics needed to get you started developing in our project! The covered topics include
 
-* installing the repository in *development-mode*
-* setting up your dev-environment
-* conventions and best-practices we use
-* necessary steps for a successful pull request (PR)
-* some explanations for why this is so much more complicated than scripting.
+* Installing the repository in *development-mode*
+* Setting up your dev-environment
+* Conventions and best-practices we use
+* Necessary steps for a successful pull request (PR)
+* Some explanations for why this is so much more complicated than scripting.
 
 
 Preliminaries
@@ -111,13 +111,15 @@ These hooks will automatically get activated whenever you commit any code, and c
 (via black and flake8) as well as commit message structure. You can also activate each of these tools
 manually by running the following commands (see the respective docs for full intros):
 
-*Note: you need to start every command with `poetry run` if executables are not in your `PATH`*
+.. NOTE::
 
-- re-format all code with black: `black .`
-- run linter: `flake8`
-- dummy check all pre-commit hooks: `pre-commit run --all-files`
-- update hooks: `pre-commit autoupdate`
-- check a commit message: `cz check -m "my commit message"`
+    You need to start every command with `poetry run` if executables are not in your `PATH`.
+
+* re-format all code with black: `black`.
+* run linter: `flake8`.
+* dummy check all pre-commit hooks: `pre-commit run --all-files`.
+* update hooks: `pre-commit autoupdate`.
+* check a commit message: `cz check -m "my commit message"`.
 
 IDEs
 ~~~~
@@ -126,7 +128,7 @@ Additionally, if you use an IDE like PyCharm, you can set up your favorite tool 
 during coding. For example:
 
 1. Add new Interpreter and point to python.exe in poetry-created env
-2. [Integrate black](https://black.readthedocs.io/en/stable/integrations/editors.html) (you could do the same with flake8)
+2. `Integrate black <https://black.readthedocs.io/en/stable/integrations/editors.html>`_ (you could do the same with flake8)
 3. Configure Inspections -> PEP8 checking
 4. Setting > Tools > Python Integrated Tools: Set default tester and docstring format
 
@@ -136,24 +138,24 @@ Global Workflows
 
 Once you have made your fork and clone of the original repository, there are three copies that are of interest:
 
-- the original repository, hereafter called `base` or `upstream`
-- your fork that's stored on GitHub (`origin`)
-- the local clone on your machine (`local`)
+* the original repository, hereafter called `base` or `upstream`
+* your fork that's stored on GitHub (`origin`)
+* the local clone on your machine (`local`)
 
 Up to this point, you're set up so that you can develop on `local`. The remaining question is: once you've done some work and coded that cool new feature, how do you get your changes into `base`? The standard way for contributing to an open source repository without having direct write access is to develop locally, then merge globally. In a nutshell, you want to keep your `local` up to date with `base`, develop a new feature on `local`, and request to merge it into `base` once you're finished. The long story goes like this:
 
 Remember that we follow a (slim-fit) version of the git-flow model, which gives the `main` and `develop` branch a special role. These are reserved for stable snapshots of the code (`main`) as well as (potentially unstable) checkpoints during development of a new version (`develop`). There's two implications here:
 
-- You want to keep your local copies of these two branches up to date with the original ones to avoid merge conflicts due to missed updates
-- You shouldn't work on these branches directly but use feature- or hotfix-branches for your work that branch from and merge into `develop`
+* You want to keep your local copies of these two branches up to date with the original ones to avoid merge conflicts due to missed updates
+* You shouldn't work on these branches directly but use feature- or hotfix-branches for your work that branch from and merge into `develop`
 
 If you add your own feature branch, there's now three repositories and three branches flying around. This might be puzzling at first sight, maybe take a moment and try to sort these out. On second sight, however, the GitHub-workflow and git-flow model are great teamplayers. There's a one-way road opening up that goes like this:
 
-`base:main` /`base:develop` > updates > `local:main`/`local:develop` > branches > `local:my_feat_branch`
+``base:main`` /``base:develop`` > updates > ``local:main``/``local:develop`` > branches > ``local:my_feat_branch``
 
 That's pretty much half of the cycle that starts at `base` and ends at your local feature branch. The other half goes in a different direction as you're lacking write access to push your changes up the road where the original code came from. Here, you need to take a little detour over `origin` - your GitHub copy of `base`:
 
-`local:my_feat_branch` > pushes > `origin:my_feat_branch` > merge > `base:develop`
+``local:my_feat_branch`` > pushes > ``origin:my_feat_branch`` > merge > ``base:develop``
 
 Again, you would need write access to `base` to perform the merge in the last step by yourself. Instead, the final step of contributing your code is handled by GitHubs **Pull Request (PR)**. Essentally, you use GitHub to explain/present your work, show that it passes all the workflows triggered by GitHub Actions and ask the maintainer to merge your changes.
 
@@ -161,53 +163,53 @@ So much of the theory, let's see how one can perform all these steps in practice
 
 1. It's important to keep your `local` up to date with `base`, so that your contribution integrates smoothly with the current version instead of relying on code that's a few commits behind. To this end, you may add `base` as an additional remote location so that from now on you can pull new commits directly from there:
 
-   ```git
-   git remote add upstream https://github.com/floodlight-sports/floodlight
-   git fetch upstream
-   ```
+    .. code-block:: bash
+
+        git remote add upstream https://github.com/floodlight-sports/floodlight
+        git fetch upstream
 
 2. As you never push to `origin:develop` or `origin:main` anyways, you can let them track `base:develop` and `base:main` instead. For `develop` that's done by:
 
-   ```git
-   git checkout develop
-   git branch -u upstream/develop
-   ```
+    .. code-block:: bash
 
-   Same goes for `main`.
+       git checkout develop
+       git branch -u upstream/develop
+
+Same goes for `main`.
 
 3. Don't use `main` or `develop` for your development directly, rather keep them in sync with the equivalent branches in `base` by hitting
 
-   ```git
-   git pull
-   ```
+    .. code-block:: bash
 
-   on the respective branch.
+        git pull
+
+on the respective branch.
 
 4. For your new feature, create a new branch from the latest version of the code:
 
-   ```git
-   git checkout develop
-   git checkout -b my_feat_branch
-   ```
+    .. code-block:: bash
+
+       git checkout develop
+       git checkout -b my_feat_branch
 
 5. Code and commit on this branch as you would normally do.
 
 6. Once you're finished, make sure you haven't missed any updates on `base` while you were coding:
 
-   ```git
-   git checkout develop
-   git pull
-   git checkout my_feat_branch
-   git rebase develop
-   ```
+    .. code-block:: bash
+
+       git checkout develop
+       git pull
+       git checkout my_feat_branch
+       git rebase develop
 
 7. Push the changes to your GitHub fork:
 
-   ```git
-   git push -u origin
-   ```
+    .. code-block:: bash
 
-8. Go to the [repository page](https://github.com/floodlight-sports/floodlight) and do a PR. Make sure you ask to merge your changes from `origin:my_feat_branch` into `base:develop`.
+       git push -u origin
+
+8. Go to the `repository page <https://github.com/floodlight-sports/floodlight>`_ and do a PR. Make sure you ask to merge your changes from `origin:my_feat_branch` into `base:develop`.
 
 
 Testing
@@ -221,9 +223,11 @@ Why testing code?
 * Can be viewed as a sort of code documentation.
 * Notice whether changes in one place might break the code in another place.
 
+.. _General rules:
+
 General rules
 -------------
-.. _General rules:
+
 .. TIP::
 
     * Test files follow a certain naming convention: ``test_<module_Name>.py``
@@ -249,14 +253,11 @@ Tests types
 
 Generally tests can be structured based on the complexity of code that they are testing.
 
-Unit test
-    Unit tests make sure that on the lowest layer classes and functions behave as they should.
+**Unit tests** make sure that on the lowest layer classes and functions behave as they should.
 
-Integration test
-    Integration tests combine multiple modules, classes or methods to test if they are all working together.
+**Integration tests** combine multiple modules, classes or methods to test if they are all working together.
 
-System test
-    System tests operate on the highest layer and test whether completely integrated systems fulfill the specified requirements.
+**System tests** operate on the highest layer and test whether completely integrated systems fulfill the specified requirements.
 
 Testing layout
 --------------
@@ -348,7 +349,6 @@ Fixtures
 --------
 
 Most of the tests depend on some sort of input. With `fixtures <https://docs.pytest.org/en/6.2.x/fixture.html>`_ pytest provides a feature with which data, test doubles or some system state can be created. Fixtures are reusable and can be used for multiple tests. In order to create a fixture you have to build a function that returns the data or system state that is needed for your testing. To do that just decorate this function with ``@pytest.fixture``. The function name can now get passed to a testing method as an argument. As the number of fixtures increases with the project, it makes sense to put them into a structure to keep track of them. Pytest provides a solution to keep everything structured (:ref:`Where to create fixtures? <Where to create fixtures?>`). You can basically store fixtures in the same files where you use them. However, it is also possible to store them in a separated ``conftest.py`` file on which every testing file in the same layer or in a subdirectory has access without any import. The following example should clarify how fixtures work:
-Here you can see an example of how fixtures can be implemented:
 
 .. code-block:: python
 

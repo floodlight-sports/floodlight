@@ -47,7 +47,7 @@ To realize this idea, we've tried to break down all that information you can ext
 
 3. **Analysis level objects** contain analysis-related objects such as performance metrics or high-level models of match play.
 
-The exact schema is further discussed in the ``core`` submodule reference. On the following pages we also discuss a range of topics that are directly linked to the creation and handling of these core data structures, such as handling spatial and temporal data, identities, and so on. This should hopefully further clarify our implemented conceptualization.
+The exact schema is further discussed in the :doc:`core <../modules/core/core>` submodule reference. On the following pages we also discuss a range of topics that are directly linked to the creation and handling of these core data structures, such as handling spatial and temporal data, identities, and so on. This should hopefully further clarify our implemented conceptualization.
 
 
 But... why?
