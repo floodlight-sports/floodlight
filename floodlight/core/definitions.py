@@ -72,10 +72,9 @@ protected_columns = {
     },
     "outcome": {
         "definition": "Result of an event as included by many data providers. "
-                      "Positive/Successful is 1, Negative/Unsuccessful is 0, may be"
-                      "None if no outcome can be defined",
+                      "Positive/Successful is 1, Negative/Unsuccessful is 0",
         "dtypes": [int],
-        "value_range": [0, 1, None]
+        "value_range": [0, 1],
     },
     "at_x": {
         "definition": "The x position (longitudinal) where the event took place or "
