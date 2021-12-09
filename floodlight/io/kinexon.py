@@ -256,7 +256,7 @@ def get_meta_data(
     return pID_dict, number_of_frames, framerate, t_null
 
 
-def _get_available_sensor_identifier(pID_dict: Dict[str, List[str]]) -> str:
+def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) -> str:
     """Returns an available sensor identifier that has been recorded. Will favor
     "name" over "mapped_id" over "sensor_id" over "number".
 
