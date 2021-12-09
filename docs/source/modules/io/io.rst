@@ -12,3 +12,4 @@ Collection of parsing modules for different provider data.
    opta
    statsperform
    tracab
+   kinexon
