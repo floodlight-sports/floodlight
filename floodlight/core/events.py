@@ -33,6 +33,11 @@ class Events:
     custom: list
         List of custom (i.e. non-essential and non-protected) columns available for
         stored events.
+    missing_essential_columns: list or None
+        List of missing columns or None if no columns are missing.
+    incorrect_value_range_columns: list or None
+        List of columns that violate the definitions or None if all columns match
+        the definitions.
     """
 
     events: pd.DataFrame
@@ -40,7 +45,7 @@ class Events:
 
     def __post_init__(self):
         # check for missing essential columns
-        missing_columns = self.missing_essential_columns()
+        missing_columns = self.essential_missing
         if missing_columns is not None:
             raise ValueError(
                 f"Floodlight Events object is missing the essential "
@@ -48,12 +53,14 @@ class Events:
             )
 
         # warn if value ranges are violated
-        incorrect_columns = self.incorrect_value_ranges()
+        incorrect_columns = self.essential_invalid
         if incorrect_columns is not None:
             for col in incorrect_columns:
                 warnings.warn(
-                    f"Floodlight Events column {col} violating the defined value range!"
-                    f" See floodlight.core.definitions for details."
+                    f"Floodlight Events column {col} does not match the defined value"
+                    f"range (from floodlight.core.definitions). You can pursue at this "
+                    f"point, however, be aware that this may lead to unexpected "
+                    f"behavior in the future."
                 )
 
     def __str__(self):
@@ -89,17 +96,34 @@ class Events:
 
         return custom
 
-    def missing_essential_columns(self):
-        """Returns columns from essential_events_column that are missing in the inner
-        events DataFrame().
-
-        Returns
-        -------
-        missing_columns: List or None
-            List of missing columns or None if no columns are missing.
-        """
+    @property
+    def essential_missing(self):
         missing_columns = [
             col for col in essential_events_columns if col not in self.essential
+        ]
+
+        if not missing_columns:
+            return None
+        else:
+            return missing_columns
+
+    @property
+    def essential_invalid(self):
+        incorrect_columns = [
+            col
+            for col in self.essential
+            if not self.column_values_in_range(col, essential_events_columns)
+        ]
+
+        if not incorrect_columns:
+            return None
+        else:
+            return incorrect_columns
+
+    @property
+    def protected_missing(self):
+        missing_columns = [
+            col for col in protected_columns if col not in self.protected
         ]
 
         if not missing_columns:
@@ -107,41 +131,19 @@ class Events:
 
         return missing_columns
 
-    def incorrect_value_ranges(self):
-        """Returns columns from the inner events DataFrame with value ranges violating
-        the specifications from floodlight.core.definitions.
-
-        Returns
-        -------
-        incorrect_columns: List or None
-            List of columns that violate the definitions or None if all columns match
-            the definitions.
-        """
-
-        incorrect_columns = []
-
-        # essential columns
-        incorrect_columns += [
-            col
-            for col in self.essential
-            if not self.check_single_column_value_range(col, essential_events_columns)
-        ]
-
-        # protected columns
-        incorrect_columns += [
+    @property
+    def protected_invalid(self):
+        incorrect_columns = [
             col
             for col in self.protected
-            if not self.check_single_column_value_range(col, protected_columns)
+            if not self.column_values_in_range(col, protected_columns)
         ]
-
         if not incorrect_columns:
             incorrect_columns = None
 
         return incorrect_columns
 
-    def check_single_column_value_range(
-        self, col: str, definitions: Dict[str, Dict]
-    ) -> bool:
+    def column_values_in_range(self, col: str, definitions: Dict[str, Dict]) -> bool:
         """Perform the checks for value range for a single column of the inner event
         DataFrame using the specifications from floodlight.core.definitions.
 
@@ -153,25 +155,19 @@ class Events:
             Dictionary for each column name to be checked. Each entry is a Dictionary
             containing definitions for allowed value ranges of the respective
             column. Information about value_range is given as a List of the form
-            [min_value, max_value, extra_value] where the extra_value indicates an
-            additionally allowed value that does not fit within the defined value range.
+            [min_value, max_value].
 
         Returns
         -------
         bool
             True if the checks for value range pass and False otherwise
         """
-        # check if value range is defined
+        # skip if value range is not defined
         if definitions[col]["value_range"] is None:
             return True
 
-        # skip extra allowed values
-        check_col = self.events[col]
-        if len(definitions[col]["value_range"]) == 3:
-            if definitions[col]["value_range"][2] is None:
-                check_col = check_col.dropna()
-            else:
-                check_col = check_col[check_col != definitions[col]["value_range"][2]]
+        # skip values that are None or NaN
+        check_col = self.events[col].dropna()
 
         # check value range for remaining values
         if not (definitions[col]["value_range"][0] <= check_col).all():
@@ -195,13 +191,15 @@ class Events:
         frameclock[:] = np.floor(self.events["gameclock"].values * framerate)
         self.events["frameclock"] = frameclock
 
-    def find(self, conditions: List[Tuple[str, Any]]) -> pd.DataFrame:
+    def find(
+        self, conditions: Tuple[str, Any] or List[Tuple[str, Any]]
+    ) -> pd.DataFrame:
         """Returns a DataFrame containing all entries from the inner events DataFrame
          that satisfy all given conditions.
 
         Parameters
         ----------
-        conditions: List[Tuple[str, Any]]
+        conditions: Tuple or List of Tuples
             Conditions used to filter the columns. Conditions need to have the form
             (column, value) where column specifies the column of the inner events
             DataFrame and value specifies the desired value of the column entries.
