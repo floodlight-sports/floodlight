@@ -33,9 +33,8 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
 
     Parameters
     ----------
-    filepath_data: str of pathlib.Path
+    filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
-
 
     Returns
     -------
@@ -51,7 +50,6 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
             - group_id: 'group id'
             - x_coord: 'x in m'
             - y_coord: 'y in m'
-
     """
 
     recorded_columns = get_column_names_from_csv(str(filepath_data))
@@ -162,7 +160,7 @@ def get_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
         identifying column in every group.
-        'pID_dict[group_identifier][identifying_column] = [pID1, pID, ..., pIDn]'
+        'pID_dict[group_identifier][identifying_column] = [pID1, pID2, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
@@ -198,7 +196,7 @@ def get_meta_data(
     # check for group identifier
     has_groups = len(recorded_group_identifier) > 0
     if not has_groups:
-        warnings.warn("Since no group exist in data, artificial group '0' is created!")
+        warnings.warn("Since no group exist in data, dummy group '0' is created!")
 
     # loop
     with open(str(filepath_data), "r") as f:
@@ -267,7 +265,7 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, List[str]]) -> str:
     pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
         identifying column in every group.
-        'pID_dict[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        'pID_dict[group][identifying_column] = [pID1, pID2, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
@@ -298,7 +296,7 @@ def create_links_from_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]],
         Nested dictionary that stores information about the pIDs from every player-
         identifying column in every group.
-        'pID_dict[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        'pID_dict[group][identifying_column] = [pID1, pID2, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
         in different columns. Player-identifying columns are "sensor_id", "mapped_id",
         and "full_name". If the respective column is in the recorded data, its pIDs are
@@ -325,9 +323,13 @@ def create_links_from_meta_data(
         identifier = _get_available_sensor_identifier(pID_dict)
 
     links = {}
-    for gID in pID_dict:
+    for group_id in pID_dict:
         links.update(
-            {gID: {ID: xID for xID, ID in enumerate(pID_dict[gID][identifier])}}
+            {
+                group_id: {
+                    ID: xID for xID, ID in enumerate(pID_dict[group_id][identifier])
+                }
+            }
         )
 
     return links
@@ -342,15 +344,16 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
 
     Parameters
     ----------
-    filepath_data: str of pathlib.Path
+    filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
 
     Returns
     -------
     positions: List[XY]
-        XY-Object for the whole game. The order of groups is ascending according to
-        their group_id. The order inside the groups is ascending according to their
-        appearance in the data.
+        List of XY-objects for the whole game, one per group. The order of groups is
+        ascending according to their group_id. If no groups are specified in the file,
+        all data gets assigned to a dummy group "0". The order inside the groups is
+        ascending according to their appearance in the data.
     """
 
     # get metadata
