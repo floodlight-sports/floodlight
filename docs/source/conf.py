@@ -46,7 +46,7 @@ html_theme_options = {
     "display_version": True,
     "collapse_navigation": False,
     "navigation_depth": 2,
-    "prev_next_buttons_location": "top",
+    "prev_next_buttons_location": None,
     "style_external_links": True,
     "style_nav_header_background": "#006666",
 }
