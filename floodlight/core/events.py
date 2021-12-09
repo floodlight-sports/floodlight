@@ -200,9 +200,14 @@ class Events:
         Parameters
         ----------
         conditions: Tuple or List of Tuples
-            Conditions used to filter the columns. Conditions need to have the form
-            (column, value) where column specifies the column of the inner events
-            DataFrame and value specifies the desired value of the column entries.
+            Conditions used to filter the columns. Can be either a single Tuple or a
+            List of Tuples. If given as a List, all conditions are enforced. Conditions
+            can be of the form (column, value) or of the form (column, (min, max)). In
+            case of the former, the specified column of the inner events DataFrame is
+            searched for entries equal to value. In case of the latter, the specified
+            column is searched for values in the range (min, max).
+            entries.
+
         Returns
         -------
         filtered_events: pd.DataFrame
@@ -210,14 +215,28 @@ class Events:
             specified in conditions. The DataFrame can be empty if no entry with the
             given value is found in the column.
         """
-        filtered_events = self.events.copy()
+        filtered_events = self.events
+
+        # if single condition transform to list of conditions
+        if not isinstance(conditions, list):
+            conditions = [conditions]
 
         for condition in conditions:
             if condition[1] is None:
                 filtered_events = filtered_events[filtered_events[condition[0]].isna()]
             else:
-                filtered_events = filtered_events[
-                    filtered_events[condition[0]] == condition[1]
-                ]
+                # check if a value or a value range is given
+                if isinstance(condition[1], list) or isinstance(condition[1], tuple):
+                    filtered_events = filtered_events[
+                        filtered_events[condition[0]] >= condition[1][0]
+                    ]
+                    filtered_events = filtered_events[
+                        filtered_events[condition[0]] <= condition[1][1]
+                    ]
+
+                else:
+                    filtered_events = filtered_events[
+                        filtered_events[condition[0]] == condition[1]
+                    ]
 
         return filtered_events
