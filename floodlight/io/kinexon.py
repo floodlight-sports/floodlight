@@ -258,6 +258,36 @@ def get_meta_data(
     return pID_dict, number_of_frames, framerate, t_null
 
 
+def _get_available_sensor_identifier(pID_dict: Dict[str, List[str]]) -> str:
+    """Returns an available sensor identifier that has been recorded. Will favor
+    "name" over "mapped_id" over "sensor_id" over "number".
+
+    Parameters
+    ----------
+    pID_dict: Dict[str, Dict[str, List[str]]],
+        Nested dictionary that stores information about the pIDs from every player-
+        identifying column in every group.
+        'pID_dict[group][identifying_column] = [pID1, pID, ..., pIDn]'
+        When recording and exporting Kinexon data, the pID can be stored
+        in different columns. Player-identifying columns are "sensor_id", "mapped_id",
+        and "full_name". If the respective column is in the recorded data, its pIDs are
+        listed in pID_dict.
+
+    Returns
+    -------
+    identifier: str
+        One sensor identifier that has been recorded.
+    """
+
+    player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
+    available_identifier = [
+        idt for idt in player_identifiers if idt in list(pID_dict.values())[0]
+    ]
+    identifier = available_identifier[0]
+
+    return identifier
+
+
 def create_links_from_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None
 ) -> Dict[str, Dict[str, int]]:
@@ -291,11 +321,8 @@ def create_links_from_meta_data(
     """
 
     if identifier is None:
-        player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
-        available_identifier = [
-            idt for idt in player_identifiers if idt in list(pID_dict.values())[0]
-        ]
-        identifier = available_identifier[0]
+        # available sensor identifier
+        identifier = _get_available_sensor_identifier(pID_dict)
 
     links = {}
     for gID in pID_dict:
@@ -337,6 +364,9 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(column_links_set & group_identifier_set)
 
+    # available sensor identifier
+    identifier = _get_available_sensor_identifier(pID_dict)
+
     # create np.array for data
     number_of_sensors = {}
     xydata = {}
@@ -353,7 +383,7 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     # loop
     with open(str(filepath_data), "r") as f:
         # skip the header of the file
-        _ = line_string = f.readline()
+        _ = f.readline()
         while True:
             line_string = f.readline()
             # terminate if at end of file
@@ -365,7 +395,7 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
             # set group
             group_id = _get_group_id(recorded_group_identifier, column_links, line)
             # set column
-            x_col = links[group_id][line[column_links["name"]]] * 2
+            x_col = links[group_id][line[column_links[identifier]]] * 2
             y_col = x_col + 1
             # set row
             row = int((timestamp - t_null) / (1000 / framerate))
