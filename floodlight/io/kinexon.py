@@ -89,6 +89,63 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
     return column_links
 
 
+def _get_group_id(
+    recorded_group_identifier: List[str],
+    column_links: Dict[str, int],
+    single_line: List[str],
+) -> Union[str, None]:
+    """Returns the group_name or group_id if it was recorded or "0" if not.
+    Favors the group_name over the group_id.
+
+    Parameters
+    ----------
+    recorded_group_identifier: List[str]
+        List of all recorded group identifiers. Group identifiers are "group_id" or
+        "group_name".
+    column_links: Dict[str, int]
+        Dictionary with column index for relevant recorded columns.
+        'column_links[column] = index'
+        The following columns are currently considered relevant:
+              floodlight id: 'column name in Kinexon.csv-file
+            - time: 'ts in ms'
+            - sensor_id: 'sensor id'
+            - mapped_id: 'mapped id'
+            - name: 'full name'
+            - group_id: 'group id'
+            - x_coord: 'x in m'
+            - y_coord: 'y in m'
+    single_line: List[str]
+        Single line of a Kinexon.csv-file that has been split at the respective
+        delimiter, eg. ",".
+
+    Returns
+    -------
+    group_id: str
+        The respective group id in that line or "0" if there is no group id.
+    """
+
+    # check for group identifier
+    has_groups = len(recorded_group_identifier) > 0
+
+    if has_groups:
+        # extract group identifier
+        if "group_name" in recorded_group_identifier:
+            group_identifier = "group_name"
+        elif "group_id" in recorded_group_identifier:
+            group_identifier = "group_id"
+        else:
+            warnings.warn("Data has groups but no group identifier!")
+            return None
+
+        group_id = single_line[column_links[group_identifier]]
+
+    # no groups
+    else:
+        group_id = "0"
+
+    return group_id
+
+
 def get_meta_data(
     filepath_data: Union[str, Path]
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
@@ -140,22 +197,7 @@ def get_meta_data(
     t = []
     # check for group identifier
     has_groups = len(recorded_group_identifier) > 0
-    # extract group identifier
-    if has_groups:
-        if "group_name" in recorded_group_identifier:
-            group_identifier = "group_name"
-        elif "group_id" in recorded_group_identifier:
-            group_identifier = "group_id"
-
-        def get_group_id(single_line):
-            return single_line[column_links[group_identifier]]
-
-    # no groups
-    else:
-
-        def get_group_id(single_line):
-            return "0"
-
+    if not has_groups:
         warnings.warn("Since no group exist in data, artificial group '0' is created!")
 
     # loop
@@ -172,7 +214,7 @@ def get_meta_data(
             # extract frames timestamp
             t.append(int(line[column_links["time"]]))
             # extract group_id
-            group_id = get_group_id(line)
+            group_id = _get_group_id(recorded_group_identifier, column_links, line)
             # create group dict in pID_dict
             if group_id not in pID_dict:
                 pID_dict.update({group_id: {}})
@@ -249,10 +291,11 @@ def create_links_from_meta_data(
     """
 
     if identifier is None:
-        for player_id in ["name", "mapped_id", "sensor_id"]:
-            if player_id in list(pID_dict.values())[0]:
-                identifier = player_id
-                break
+        player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
+        available_identifier = [
+            idt for idt in player_identifiers if idt in list(pID_dict.values())[0]
+        ]
+        identifier = available_identifier[0]
 
     links = {}
     for gID in pID_dict:
@@ -307,50 +350,35 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
             }
         )
 
-    has_groups = len(recorded_group_identifier) > 0
-    if has_groups:
-        if "group_name" in recorded_group_identifier:
-            group_identifier = "group_name"
-        elif "group_id" in recorded_group_identifier:
-            group_identifier = "group_id"
-
-        def get_group_id(single_line):
-            return single_line[column_links[group_identifier]]
-
-    # no groups
-    else:
-
-        def get_group_id(single_line):
-            return "0"
-
     # loop
     with open(str(filepath_data), "r") as f:
+        # skip the header of the file
+        _ = line_string = f.readline()
         while True:
             line_string = f.readline()
             # terminate if at end of file
             if len(line_string) == 0:
                 break
+            # split str
             line = line_string.split(",")
-            # skip the header of the file
-            if line[column_links["time"]].isdecimal():
-                timestamp = int(line[column_links["time"]])
-                # set group
-                group_id = get_group_id(line)
-                # set column
-                x_col = links[group_id][line[column_links["name"]]] * 2
-                y_col = x_col + 1
-                # set row
-                row = int((timestamp - t_null) / (1000 / framerate))
-                # set (x, y)-data
-                x_coordinate = line[column_links["x_coord"]]
-                y_coordinate = line[column_links["y_coord"]]
+            timestamp = int(line[column_links["time"]])
+            # set group
+            group_id = _get_group_id(recorded_group_identifier, column_links, line)
+            # set column
+            x_col = links[group_id][line[column_links["name"]]] * 2
+            y_col = x_col + 1
+            # set row
+            row = int((timestamp - t_null) / (1000 / framerate))
+            # set (x, y)-data
+            x_coordinate = line[column_links["x_coord"]]
+            y_coordinate = line[column_links["y_coord"]]
 
-                # insert (x, y)-data into column and row of respective array
-                if x_coordinate != "":
-                    xydata[group_id][row, x_col] = x_coordinate
+            # insert (x, y)-data into column and row of respective array
+            if x_coordinate != "":
+                xydata[group_id][row, x_col] = x_coordinate
 
-                if y_coordinate != "":
-                    xydata[group_id][row, y_col] = y_coordinate
+            if y_coordinate != "":
+                xydata[group_id][row, y_col] = y_coordinate
 
     data_objects = []
     for group_id in xydata:
