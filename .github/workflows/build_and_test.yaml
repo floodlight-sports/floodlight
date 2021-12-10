@@ -48,7 +48,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
 
     - name: Lint with flake8
-    - uses: TrueBrain/actions-flake8@v2
+    - uses: TrueBrain/actions-flake8@v2.1
       with:
         python-version: ${{ matrix.python-version }}
 
