@@ -238,24 +238,6 @@ class Events:
         if not isinstance(conditions, list):
             conditions = [conditions]
 
-        for condition in conditions:
-            if condition[1] is None:
-                filtered_events = filtered_events[filtered_events[condition[0]].isna()]
-            else:
-                # check if a value or a value range is given
-                if isinstance(condition[1], list) or isinstance(condition[1], tuple):
-                    filtered_events = filtered_events[
-                        filtered_events[condition[0]] >= condition[1][0]
-                    ]
-                    filtered_events = filtered_events[
-                        filtered_events[condition[0]] <= condition[1][1]
-                    ]
-
-                else:
-                    filtered_events = filtered_events[
-                        filtered_events[condition[0]] == condition[1]
-                    ]
-
         # loop through and filter by conditions
         for column, value in conditions:
 
