@@ -19,7 +19,9 @@ jobs:
         poetry-version: [1.1.11]
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Check out source repository
+      uses: actions/checkout@v2
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -46,12 +48,6 @@ jobs:
     - name: Install dependencies
       run: poetry install
       if: steps.cache.outputs.cache-hit != 'true'
-
-
-    - name: flake8 Lint
-      uses: py-actions/flake8@v1
-      with:
-        flake8-version: ${{ matrix.python-version }}
 
     - name: Test with pytest
       run: |

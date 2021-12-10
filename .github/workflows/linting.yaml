@@ -1,0 +1,26 @@
+name: linting
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: []
+
+jobs:
+
+  flake8-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
+
+      - name: flake8 Lint
+        uses: py-actions/flake8@v1
+        with:
+          ignore: "E203"
+          max-line-length: "88"
