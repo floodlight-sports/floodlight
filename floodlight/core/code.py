@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass
 
 import numpy as np
@@ -18,6 +19,8 @@ class Code:
         or explained.
     framerate: int, optional
         Temporal resolution of data in frames per second/Hertz.
+    token: list
+        A list of all tokens used in game code, in ascending order.
     """
 
     code: np.ndarray
@@ -30,3 +33,50 @@ class Code:
 
     def __len__(self):
         return len(self.code)
+
+    def __getitem__(self, key):
+        return self.code[key]
+
+    def __setitem__(self, key, value):
+        self.code[key] = value
+
+    @property
+    def token(self) -> list:
+        token = list(np.unique(self.code))
+        token.sort()
+
+        return token
+
+    def slice(
+        self, startframe: int = None, endframe: int = None, inplace: bool = False
+    ):
+        """Return copy of object with sliced code. Mimics numpy's array slicing.
+
+        Parameters
+        ----------
+        startframe : int, optional
+            Start of slice. Defaults to beginning of segment.
+        endframe : int, optional
+            End of slice (endframe is excluded). Defaults to end of segment.
+        inplace: bool, optional
+            If set to ``False`` (default), a new object is returned, otherwise the
+            operation is performed in place on the called object.
+
+        Returns
+        -------
+        code_sliced: Union[Code, None]
+        """
+        sliced_data = self.code[startframe:endframe].copy()
+        code_sliced = None
+
+        if inplace:
+            self.code = sliced_data
+        else:
+            code_sliced = Code(
+                code=sliced_data,
+                name=deepcopy(self.name),
+                definitions=deepcopy(self.definitions),
+                framerate=deepcopy(self.framerate),
+            )
+
+        return code_sliced

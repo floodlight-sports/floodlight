@@ -1,6 +1,8 @@
 import pytest
 import numpy as np
 
+from floodlight.core.code import Code
+
 
 # Create example data with fixtures to test all the functions
 @pytest.fixture()
@@ -36,3 +38,14 @@ def example_xy_data_float() -> np.ndarray:
 def example_xy_data_string() -> np.ndarray:
     positions = np.array([["1", "2", "3", "4"], ["5", "6", "7", "8"]])
     return positions
+
+
+@pytest.fixture()
+def example_code() -> Code:
+    array = np.array(["A"] * 5 + ["H"] * 5)
+    name = "possession"
+    definitions = {"H": "Home", "A": "Away"}
+    framerate = 10
+    code = Code(code=array, name=name, definitions=definitions, framerate=framerate)
+
+    return code
