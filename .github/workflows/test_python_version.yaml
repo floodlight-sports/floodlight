@@ -1,8 +1,8 @@
-name: build
+name: python version test
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: []
 
@@ -12,10 +12,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: [3.8]
+        os: [ubuntu-latest]
+        python-version: [3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10]
         poetry-version: [1.1.11]
 
     steps:
