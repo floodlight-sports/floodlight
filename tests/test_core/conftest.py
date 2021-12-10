@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import pandas as pd
 
 from floodlight.core.code import Code
 
@@ -49,3 +50,23 @@ def example_code() -> Code:
     code = Code(code=array, name=name, definitions=definitions, framerate=framerate)
 
     return code
+
+
+# Events
+@pytest.fixture()
+def example_events_data_minimal() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [1.1, 2.2],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_with_outcome_and_none() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2, 2, 4, 1],
+        "gameclock": [1.1412, 2.4122, 5.213, 11.214, 21.12552],
+        "outcome": [0, 1, None, 0, None],
+    }
+    return pd.DataFrame(data)
