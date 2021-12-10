@@ -33,11 +33,16 @@ class Events:
     custom: list
         List of custom (i.e. non-essential and non-protected) columns available for
         stored events.
-    missing_essential_columns: list or None
-        List of missing columns or None if no columns are missing.
-    incorrect_value_range_columns: list or None
-        List of columns that violate the definitions or None if all columns match
-        the definitions.
+    essential_missing: list or None
+        List of missing essential columns or None if no columns are missing.
+    essential_invalid: list or None
+        List of essential columns that violate the definitions or None if all columns
+        match the definitions.
+    protected_missing: list or None
+        List of missing protected columns or None if no columns are missing.
+    protected_invalid: list or None
+        List of protected columns that violate the definitions or None if all columns
+        match the definitions.
     """
 
     events: pd.DataFrame
@@ -109,16 +114,16 @@ class Events:
 
     @property
     def essential_invalid(self):
-        incorrect_columns = [
+        invalid_columns = [
             col
             for col in self.essential
             if not self.column_values_in_range(col, essential_events_columns)
         ]
 
-        if not incorrect_columns:
-            return None
-        else:
-            return incorrect_columns
+        if not invalid_columns:
+            invalid_columns = None
+
+        return invalid_columns
 
     @property
     def protected_missing(self):
@@ -133,46 +138,55 @@ class Events:
 
     @property
     def protected_invalid(self):
-        incorrect_columns = [
+        invalid_columns = [
             col
             for col in self.protected
             if not self.column_values_in_range(col, protected_columns)
         ]
-        if not incorrect_columns:
-            incorrect_columns = None
 
-        return incorrect_columns
+        if not invalid_columns:
+            invalid_columns = None
+
+        return invalid_columns
 
     def column_values_in_range(self, col: str, definitions: Dict[str, Dict]) -> bool:
-        """Perform the checks for value range for a single column of the inner event
-        DataFrame using the specifications from floodlight.core.definitions.
+        """Check if values for a single column of the inner event DataFrame are in
+        correct range using using the specifications from floodlight.core.definitions.
 
         Parameters
         ----------
         col: str
-            Column of the inner event DataFrame to be checked
+            Column name of the inner event DataFrame to be checked
         definitions: Dict
-            Dictionary for each column name to be checked. Each entry is a Dictionary
-            containing definitions for allowed value ranges of the respective
-            column. Information about value_range is given as a List of the form
-            [min_value, max_value].
+            Dictionary (from floodlight.core.definitions) containing specifications for
+            the columns to be checked.
+
+            The definitions need to contain an entry for the column to be checked and
+            this entry needs to contain information about the value range in the form:
+            ``definitions[col][value_range] = (min, max)``.
 
         Returns
         -------
         bool
             True if the checks for value range pass and False otherwise
+
+        Notes
+        -----
+        Non-integer results of this computation will always be rounded to the next
+        smaller integer.
         """
         # skip if value range is not defined
         if definitions[col]["value_range"] is None:
             return True
 
         # skip values that are None or NaN
-        check_col = self.events[col].dropna()
+        col_nan_free = self.events[col].dropna()
+
+        # retrieve value range from definitions
+        min_val, max_val = definitions[col]["value_range"]
 
         # check value range for remaining values
-        if not (definitions[col]["value_range"][0] <= check_col).all():
-            return False
-        if not (check_col <= definitions[col]["value_range"][1]).all():
+        if not (min_val <= col_nan_free).all() & (col_nan_free <= max_val).all():
             return False
 
         # all checks passed
@@ -191,7 +205,7 @@ class Events:
         frameclock[:] = np.floor(self.events["gameclock"].values * framerate)
         self.events["frameclock"] = frameclock
 
-    def find(
+    def select(
         self, conditions: Tuple[str, Any] or List[Tuple[str, Any]]
     ) -> pd.DataFrame:
         """Returns a DataFrame containing all entries from the inner events DataFrame
@@ -200,24 +214,27 @@ class Events:
         Parameters
         ----------
         conditions: Tuple or List of Tuples
-            Conditions used to filter the columns. Can be either a single Tuple or a
-            List of Tuples. If given as a List, all conditions are enforced. Conditions
-            can be of the form (column, value) or of the form (column, (min, max)). In
-            case of the former, the specified column of the inner events DataFrame is
-            searched for entries equal to value. In case of the latter, the specified
-            column is searched for values in the range (min, max).
-            entries.
+            A single or a list of conditions used for filtering. Each condition should
+            follow the form ``(column, value)``. If ``value`` is given as a variable
+            (can also be None), it is used to filter for an exact value. If given as a
+            tuple ``value = (min, max)`` that specifies a minimum and maximum value, it
+            is filtered for a value range.
+
+            For example, to filter all events that have the ``eID`` of ``"Pass"`` and
+            that happened within the first 1000 seconds of the segment, conditions
+            should look like:
+            ``conditions = [("eID", 1), ("gameclock", (0, 1000))]
 
         Returns
         -------
         filtered_events: pd.DataFrame
-            A copy of the inner events DataFrame where all entries fulfill all criteria
-            specified in conditions. The DataFrame can be empty if no entry with the
-            given value is found in the column.
+            A view of the inner events DataFrame with rows fulfilling all criteria
+            specified in conditions. The DataFrame can be empty if no row fulfills all
+            specified criteria.
         """
         filtered_events = self.events
 
-        # if single condition transform to list of conditions
+        # convert single non-list condition to list
         if not isinstance(conditions, list):
             conditions = [conditions]
 
@@ -238,5 +255,29 @@ class Events:
                     filtered_events = filtered_events[
                         filtered_events[condition[0]] == condition[1]
                     ]
+
+        # loop through and filter by conditions
+        for column, value in conditions:
+
+            # if the value is None filter for all entries with None, NaN or NA
+            if value is None:
+                filtered_events = filtered_events[filtered_events[column].isna()]
+
+            # check if a single value or a value range is given
+            else:
+
+                # value range: filter by minimum and maximum value
+                if isinstance(value, (list, tuple)):
+                    min_val, max_val = value
+                    filtered_events = filtered_events[
+                        filtered_events[column] >= min_val
+                    ]
+                    filtered_events = filtered_events[
+                        filtered_events[column] <= max_val
+                    ]
+
+                # single value: filter by that value
+                else:
+                    filtered_events = filtered_events[filtered_events[column] == value]
 
         return filtered_events
