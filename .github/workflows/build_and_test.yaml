@@ -49,8 +49,6 @@ jobs:
 
     - name: Lint with flake8
     - uses: TrueBrain/actions-flake8@v2.1
-      with:
-        python-version: ${{ matrix.python-version }}
 
     - name: Test with pytest
       run: |
