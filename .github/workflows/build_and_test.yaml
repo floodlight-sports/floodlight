@@ -1,8 +1,8 @@
-name: quick-build
+name: build
 
 on:
   push:
-    branches: [develop]
+    branches: [main, develop]
   pull_request:
     branches: []
 
@@ -15,7 +15,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.8]
+        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, '3.10']
         poetry-version: [1.1.11]
 
     steps:
