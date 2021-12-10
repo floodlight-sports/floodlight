@@ -47,8 +47,11 @@ jobs:
       run: poetry install
       if: steps.cache.outputs.cache-hit != 'true'
 
-    - name: Lint with flake8
-    - uses: TrueBrain/actions-flake8@v2.1
+
+    - name: flake8 Lint
+      uses: py-actions/flake8@v1
+      with:
+        flake8-version: ${{ matrix.python-version }}
 
     - name: Test with pytest
       run: |
