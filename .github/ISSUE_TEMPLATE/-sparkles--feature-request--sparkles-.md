@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-Checklist
+**Checklist**
 - [ ] I believe the feature fits the scope of the project
 
 **Is your feature request related to a problem? Please describe.**
