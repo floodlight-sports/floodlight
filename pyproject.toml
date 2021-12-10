@@ -5,7 +5,6 @@ description = "A high-level framework for sports data analysis"
 authors = ["draabe <draabx@posteo.org>"]
 license = "MIT"
 
-
 [tool.poetry.dependencies]
 python = ">=3.7, ~3.8"
 numpy = "^1.21.2"
@@ -23,7 +22,7 @@ commitizen = "^2.20.0"
 Sphinx = "^4.2.0"
 sphinx-rtd-theme = "^1.0.0"
 sphinx-autodoc-typehints = "^1.12.0"
-
+auto-changelog = "^0.5.3"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
