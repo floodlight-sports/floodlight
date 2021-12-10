@@ -6,7 +6,7 @@ authors = ["draabe <draabx@posteo.org>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.7, ~3.8"
+python = ">=3.7, <=3.10"
 numpy = "^1.21.2"
 pandas = "^1.3.4"
 lxml = "^4.6.4"
