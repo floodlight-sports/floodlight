@@ -81,3 +81,30 @@ def test_translate_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
 
     # Assert
     assert np.array_equal(translated_data, np.array([[3, 4, 5, 6], [7, 8, 9, 10]]))
+
+@pytest.mark.unit
+def test_rotate(example_xy_data_pos_int: np.ndarray) -> None:
+    # Arrange
+    data = XY(example_xy_data_pos_int)
+
+    # Act
+    data.rotate(90)
+    rotated_data_pos = data.xy
+    data = XY(example_xy_data_pos_int)
+    data.rotate(-90)
+    rotated_data_neg = data.xy
+    data = XY(example_xy_data_pos_int)
+
+    # Assert
+    assert np.array_equal(rotated_data_pos, np.array([[-2., 1., -4., 3.], [-6., 5., -8., 7.]]))
+    assert np.array_equal(rotated_data_neg, np.array([[2., -1., 4., -3.], [6., -5., 8., -7.]]))
+
+@pytest.mark.unit
+def test_rotate_assert(example_xy_data_pos_int: np.ndarray) -> None:
+    # Arrange
+    data = XY(example_xy_data_pos_int)
+
+    # Act
+    with pytest.raises(ValueError, match=f"Expected angle to be between -360 and 360"):
+        data.rotate(367)
+        rotated_data = data.xy

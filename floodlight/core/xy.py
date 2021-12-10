@@ -161,8 +161,30 @@ class XY:
             raise ValueError(f"Expected axis to be one of {0, 1}, got {axis}")
 
     def rotate(self, alpha: float):
-        """"""
-        pass
+        """ Rotates data on given angle 'alpha' around the origin.
+
+        Parameters
+        ----------
+        alpha: float
+            Rotation angle in degrees. Alpha must be between -360 and 360. If positive alpha,
+            data is rotated in counter clockwise direction around the origin. If negative,
+            data is rotated in clockwise direction around the origin.
+        """
+        if not (-360 <= alpha <= 360):
+            raise ValueError(f"Expected angle to be between -360 and 360")
+
+        phi = np.radians(alpha)
+        cos = np.cos(phi)
+        sin = np.sin(phi)
+
+        # construct rotation matrix
+        r = np.array([[cos, -sin], [sin, cos]]).transpose()
+
+        # construct block-diagonal rotation matrix to match number of players
+        r_diag = np.kron(np.eye(self.xy.shape[0]), r)
+
+        # perform rotation
+        self.xy = np.round(np.dot(self.xy, r_diag), 3)
 
     def permute(self, i: int, j: int):
         """"""
