@@ -83,21 +83,21 @@ protected_columns = {
         "value_range": None
     },
     "at_y": {
-            "definition": "The y position (lateral) where the event took place or "
-                          "originated from",
-            "dtypes": [float],
-            "value_range": None
+        "definition": "The y position (lateral) where the event took place or "
+                      "originated from",
+        "dtypes": [float],
+        "value_range": None
     },
     "to_x": {
-            "definition": "The x position (longitudinal) where the event ended",
-            "dtypes": [float],
-            "value_range": None
+        "definition": "The x position (longitudinal) where the event ended",
+        "dtypes": [float],
+        "value_range": None
     },
     "to_y": {
-            "definition": "The y position (lateral) where the event ended",
-            "dtypes": [float],
-            "value_range": None
-        },
+        "definition": "The y position (lateral) where the event ended",
+        "dtypes": [float],
+        "value_range": None
+    },
 }
 
 # fmt:on
