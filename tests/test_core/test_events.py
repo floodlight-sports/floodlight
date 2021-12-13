@@ -35,6 +35,29 @@ def test_events_setter(example_events_data_minimal: pd.DataFrame) -> None:
 
 
 @pytest.mark.unit
+def test_column_properties() -> None:
+    # Arrange df with different columns
+    columns = ["eID", "at_x", "to_x", "my_col"]
+    df = pd.DataFrame(columns=columns)
+
+    # trigger post_init
+    with pytest.raises(ValueError):
+        events = Events(events=df)
+
+    # add missing column
+    columns.append("gameclock")
+    df = pd.DataFrame(columns=columns)
+    events = Events(events=df)
+
+    # Assert column properties
+    assert events.essential == ["eID", "gameclock"]
+    assert events.protected == ["at_x", "to_x"]
+    assert events.custom == ["my_col"]
+    assert events.essential_missing is None
+    assert len(events.protected_missing) > 3
+
+
+@pytest.mark.unit
 def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
     # Arrange
     data = Events(example_events_data_minimal)
