@@ -48,7 +48,7 @@ class Pitch:
 
     def __str__(self):
         return (
-            f"Floodlight Pitch object of size x = {self.xlim} / y = {self.ylim} "
+            f"Floodlight Pitch object with axes x = {self.xlim} / y = {self.ylim} "
             f"({self.boundaries}) in [{self.unit}]"
         )
 
@@ -61,7 +61,7 @@ class Pitch:
         ----------
         template_name: str
             The name of the template the pitch should follow. Currently supported are
-            {'opta', 'chyronhego_international'}.
+            {'dfl', 'opta', 'statsperform', 'tracab'}.
         kwargs:
             You may pass optional arguments (`length`, `width`, `sport`} used for class
             instantiation. For some data providers, additional kwargs are needed to
@@ -73,12 +73,48 @@ class Pitch:
         pitch: Pitch
             A class instance of the given provider format.
         """
-        if template_name == "opta":
+        if template_name == "dfl":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact DFL (German Football League) "
+                    "Pitch object, `length` and `width` of the pitch need"
+                    "to be passed as keyworded arguments"
+                )
+            x_half = round(kwargs["length"] / 2, 3)
+            y_half = round(kwargs["width"] / 2, 3)
+            return cls(
+                xlim=(-x_half, x_half),
+                ylim=(-y_half, y_half),
+                unit="m",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
+            )
+        elif template_name == "opta":
             return cls(
                 xlim=(0.0, 100.0),
                 ylim=(0.0, 100.0),
                 unit="percent",
                 boundaries="fixed",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
+            )
+        elif template_name == "statsperform":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact StatsPerform Pitch object, "
+                    "`length` and `width` of the pitch need "
+                    "to be passed as keyworded arguments"
+                )
+            x_half = round(kwargs["length"] / 2, 3)
+            y_half = round(kwargs["width"] / 2, 3)
+            return cls(
+                xlim=(-x_half, x_half),
+                ylim=(-y_half, y_half),
+                unit="m",
+                boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
@@ -96,31 +132,6 @@ class Pitch:
                 xlim=(-x_half, x_half),
                 ylim=(-y_half, y_half),
                 unit="cm",
-                boundaries="flexible",
-                length=kwargs.get("length"),
-                width=kwargs.get("width"),
-                sport=kwargs.get("sport"),
-            )
-        elif template_name == "dfl":
-            if "length" not in kwargs or "width" not in kwargs:
-                raise TypeError(
-                    "For an exact DFL (German Football League) "
-                    "Pitch object, `length` and `width` of the pitch need"
-                    "to be passed as keyworded arguments"
-                )
-        elif template_name == "statsperform":
-            if "length" not in kwargs or "width" not in kwargs:
-                raise TypeError(
-                    "For an exact StatsPerform Pitch object, "
-                    "length` and `width` of the pitch need "
-                    "to be passed as keyworded arguments"
-                )
-            x_half = round(kwargs["length"] / 2, 3)
-            y_half = round(kwargs["width"] / 2, 3)
-            return cls(
-                xlim=(-x_half, x_half),
-                ylim=(-y_half, y_half),
-                unit="m",
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
