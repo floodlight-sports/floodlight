@@ -60,13 +60,3 @@ Handling
 Of course you may use whatever time-information-identification that you would like to use! For many purposes, its easier to use the scoreboard clock (e.g. for printing out stuff) or timestamps (e.g. for linking stuff). Internally, however, we rely on the ``gameclock`` as much as possible. This is due to the robustness reasons given above. But the real deal is the case of joint manipulation of frame-based and list-based objects!
 
 Within a segment (e.g. relative to its start), list-based objects can be time-identified with the ``gameclock``, and frame-based objects with index positions (plus a framerate). To join the former with the latter, let's say 'Hi' to another clock, the ``frameclock``\. Whereas the ``gameclock`` measures elapsed times in seconds, the ``frameclock`` measures elapsed time in frames for a given framerate. So it's really just ``frameclock = int(gameclock * framerate)``\, but its the little missing link to get all objects on the same page (or clock, if you like).
-
-With a synced frameclock (i.e. by making sure all frame-based objects are scaled to the same framerate), many cross-object manipulations become clear and intuitive one-liners
-
-.. code-block:: python
-
-    # Indexing position data to those segments where the team is in possession
-    home.xy[possession.code == "Home"]
-
-    # Finding the position data at the moment of a particular event
-    home.xy[home.events[eID == "Pass"]["frameclock"]]
