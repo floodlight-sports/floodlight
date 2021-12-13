@@ -1,15 +1,5 @@
-from .core.code import Code
-from .core.events import Events
-from .core.pitch import Pitch
-from .core.xy import XY
-
-__all__ = ["__version__", "__doc__", "Code", "Events", "Pitch", "XY"]
-
-__version__ = "0.2.0"
-
-__doc__ = """
-A high-level, data-driven sports analytics framework
-====================================================
+**floodlight** Documentation
+============================
 
 **floodlight** is a Python package for streamlined analysis of sports data. It is
 designed with a clear focus on scientific computing and built upon popular libraries
@@ -24,4 +14,40 @@ All implementations run completely provider- and sports-independent, while maint
 a maximum of flexibility to incorporate as many data flavours as possible. A high-level
 interface allows easy access to all standard routines, so that you can stop worrying
 about data wrangling and start focussing on the analysis instead!
-"""
+
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Package Guides
+
+    Getting started <guides/getting_started>
+    Contributing <guides/contrib_manual>
+
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Compendium
+
+    Intro <compendium/0_compendium>
+    Data <compendium/1_data>
+    Design <compendium/2_design>
+    Time <compendium/3_time>
+    Space <compendium/4_space>
+    Identifier <compendium/5_identifier>
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Module Reference
+
+   modules/core/core
+   modules/io/io
+   modules/utils/utils
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
