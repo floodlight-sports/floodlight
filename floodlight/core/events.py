@@ -82,22 +82,24 @@ class Events:
 
     @property
     def essential(self):
-        essential = list(set(self.events.columns) & set(essential_events_columns))
+        essential = [
+            col for col in self.events.columns if col in essential_events_columns
+        ]
 
         return essential
 
     @property
     def protected(self):
-        protected = list(set(self.events.columns) & set(protected_columns))
-
+        protected = [col for col in self.events.columns if col in protected_columns]
         return protected
 
     @property
     def custom(self):
-        custom = list(
-            set(self.events.columns)
-            - (set(essential_events_columns) | set(protected_columns))
-        )
+        custom = [
+            col
+            for col in self.events.columns
+            if col not in essential_events_columns and col not in protected_columns
+        ]
 
         return custom
 
@@ -223,7 +225,7 @@ class Events:
             For example, to filter all events that have the ``eID`` of ``"Pass"`` and
             that happened within the first 1000 seconds of the segment, conditions
             should look like:
-            ``conditions = [("eID", 1), ("gameclock", (0, 1000))]
+            ``conditions = [("eID", "Pass"), ("gameclock", (0, 1000))]``
 
         Returns
         -------
