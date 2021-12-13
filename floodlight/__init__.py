@@ -5,7 +5,7 @@ from .core.xy import XY
 
 __all__ = ["__version__", "__doc__", "Code", "Events", "Pitch", "XY"]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __doc__ = """
 A high-level, data-driven sports analytics framework
