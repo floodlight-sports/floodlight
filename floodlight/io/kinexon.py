@@ -293,29 +293,28 @@ def create_links_from_meta_data(
 
     Parameters
     ----------
-    pID_dict: Dict[str, Dict[str, List[str]]],
+    pID_dict: Dict[str, Dict[str, List[str]]]
         Nested dictionary that stores information about the pIDs from every player-
-        identifying column in every group.
-        'pID_dict[group][identifying_column] = [pID1, pID2, ..., pIDn]'
+        identifying column in every group. The format is
+        ``pID_dict[group][identifying_column] = [pID1, pID2, ..., pIDn]``.
+        When recording and exporting Kinexon data, the pID can be stored in different
+        columns. Player-identifying columns are ``"sensor_id"``, ``"mapped_id"``, and
+        ``"full_name"``. If the respective column is in the recorded data, its pIDs are
+        listed in ``pID_dict``.
+    identifier: str, optional
+        Column-name of personal identifier in Kinexon.csv-file, defaults to None.
+        Can be one of: ``"sensor_id"``, ``"mapped_id"``, ``"name"``.
+
         When recording and exporting Kinexon data, the pID can be stored
-        in different columns. Player-identifying columns are "sensor_id", "mapped_id",
-        and "full_name". If the respective column is in the recorded data, its pIDs are
-        listed in pID_dict.
-    identifier: str, default None
-        Column-name of personal identifier in Kinexon.csv-file.
-        Can be one of:
-            - 'sensor_id'
-            - 'mapped_id'
-            - 'name'
-        When recording and exporting Kinexon data, the pID can be stored
-        in different columns. Player-identifying columns are "sensor_id", "mapped_id",
-        and "full_name". If specified to one of the above, keys in links will be the
-        pIDs in that column. If not specified, it will use one of the columns, favoring
-        "name" over "mapped_id" over "sensor_id".
+        in different columns. Player-identifying columns are ``"sensor_id"``,
+        ``"mapped_id"``, and ``"full_name"``. If specified to one of the above, keys in
+        links will be the pIDs in that column. If not specified, it will use one of the
+        columns, favoring ``"name"`` over ``"mapped_id"`` over ``"sensor_id"``.
+
     Returns
     -------
     links: Dict[str, Dict[str, int]]
-        Link-dictionary of the form `links[group][identifier-ID] = xID`.
+        Link-dictionary of the form ``links[group][identifier-ID] = xID``.
     """
 
     if identifier is None:
