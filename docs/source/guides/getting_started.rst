@@ -18,7 +18,7 @@ and then imported into your local Python environment
 
 .. code-block:: python
 
-    import floodlight as flx
+    import floodlight
 
 
 Loading Data
@@ -72,10 +72,53 @@ As provider data is usually proprietary, you might find yourself without any dat
 
 .. code-block:: python
 
-    from floodlight.io.sample_data import load_sample_data
+    from floodlight.io.sample_data import sample_data
 
+    (
+        xy_home_ht1,
+        xy_home_ht2,
+        xy_away_ht1,
+        xy_away_ht2,
+        xy_ball_ht1,
+        xy_ball_ht2,
+        events_home_ht1,
+        events_home_ht2,
+        events_away_ht1,
+        events_away_ht2,
+        possession_ht1,
+        possession_ht2,
+        ballstatus_ht1,
+        ballstatus_ht2,
+        pitch,
+    ) = sample_data()
 
-Object handling
-===============
+Note that the sample data is already projected to the same pitch, so there are no separate objects for tracking data and events.
 
-Handle objects
+Object Manipulation
+===================
+
+Now that we have some objects loaded, let's manipulate them. Below are just a few examples, for all methods check out the :doc:`core <../modules/core/core>` module reference.
+
+.. code-block:: python
+
+    # rotate position data 180 degrees (counter-clockwise)
+    xy_home_ht1.rotate(180)
+    # show only x coordinates
+    print(xy_home_ht1.x)
+    # show points of 3rd player (xID=3)
+    xy_home_ht1.player(3)
+    # slice position data to first 100 frames
+    xy_home_ht1.slice(startframe=0, endframe=100, inplace=True)
+
+    # print coordinates of pitch middle
+    print(pitch.center)
+
+    # add "frameclock" column to events object
+    events_away_ht1.add_frameclock(5)
+    # show all "Pass" events within first 800 frames
+    events_away_ht1.select(conditions=[("eID", "Pass"), ("frameclock", (0, 800))])
+
+    # check what's stored in code object
+    print(possession_ht1.definitions)
+    # slice ball possession code to first 10 frames
+    possession_ht1.slice(startframe=0, endframe=10, inplace=True)
