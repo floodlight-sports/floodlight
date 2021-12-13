@@ -18,8 +18,8 @@ def get_opta_feedtype(filepath: Union[str, Path]) -> Union[str, None]:
     Thus it should have a "PRODUCTION HEADER" comment at the top of the file so that on
     line 6 it reads something like ``production module:  Opta::Feed::XML::Soccer::F24``.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     filepath : Union[str, Path]
         Full path to Opta XML file.
 
