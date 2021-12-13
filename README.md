@@ -1,29 +1,26 @@
 [version-image]: https://img.shields.io/badge/status-beta-006666
 [version-url]: https://img.shields.io/badge/status-beta-006666
-[python-image]: https://img.shields.io/badge/python-3.8-006666
-[python-url]: https://img.shields.io/badge/python-3.8-006666
-[build-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/build_and_test.yaml/badge.svg
-[build-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/build_and_test.yaml
-[coverage-image]: https://img.shields.io/badge/coverage-0%25-brightgreen
-[coverage-url]: https://img.shields.io/badge/coverage-0%25-brightgreen
-[contrib-image]: https://img.shields.io/badge/contributions-welcome-006666
-[contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
+[docs-image]: https://readthedocs.org/projects/floodlight/badge/?version=latest
+[docs-url]: https://floodlight.readthedocs.io/en/latest/?badge=latest
+[build-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml/badge.svg
+[build-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml
+[lint-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml/badge.svg
+[lint-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml
 [black-image]: https://img.shields.io/badge/code%20style-black-000000.svg
 [black-url]: https://github.com/psf/black
+[contrib-image]: https://img.shields.io/badge/contributions-welcome-006666
+[contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
 
 
 # floodlight
-
-
 [![PyPI][version-image]][version-url]
-[![Python][python-image]][python-url]
+[![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
+[![Linting Status][lint-image]][lint-url]
 [![Code style: black][black-image]][black-url]
 
 
-
 ## A high-level, data-driven sports analytics framework
-
 
 **floodlight** is a Python package for streamlined analysis of sports data. It is
 designed with a clear focus on scientific computing and built upon popular libraries
@@ -38,6 +35,7 @@ All implementations run completely provider- and sports-independent, while maint
 a maximum of flexibility to incorporate as many data flavours as possible. A high-level
 interface allows easy access to all standard routines, so that you can stop worrying
 about data wrangling and start focussing on the analysis instead!
+
 
 ### Features
 
@@ -70,6 +68,7 @@ parsing functionality for major data providers.
   - Tracking data
   - Event data
 
+
 ### Installation
 
 The package can be installed easily via pip:
@@ -78,13 +77,17 @@ The package can be installed easily via pip:
 pip install floodlight
 ```
 
+
 ### Contributing [![Contributions][contrib-image]][contrib-url]
 
 Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
 know to get started. We also provide an extended, beginner-friendly guide on how to
 start contributing in our documentation.
 
+
 ### Documentation
+
+You can find all documentation [here][docs-url].
 
 
 ### Why
@@ -102,6 +105,7 @@ We felt that as long as there is no underlying, high-level framework, each and e
 own implementation. At last, we found ourselves refactoring the same code - and there are certain processing or
 plotting routines that are required in *almost every* project - over and over again, just to fit the particular data
 structures we were dealing with at that time.
+
 
 ### Related Projects
 
