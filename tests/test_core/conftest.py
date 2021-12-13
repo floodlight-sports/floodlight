@@ -5,7 +5,8 @@ import pandas as pd
 from floodlight.core.code import Code
 
 
-# Create example data with fixtures to test all the functions
+# Sample data for easy creation of core objects
+# XY
 @pytest.fixture()
 def example_xy_data_pos_int() -> np.ndarray:
     positions = np.array([[1, 2, 3, 4], [5, 6, 7, 8]])
@@ -41,6 +42,7 @@ def example_xy_data_string() -> np.ndarray:
     return positions
 
 
+# Code
 @pytest.fixture()
 def example_code() -> Code:
     array = np.array(["A"] * 5 + ["H"] * 5)
