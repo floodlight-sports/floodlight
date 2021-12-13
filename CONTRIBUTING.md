@@ -5,7 +5,7 @@ Thank you for considering to help with this package! We warmly welcome all kinds
 
 Please also feel encouraged to open an issue (or PR) if you found a bug, have general feedback or if you are unsure whether your new feature would be a good addition.
 
-If all or some of this is new to you, and you would prefer a detailed step-by-step explanation of how to contribute, check out our extended contributing manual in the documentation.
+If all or some of this is new to you, and you would prefer a detailed step-by-step explanation of how to contribute, check out our extended contributing manual in the [documentation](floodlight.readthedocs.io).
 
 
 Development
@@ -37,6 +37,7 @@ We follow a few standards to ensure code quality:
 - [Docstrings](https://www.python.org/dev/peps/pep-0257/) are formatted in [numpy-style](https://numpydoc.readthedocs.io/en/latest/format.html) (as in this [example](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html)) to enable smooth creation of the API reference.
 - Commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
+
 Continuous Integration
 ----------------------
 
@@ -55,6 +56,7 @@ After installation, all hooks will be automatically called for each commit. You 
 poetry run pre-commit run --all-files
 ```
 
+
 Testing
 -------
 
@@ -72,7 +74,22 @@ We make use of fixtures for mock data, and also marks to group tests according t
 poetry run pytest -m unit
 ```
 
+
 Docs
 ----
 
 All documentation is stored in the `docs/` folder and are based on the *sphinx* package. There is a dedicated `README.md` in this folder with instructions on how to build the docs.
+
+Vision
+------
+
+The list of possible features for this package is endless, so we aim to keep things together. In the beginning, our focus really is on:
+
+* parsing functionality
+* observation-level core data structures
+* core object methods and handling
+* design and interface optimization
+
+The next step (in the future) would be to include a set of plotting methods, and analyses from published articles.
+
+Please also make sure you've checked out design principles from the documentation to understand our perspective on this package.
