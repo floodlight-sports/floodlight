@@ -15,12 +15,11 @@ def get_opta_feedtype(filepath: Union[str, Path]) -> Union[str, None]:
     """Tries to extract the feed type from Opta's XML feed.
 
     This function assumes that the file follows Opta's format of producing feeds.
-    Therefore it should have a PRODUCTION HEADER comment at the beginning of the file
-    so that on line 6 it reads something like
-    ``production module:  Opta::Feed::XML::Soccer::F24``.
+    Thus it should have a "PRODUCTION HEADER" comment at the top of the file so that on
+    line 6 it reads something like ``production module:  Opta::Feed::XML::Soccer::F24``.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     filepath : Union[str, Path]
         Full path to Opta XML file.
 
