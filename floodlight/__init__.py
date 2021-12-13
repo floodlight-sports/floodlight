@@ -3,7 +3,7 @@ from .core.events import Events
 from .core.pitch import Pitch
 from .core.xy import XY
 
-__all__ = ["Code", "Events", "Pitch", "XY"]
+__all__ = ["__version__", "__doc__", "Code", "Events", "Pitch", "XY"]
 
 __version__ = "0.1.0"
 
