@@ -179,7 +179,8 @@ class XY:
         r = np.array([[cos, -sin], [sin, cos]]).transpose()
 
         # construct block-diagonal rotation matrix to match number of players
-        r_diag = np.kron(np.eye(self.xy.shape[0]), r)
+        n_players = int(self.xy.shape[1] / 2)
+        r_diag = np.kron(np.eye(n_players), r)
 
         # perform rotation
         self.xy = np.round(np.dot(self.xy, r_diag), 3)
