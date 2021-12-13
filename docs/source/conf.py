@@ -2,7 +2,7 @@ import datetime
 import os
 import sys
 
-# from floodlight import __version__
+from floodlight import __version__
 
 # -- Path setup --------------------------------------------------------------
 sys.path.insert(0, os.path.abspath(".."))
@@ -14,8 +14,7 @@ year = datetime.datetime.now().year
 author = "Dominik Raabe"
 copyright = f"{year}, {author}"
 
-__version__ = "0.1.0"
-release = f"v{__version__}"
+release = f"{__version__}"
 
 
 # -- General configuration ---------------------------------------------------
