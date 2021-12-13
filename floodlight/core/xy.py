@@ -9,8 +9,7 @@ from floodlight.utils.types import Numeric
 
 @dataclass
 class XY:
-    """
-    Spatio-temporal data fragment. Core class of floodlight.
+    """Spatio-temporal data fragment. Core class of floodlight.
 
     Attributes
     ----------
@@ -61,8 +60,7 @@ class XY:
         self.xy[:, 1::2] = y_data
 
     def frame(self, t: int) -> np.ndarray:
-        """
-        Returns data for given frame *t*.
+        """Returns data for given frame *t*.
 
         Parameters
         ----------
@@ -77,8 +75,7 @@ class XY:
         return self.xy[t, :]
 
     def player(self, xID: int) -> np.ndarray:
-        """
-        Returns data for player with given player index *xID*.
+        """Returns data for player with given player index *xID*.
 
         Parameters
         ----------
@@ -94,8 +91,7 @@ class XY:
         return self.xy[:, xID * 2 : xID * 2 + 2]
 
     def point(self, t: int, xID: int) -> np.ndarray:
-        """
-        Returns data for a point determined by frame *t* and player index *xID*.
+        """Returns data for a point determined by frame *t* and player index *xID*.
 
         Parameters
         ----------
@@ -161,17 +157,19 @@ class XY:
             raise ValueError(f"Expected axis to be one of {0, 1}, got {axis}")
 
     def rotate(self, alpha: float):
-        """ Rotates data on given angle 'alpha' around the origin.
+        """Rotates data on given angle 'alpha' around the origin.
 
         Parameters
         ----------
         alpha: float
-            Rotation angle in degrees. Alpha must be between -360 and 360. If positive alpha,
-            data is rotated in counter clockwise direction around the origin. If negative,
-            data is rotated in clockwise direction around the origin.
+            Rotation angle in degrees. Alpha must be between -360 and 360. If positive
+            alpha, data is rotated in counter clockwise direction around the origin. If
+            negative, data is rotated in clockwise direction around the origin.
         """
         if not (-360 <= alpha <= 360):
-            raise ValueError(f"Expected angle to be between -360 and 360")
+            raise ValueError(
+                f"Expected alpha to be from -360 to 360, got {alpha} instead"
+            )
 
         phi = np.radians(alpha)
         cos = np.cos(phi)
@@ -185,24 +183,6 @@ class XY:
 
         # perform rotation
         self.xy = np.round(np.dot(self.xy, r_diag), 3)
-
-    def permute(self, i: int, j: int):
-        """"""
-        pass
-
-    def downsample(self):
-        pass
-
-    def upsample(self):
-        pass
-
-    def check_nan(self):
-        """"""
-        pass
-
-    def fill_nan(self):
-        """"""
-        pass
 
     def slice(
         self, startframe: int = None, endframe: int = None, inplace: bool = False
