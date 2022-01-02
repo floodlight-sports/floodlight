@@ -49,7 +49,7 @@ def _read_mat_info_xml(
     return pitch, kickoffs
 
 
-def _create_periods_and_timedelta_from_positions_xml(
+def _read_periods_and_timedelta_from_positions_xml(
     filepath_positions: Union[str, Path], kickoffs: Dict[str, int]
 ) -> Tuple[Dict[str, Tuple[int, int]], int]:
     """Parses over position xml file and returns a dictionary with periods as well as a
@@ -80,11 +80,10 @@ def _create_periods_and_timedelta_from_positions_xml(
         # read time
         frame_time = int(frame.get("t"))
 
-        # timedelta to estimate framerate
+        # compute timedelta (used for estimating framerate)
         if last_time is None:
             last_time = frame_time
         elif timedelta is None:
-            # convert millisecond time delta to framerate
             timedelta = frame_time - last_time
         else:
             pass
@@ -127,13 +126,16 @@ def create_links_from_mat_info_xml(
     tree = etree.parse(str(filepath_mat_info))
     root = tree.getroot()
 
-    # parse XML file and extract links from pID to xID for both teams
+    # parse XML file and extract links for both teams
+
+    # pID to jID
     links_pID_to_jID = {"Home": {}, "Away": {}}
     for player in root.find("Players").iterfind("Player"):
         links_pID_to_jID[player.get("team")][player.get("id")] = int(
             player.get("shirt")
         )
 
+    # jID to xID
     links_jID_to_xID = {
         "Home": {
             int(links_pID_to_jID["Home"][pID]): xID + 1
@@ -144,6 +146,7 @@ def create_links_from_mat_info_xml(
             for xID, pID in enumerate(links_pID_to_jID["Away"])
         },
     }
+
     return links_jID_to_xID, links_pID_to_jID
 
 
@@ -201,7 +204,7 @@ def read_soccerbot_position_xml(
         # potential check
 
     # create periods
-    periods, timedelta = _create_periods_and_timedelta_from_positions_xml(
+    periods, timedelta = _read_periods_and_timedelta_from_positions_xml(
         filepath_positions, kickoffs
     )
     segments = list(periods.keys())
@@ -266,35 +269,21 @@ def read_soccerbot_position_xml(
 
             # insert positions of the home team to correct place in bin
             for position in frame.find("HomeTeam").iterfind("Pos"):
-                x_col = (
-                    links_jID_to_xID["Home"][
-                        links_pID_to_jID["Home"][position.get("id")]
-                    ]
-                    - 1
-                ) * 2
-                y_col = (
-                    links_jID_to_xID["Home"][
-                        links_pID_to_jID["Home"][position.get("id")]
-                    ]
-                    - 1
-                ) * 2 + 1
+                pID = position.get("id")
+                jID = links_pID_to_jID["Home"][pID]
+                xID = links_jID_to_xID["Home"][jID]
+                x_col = (xID - 1) * 2
+                y_col = (xID - 1) * 2 + 1
                 xydata["Home"][segment][frame_num, x_col] = float(position.get("x"))
                 xydata["Home"][segment][frame_num, y_col] = float(position.get("y"))
 
             # insert positions of the away team to correct place in bin
             for position in frame.find("AwayTeam").iterfind("Pos"):
-                x_col = (
-                    links_jID_to_xID["Away"][
-                        links_pID_to_jID["Away"][position.get("id")]
-                    ]
-                    - 1
-                ) * 2
-                y_col = (
-                    links_jID_to_xID["Away"][
-                        links_pID_to_jID["Away"][position.get("id")]
-                    ]
-                    - 1
-                ) * 2 + 1
+                pID = position.get("id")
+                jID = links_pID_to_jID["Away"][pID]
+                xID = links_jID_to_xID["Away"][jID]
+                x_col = (xID - 1) * 2
+                y_col = (xID - 1) * 2 + 1
                 xydata["Away"][segment][frame_num, x_col] = float(position.get("x"))
                 xydata["Away"][segment][frame_num, y_col] = float(position.get("y"))
 
