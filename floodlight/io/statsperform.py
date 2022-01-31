@@ -4,7 +4,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import urllib.request  # the lib that handles the url stuff
+import urllib.request
+from lxml import etree
+
 
 from floodlight.core.code import Code
 from floodlight.core.events import Events
@@ -460,7 +462,7 @@ def _read_gameclocks_and_periods_from_tracking_data(
     for package in tracking_data_lines:
 
         # read line tracking_data_lines[-1]
-        gameclock, segment, _, _ = _read_url_single_line(package)
+        gameclock, segment, _, _ = _read_txt_single_line(package)
 
         # update gameclocks
         if segment not in gameclocks:
@@ -483,7 +485,7 @@ def _read_gameclocks_and_periods_from_tracking_data(
     return gameclocks, periods
 
 
-def _read_url_single_line(
+def _read_txt_single_line(
     package: str,
 ) -> Tuple[
     int,
@@ -592,7 +594,7 @@ def _read_jersey_numbers_from_tracking_lines(
     for package in tracking_data_lines:
 
         # read line
-        _, _, positions, _ = _read_url_single_line(package)
+        _, _, positions, _ = _read_txt_single_line(package)
 
         # extract jersey numbers
         home_jIDs |= positions["Home"].keys()
@@ -633,17 +635,118 @@ def create_links_from_tracking_url(
     return links
 
 
+def read_statsperform_event_data_xml(
+    url_events: Union[str, Path],
+) -> Tuple[Events, Events, Events, Events]:
+    """Parses an open StatsPerform Match Event XML file and extracts the event data.
+
+    This function provides a high-level access to the internal StatsPerform Match Events
+    XML file that is stored at a (secret) URL and returns Events objects for both teams.
+
+    Parameters
+    ----------
+    url_events: str
+        Full url to the csv file with the event data.
+
+    Returns
+    -------
+    data_objects: Tuple[Events, Events, Events, Events]
+        Events-objects for both teams and both halves.
+    """
+    # parse url
+    tree = etree.parse(url_events)
+    root = tree.getroot()
+
+    # initialize bins
+    events = {}
+    segments = ["1", "2"]
+    teams = ["HomeTeam", "AwayTeam"]
+    for team in teams:
+        events[team] = {segment: pd.DataFrame() for segment in segments}
+    links_pID_to_tID = {}
+    links_pID_to_name = {}
+
+    for teamsheet in root.findall("MatchSheet/Team"):
+        # read team
+        team = teamsheet.attrib["Type"]
+        # skip referees
+        if teamsheet.attrib["Type"] == "Referees":
+            continue
+        # assign player ids to team
+        for actor in teamsheet.findall("Actor"):
+            links_pID_to_tID[actor.attrib["IdActor"]] = team
+            links_pID_to_name[actor.attrib["IdActor"]] = actor.attrib["NickName"]
+
+    # loop over events
+    for half in root.findall("Events/EventsHalf"):
+        # read segment
+        segment = half.attrib["IdHalf"]
+        for elem in half.findall("Event"):
+            # read team
+            team = None
+            if elem.attrib["IdActor1"]:
+                team = links_pID_to_tID[elem.attrib["IdActor1"]]
+
+            # create event
+            event = {}
+            event["eID"] = elem.attrib["EventName"]
+
+            # relative time
+            print(elem.attrib["Time"])
+            event["gameclock"] = float(elem.attrib["Time"])
+
+            # segment, player and team
+            event["tID"] = team
+            event["pID"] = elem.attrib["IdActor1"]
+
+            # TODO: outcome
+            event["outcome"] = np.nan
+
+            # minute and second of game
+            event["minute"] = np.floor(event["gameclock"] / 60)
+            event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
+
+            # insert to bin
+            if team:
+                events[team][segment] = events[team][segment].append(
+                    event, ignore_index=True
+                )
+            else:  # if no clear assignment possible, insert to bins for both teams
+                for team in teams:
+                    events[team][segment] = events[team][segment].append(
+                        event, ignore_index=True
+                    )
+
+    # assembly
+    t1_ht1 = Events(
+        events=events["1.0"]["1"],
+    )
+    t1_ht2 = Events(
+        events=events["1.0"]["2"],
+    )
+    t2_ht1 = Events(
+        events=events["2.0"]["1"],
+    )
+    t2_ht2 = Events(
+        events=events["2.0"]["2"],
+    )
+    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
+
+    return data_objects
+
+
 def read_statsperform_tracking_data_url(
     url_tracking: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code]:
-    """Parses an open StatsPerform CSV file and extract position data and possession
-    codes as well as pitch information.
+    """Parses an open StatsPerform URL with tracking data to extract position data and
+    activeness codes.
 
-     Openly published StatsPerform position data (e.g. for the Pro Forum '22) is stored
-     in a CSV file containing all position data (for both halves) as well as information
-     about players, the pitch size, and the ball possession. This function provides a
-     high-level access to StatsPerform data by parsing the CSV file.
+     Internal StatsPerform position data is stored as a .txt file containing all
+     position data (for both halves) as well as information about players and the
+     activeness of the game at a (secret) URL location (StatsEdgeViewer). This function
+     provides a high-level access to StatsPerform data by parsing the txt file at the
+     URL.
 
     Parameters
     ----------
@@ -721,7 +824,7 @@ def read_statsperform_tracking_data_url(
     for package in tracking_data_lines:
 
         # read line to get gameclock, player positions and ball info
-        gameclock, segment, positions, ball = _read_url_single_line(package)
+        gameclock, segment, positions, ball = _read_txt_single_line(package)
 
         # check if frame is in any segment
         if segment is None:
@@ -782,8 +885,8 @@ def read_statsperform_tracking_data_url(
     return data_objects
 
 
-read_statsperform_tracking_data_url(
-    "http://delivery.prozone-it.com/"
-    + "U2FsdGVkX18TdoOgfHjNwxt3LA5DsxXqhcExmEhu9JNWiOPaPJxotylVfjGqdRlG8oFNO4j7JKFxHf"
-    "CEKFO1TQ==/FRAN_RAW_GAME_OPT_TGV_25FPS$2248508.TXT"
+read_statsperform_event_data_xml(
+    "http://delivery.prozone-it.com/U2FsdGVkX19418RUaKWahz"
+    "OckyTMv3rlJq8/ZyNajUm/jP+erlFkMuc1P6/EKNmR2xQimcXoieX"
+    "INXjp5O2pig==/Match_PSGER-LILLE-030421_EVENT.xml"
 )
