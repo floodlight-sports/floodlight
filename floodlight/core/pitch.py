@@ -85,7 +85,7 @@ class Pitch:
             return cls(
                 xlim=(-x_half, x_half),
                 ylim=(-y_half, y_half),
-                unit="m",
+                unit="cm",
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
