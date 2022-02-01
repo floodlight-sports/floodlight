@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Tuple, Union, List
+from typing import Any, Dict, Tuple, Union, List
 from pathlib import Path
 
 import numpy as np
@@ -434,6 +434,39 @@ def read_open_statsperform_tracking_data_csv(
 # ------------------------- TODO: StatsPerform Closed Format
 
 
+def _get_and_convert(dic: dict, key: Any, value_type: type, default: Any = None) -> Any:
+    """Performs dictionary get and type conversion simultaneously.
+
+    Parameters
+    ----------
+    dic: dict
+        Dictionary to be queried.
+    key: Any
+        Key to be looked up.
+    value_type: type
+        Desired output type the value should be cast into.
+    default: Any, optional
+        Return value if key is not in dic, defaults to None.
+
+    Returns
+    -------
+    value: value_type
+        Returns the value for key if key is in dic, else default. Tries type conversion
+        to `type(value) = value_type`. If type conversion fails, e.g. by trying to force
+        something like `float(None)` due to a missing dic entry, value is returned in
+        its original data type.
+    """
+    value = dic.get(key, default)
+    try:
+        value = value_type(value)
+    except TypeError:
+        pass
+    except ValueError:
+        pass
+
+    return value
+
+
 def _read_gameclocks_and_periods_from_tracking_data(
     tracking_data_lines: List[str],
 ) -> Tuple[Dict, Dict]:
@@ -637,7 +670,7 @@ def create_links_from_tracking_url(
 
 def read_statsperform_event_data_xml(
     url_events: Union[str, Path],
-) -> Tuple[Events, Events, Events, Events]:
+) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Parses an open StatsPerform Match Event XML file and extracts the event data.
 
     This function provides a high-level access to the internal StatsPerform Match Events
@@ -653,84 +686,143 @@ def read_statsperform_event_data_xml(
     data_objects: Tuple[Events, Events, Events, Events]
         Events-objects for both teams and both halves.
     """
-    # parse url
+    # load xml tree from url into memory
     tree = etree.parse(url_events)
     root = tree.getroot()
 
-    # initialize bins
-    events = {}
-    segments = ["1", "2"]
-    teams = ["HomeTeam", "AwayTeam"]
-    for team in teams:
-        events[team] = {segment: pd.DataFrame() for segment in segments}
-    links_pID_to_tID = {}
-    links_pID_to_name = {}
+    # read segments and assign teams
+    columns = [
+        "eID",
+        "gameclock",
+        "pID",
+        "jID",
+        # "outcome",
+        "minute",
+        "second",
+        "at_x",
+        "at_y",
+        "to_x",
+        "to_y",
+        "qualifier",
+    ]
+    segments = [
+        f"HT{_get_and_convert(period.attrib, 'IdHalf', str)}"
+        for period in root.findall("Events/EventsHalf")
+    ]
+    teams = ["Home", "Away"]
 
+    # bins
+    event_lists = {
+        team: {segment: {col: [] for col in columns} for segment in segments}
+        for team in teams
+    }
+
+    # create links
+    links_pID_to_tID = {}
+    links_pID_to_jID = {}
+    links_pID_to_name = {}
     for teamsheet in root.findall("MatchSheet/Team"):
-        # read team
-        team = teamsheet.attrib["Type"]
         # skip referees
         if teamsheet.attrib["Type"] == "Referees":
             continue
+        # read team
+        team = teamsheet.attrib["Type"][:-4]  # cut 'Team' of e.g. 'HomeTeam'
         # assign player ids to team
         for actor in teamsheet.findall("Actor"):
-            links_pID_to_tID[actor.attrib["IdActor"]] = team
-            links_pID_to_name[actor.attrib["IdActor"]] = actor.attrib["NickName"]
+            if actor.attrib["Occupation"] != "Player":  # coaches etc.
+                continue
+            links_pID_to_tID[_get_and_convert(actor, "IdActor1", int)] = team
+            links_pID_to_jID[
+                _get_and_convert(actor, "IdActor1", int)
+            ] = _get_and_convert(actor, "JerseyNumber", int)
+            links_pID_to_name[
+                _get_and_convert(actor, "IdActor1", int)
+            ] = _get_and_convert(actor, "NickName", str)
 
     # loop over events
     for half in root.findall("Events/EventsHalf"):
-        # read segment
-        segment = half.attrib["IdHalf"]
-        for elem in half.findall("Event"):
-            # read team
-            team = None
-            if elem.attrib["IdActor1"]:
-                team = links_pID_to_tID[elem.attrib["IdActor1"]]
+        # get segment information
+        period = _get_and_convert(half.attrib, "IdHalf", str)
+        segment = "HT" + str(period)
+        for event in half.findall("Event"):
+            # read pID
+            pID = _get_and_convert(event.attrib, "IdActor1", str)
 
-            # create event
-            event = {}
-            event["eID"] = elem.attrib["EventName"]
+            # assign team
+            team = _get_and_convert(links_pID_to_tID, pID, str)
+
+            # create list of either a single team or both teams if no clear assignment
+            if team == "None":
+                team = teams
+            else:
+                team = [team]
+
+            # identifier TODO: and outcome
+            eID = _get_and_convert(event.attrib, "EventName", str)
+            pID = _get_and_convert(event.attrib, "IdActor1", int)
+            jID = _get_and_convert(links_pID_to_jID, pID, int)
+            for team in teams:
+                event_lists[team][segment]["eID"].append(eID)
+                event_lists[team][segment]["pID"].append(pID)
+                event_lists[team][segment]["jID"].append(jID)
 
             # relative time
-            print(elem.attrib["Time"])
-            event["gameclock"] = float(elem.attrib["Time"])
+            gameclock = _get_and_convert(event.attrib, "Time", int)
+            minute = np.floor(gameclock / 60)
+            second = np.floor(gameclock - minute * 60)
+            for team in teams:
+                event_lists[team][segment]["gameclock"].append(gameclock)
+                event_lists[team][segment]["minute"].append(minute)
+                event_lists[team][segment]["second"].append(second)
 
-            # segment, player and team
-            event["tID"] = team
-            event["pID"] = elem.attrib["IdActor1"]
+            # location
+            at_x = _get_and_convert(event.attrib, "LocationX", float)
+            at_y = _get_and_convert(event.attrib, "LocationY", float)
+            to_x = _get_and_convert(event.attrib, "TargetX", float)
+            to_y = _get_and_convert(event.attrib, "TargetY", float)
+            for team in teams:
+                event_lists[team][segment]["at_x"].append(at_x)
+                event_lists[team][segment]["at_y"].append(at_y)
+                event_lists[team][segment]["to_x"].append(to_x)
+                event_lists[team][segment]["to_y"].append(to_y)
 
-            # TODO: outcome
-            event["outcome"] = np.nan
+            # qualifier
+            qual_dict = {}
+            for qual_id in event.attrib:
+                qual_value = event.attrib.get(qual_id)
+                qual_dict[qual_id] = qual_value
+            for team in teams:
+                event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-            # minute and second of game
-            event["minute"] = np.floor(event["gameclock"] / 60)
-            event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
-
-            # insert to bin
-            if team:
-                events[team][segment] = events[team][segment].append(
-                    event, ignore_index=True
-                )
-            else:  # if no clear assignment possible, insert to bins for both teams
-                for team in teams:
-                    events[team][segment] = events[team][segment].append(
-                        event, ignore_index=True
-                    )
-
-    # assembly
-    t1_ht1 = Events(
-        events=events["1.0"]["1"],
+    # assembly TODO: directions
+    home_ht1 = Events(
+        events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
     )
-    t1_ht2 = Events(
-        events=events["1.0"]["2"],
+    home_ht2 = Events(
+        events=pd.DataFrame(data=event_lists["Home"]["HT2"]),
     )
-    t2_ht1 = Events(
-        events=events["2.0"]["1"],
+    away_ht1 = Events(
+        events=pd.DataFrame(data=event_lists["Away"]["HT1"]),
     )
-    t2_ht2 = Events(
-        events=events["2.0"]["2"],
+    away_ht2 = Events(
+        events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
     )
-    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
+
+    # create pitch
+    length = _get_and_convert(root.attrib, "FieldLength", int)
+    width = _get_and_convert(root.attrib, "FieldWidth", int)
+    x_half = round(length / 2, 3)
+    y_half = round(width / 2, 3)
+    pitch = Pitch(
+        xlim=(-x_half, x_half),
+        ylim=(-y_half, y_half),
+        unit="cm",
+        boundaries="flexible",
+        length=length,
+        width=width,
+        sport="football",
+    )
+    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
 
     return data_objects
 
