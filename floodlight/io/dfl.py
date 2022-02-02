@@ -652,25 +652,25 @@ def read_position_data_xml(
 
     # create Code objects
     possession_ht1 = Code(
-        code=codes["possession"]["firstHalf"],
+        code=np.array(codes["possession"]["firstHalf"]),
         name="possession",
         definitions={1: "Home", 2: "Away"},
         framerate=framerate_est,
     )
     possession_ht2 = Code(
-        code=codes["possession"]["secondHalf"],
+        code=np.array(codes["possession"]["secondHalf"]),
         name="possession",
         definitions={1: "Home", 2: "Away"},
         framerate=framerate_est,
     )
     ballstatus_ht1 = Code(
-        code=codes["ballstatus"]["firstHalf"],
+        code=np.array(codes["ballstatus"]["firstHalf"]),
         name="ballstatus",
         definitions={0: "Dead", 1: "Alive"},
         framerate=framerate_est,
     )
     ballstatus_ht2 = Code(
-        code=codes["ballstatus"]["secondHalf"],
+        code=np.array(codes["ballstatus"]["secondHalf"]),
         name="ballstatus",
         definitions={0: "Dead", 1: "Alive"},
         framerate=framerate_est,
