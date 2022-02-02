@@ -14,6 +14,9 @@ from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
 
 
+# ----------------------------- StatsPerform Open Format -------------------------------
+
+
 def _create_metadata_from_csv_df(
     csv_df: pd.DataFrame,
 ) -> Tuple[Dict[int, tuple], Pitch]:
@@ -37,7 +40,7 @@ def _create_metadata_from_csv_df(
     pi_len = csv_df["pitch_dimension_long_side"].values[0]
     pi_wid = csv_df["pitch_dimension_short_side"].values[0]
     pitch = Pitch.from_template(
-        "statsperform",
+        "statsperform_open",
         length=pi_len,
         width=pi_wid,
         sport="football",
@@ -431,7 +434,7 @@ def read_open_statsperform_tracking_data_csv(
     return data_objects
 
 
-# ------------------------- TODO: StatsPerform Closed Format
+# ----------------------------- StatsPerform Closed Format -----------------------------
 
 
 def _get_and_convert(dic: dict, key: Any, value_type: type, default: Any = None) -> Any:
@@ -562,7 +565,7 @@ def _read_txt_single_line(
     timeinfo = chunks[1].split(",")
     gameclock = int(timeinfo[0])
     segment = int(timeinfo[1])
-    ballstatus = int(timeinfo[2].split(":")[0] == 0)  # 0 means game is not paused!
+    # ballstatus = timeinfo[2].split(":")[0] == '0'  # 0 seems to be always the case
 
     # remaining chunks (player ball positions)
     for pos_chunk in chunks[3:]:
@@ -574,9 +577,8 @@ def _read_txt_single_line(
         # check if ball or player
         if pos_chunk[0] == ":":  # ball data starts with ':
             x, y, z = map(lambda x: float(x), pos_chunk.split(":")[1].split(","))
-            # ball["position"] = (x, y, z)
+            # ball["position"] = (x, y, z)  # z-coordinate is not yet supported
             ball["position"] = (x, y)
-            ball["ballstatus"] = ballstatus
         else:  # player
 
             # read team
@@ -671,7 +673,7 @@ def create_links_from_tracking_url(
 def read_statsperform_event_data_xml(
     url_events: Union[str, Path],
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
-    """Parses an open StatsPerform Match Event XML file and extracts the event data.
+    """Parses a StatsPerform .xml file stored at a given URL address for Events.
 
     This function provides a high-level access to the internal StatsPerform Match Events
     XML file that is stored at a (secret) URL and returns Events objects for both teams.
@@ -696,7 +698,6 @@ def read_statsperform_event_data_xml(
         "gameclock",
         "pID",
         "jID",
-        # "outcome",
         "minute",
         "second",
         "at_x",
@@ -753,15 +754,15 @@ def read_statsperform_event_data_xml(
 
             # create list of either a single team or both teams if no clear assignment
             if team == "None":
-                team = teams
+                teams_assigned = teams  # add to both teams
             else:
-                team = [team]
+                teams_assigned = [team]  # only add to one team
 
-            # identifier TODO: and outcome
+            # identifier
             eID = _get_and_convert(event.attrib, "EventName", str)
             pID = _get_and_convert(event.attrib, "IdActor1", int)
             jID = _get_and_convert(links_pID_to_jID, pID, int)
-            for team in teams:
+            for team in teams_assigned:
                 event_lists[team][segment]["eID"].append(eID)
                 event_lists[team][segment]["pID"].append(pID)
                 event_lists[team][segment]["jID"].append(jID)
@@ -770,7 +771,7 @@ def read_statsperform_event_data_xml(
             gameclock = _get_and_convert(event.attrib, "Time", int)
             minute = np.floor(gameclock / 60)
             second = np.floor(gameclock - minute * 60)
-            for team in teams:
+            for team in teams_assigned:
                 event_lists[team][segment]["gameclock"].append(gameclock)
                 event_lists[team][segment]["minute"].append(minute)
                 event_lists[team][segment]["second"].append(second)
@@ -780,7 +781,7 @@ def read_statsperform_event_data_xml(
             at_y = _get_and_convert(event.attrib, "LocationY", float)
             to_x = _get_and_convert(event.attrib, "TargetX", float)
             to_y = _get_and_convert(event.attrib, "TargetY", float)
-            for team in teams:
+            for team in teams_assigned:
                 event_lists[team][segment]["at_x"].append(at_x)
                 event_lists[team][segment]["at_y"].append(at_y)
                 event_lists[team][segment]["to_x"].append(to_x)
@@ -791,10 +792,20 @@ def read_statsperform_event_data_xml(
             for qual_id in event.attrib:
                 qual_value = event.attrib.get(qual_id)
                 qual_dict[qual_id] = qual_value
-            for team in teams:
+            for team in teams_assigned:
                 event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-    # assembly TODO: directions
+    # create pitch
+    length = _get_and_convert(root.attrib, "FieldLength", int)
+    width = _get_and_convert(root.attrib, "FieldWidth", int)
+    pitch = Pitch.from_template(
+        "statsperform_internal",
+        length=length,
+        width=width,
+        sport="football",
+    )
+
+    # assembly
     home_ht1 = Events(
         events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
     )
@@ -808,20 +819,6 @@ def read_statsperform_event_data_xml(
         events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
     )
 
-    # create pitch
-    length = _get_and_convert(root.attrib, "FieldLength", int)
-    width = _get_and_convert(root.attrib, "FieldWidth", int)
-    x_half = round(length / 2, 3)
-    y_half = round(width / 2, 3)
-    pitch = Pitch(
-        xlim=(-x_half, x_half),
-        ylim=(-y_half, y_half),
-        unit="cm",
-        boundaries="flexible",
-        length=length,
-        width=width,
-        sport="football",
-    )
     data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
 
     return data_objects
@@ -830,15 +827,14 @@ def read_statsperform_event_data_xml(
 def read_statsperform_tracking_data_url(
     url_tracking: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code]:
-    """Parses an open StatsPerform URL with tracking data to extract position data and
-    activeness codes.
+) -> Tuple[XY, XY, XY, XY, XY, XY]:
+    """Parses a StatsPerform .txt file stored at a given URL address and extracts
+    position data and activeness codes.
 
      Internal StatsPerform position data is stored as a .txt file containing all
      position data (for both halves) as well as information about players and the
      activeness of the game at a (secret) URL location (StatsEdgeViewer). This function
-     provides a high-level access to StatsPerform data by parsing the txt file at the
-     URL.
+     provides a high-level access to StatsPerform data by parsing the txt file.
 
     Parameters
     ----------
@@ -865,7 +861,7 @@ def read_statsperform_tracking_data_url(
     for line in response_lines:
         tracking_data_lines.append(str(line.decode("utf-8")))
 
-    # read framerate from url description
+    # read framerate from url address
     framerate = None
     metadata = {}
     for url_info_chunk in url_tracking.split("_"):
@@ -949,36 +945,6 @@ def read_statsperform_tracking_data_url(
     ball_ht1 = XY(xy=xydata["Ball"][1], framerate=metadata["framerate"])
     ball_ht2 = XY(xy=xydata["Ball"][2], framerate=metadata["framerate"])
 
-    # create Code objects
-    ballstatus_ht1 = Code(
-        code=np.array(codes["ballstatus"][1]),
-        name="ballstatus",
-        definitions={False: "Dead", True: "Alive"},
-        framerate=metadata["framerate"],
-    )
-    ballstatus_ht2 = Code(
-        code=np.array(codes["ballstatus"][2]),
-        name="ballstatus",
-        definitions={False: "Dead", True: "Alive"},
-        framerate=metadata["framerate"],
-    )
-
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
-    )
+    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2)
 
     return data_objects
-
-
-read_statsperform_event_data_xml(
-    "http://delivery.prozone-it.com/U2FsdGVkX19418RUaKWahz"
-    "OckyTMv3rlJq8/ZyNajUm/jP+erlFkMuc1P6/EKNmR2xQimcXoieX"
-    "INXjp5O2pig==/Match_PSGER-LILLE-030421_EVENT.xml"
-)
