@@ -202,6 +202,8 @@ def read_f24(
         timestamp = iso8601.parse_date(event_timestring, default_timezone=pytz.utc)
         delta = timestamp - kickoffs[segment]
         gameclock = delta.total_seconds()
+        # re-adjust pre-kick-off events (e.g. substitutions) to 00:00
+        gameclock = max(gameclock, 0.0)
         event_lists[team][segment]["timestamp"].append(timestamp)
         event_lists[team][segment]["minute"].append(minute)
         event_lists[team][segment]["second"].append(second)
