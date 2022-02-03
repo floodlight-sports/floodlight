@@ -747,7 +747,7 @@ def read_statsperform_event_data_xml(
         segment = "HT" + str(period)
         for event in half.findall("Event"):
             # read pID
-            pID = _get_and_convert(event.attrib, "IdActor1", str)
+            pID = _get_and_convert(event.attrib, "IdActor1", int)
 
             # assign team
             team = _get_and_convert(links_pID_to_tID, pID, str)
@@ -760,7 +760,6 @@ def read_statsperform_event_data_xml(
 
             # identifier
             eID = _get_and_convert(event.attrib, "EventName", str)
-            pID = _get_and_convert(event.attrib, "IdActor1", int)
             jID = _get_and_convert(links_pID_to_jID, pID, int)
             for team in teams_assigned:
                 event_lists[team][segment]["eID"].append(eID)
