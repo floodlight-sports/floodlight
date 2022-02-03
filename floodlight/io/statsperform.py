@@ -732,7 +732,7 @@ def read_statsperform_event_data_xml(
         for actor in teamsheet.findall("Actor"):
             if actor.attrib["Occupation"] != "Player":  # coaches etc.
                 continue
-            links_pID_to_tID[_get_and_convert(actor, "IdActor1", int)] = team
+            links_pID_to_tID[_get_and_convert(actor, "IdActor", int)] = team
             links_pID_to_jID[
                 _get_and_convert(actor, "IdActor", int)
             ] = _get_and_convert(actor, "JerseyNumber", int)
