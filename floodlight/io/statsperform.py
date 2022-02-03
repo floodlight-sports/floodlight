@@ -734,10 +734,10 @@ def read_statsperform_event_data_xml(
                 continue
             links_pID_to_tID[_get_and_convert(actor, "IdActor1", int)] = team
             links_pID_to_jID[
-                _get_and_convert(actor, "IdActor1", int)
+                _get_and_convert(actor, "IdActor", int)
             ] = _get_and_convert(actor, "JerseyNumber", int)
             links_pID_to_name[
-                _get_and_convert(actor, "IdActor1", int)
+                _get_and_convert(actor, "IdActor", int)
             ] = _get_and_convert(actor, "NickName", str)
 
     # loop over events
