@@ -137,6 +137,42 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
+        elif template_name == "tracab":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact TRACAB (ChyronHego, international format) "
+                    "Pitch object, `length` and `width` of the pitch need "
+                    "to be passed as keyworded arguments"
+                )
+            x_half = round(kwargs["length"] / 2, 3)
+            y_half = round(kwargs["width"] / 2, 3)
+            return cls(
+                xlim=(-x_half, x_half),
+                ylim=(-y_half, y_half),
+                unit="cm",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
+            )
+        elif template_name == "soccerbot":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact SoccerBot"
+                    "Pitch object, `length` and `width` of the pitch need"
+                    "to be passed as keyworded arguments"
+                )
+            x_half = round(kwargs["length"] / 2, 3)
+            y_half = round(kwargs["width"] / 2, 3)
+            return cls(
+                xlim=(-x_half, x_half),
+                ylim=(-y_half, y_half),
+                unit="m",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
+            )
         else:
             raise ValueError(f"Unsupported template name '{template_name}'")
 
