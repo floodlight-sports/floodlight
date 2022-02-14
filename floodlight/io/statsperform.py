@@ -556,49 +556,53 @@ def _read_txt_single_line(
     ball = {}
 
     # read chunks
-    chunks = package.split(";")
+    chunks = package.split(":")
+    time_chunk = chunks[0]
+    player_chunks = chunks[1].split(";")
 
-    # first chunk (system clock)
+    ball_chunk = None
+    if len(chunks) > 2:  # check if ball information exist in chunk
+        ball_chunk = chunks[2]
+
+    # time chunk
+    # systemclock = time_chunk.split(";")[0]
     # possible check or synchronization step
-
-    # second chunk (time info)
-    timeinfo = chunks[1].split(",")
+    timeinfo = time_chunk.split(";")[1].split(",")
     gameclock = int(timeinfo[0])
     segment = int(timeinfo[1])
     # ballstatus = timeinfo[2].split(":")[0] == '0'  # 0 seems to be always the case
 
-    # remaining chunks (player ball positions)
-    for pos_chunk in chunks[3:]:
+    # player chunks
+    for player_chunk in player_chunks:
 
         # skip final entry of chunk
-        if pos_chunk == "\n":
+        if not player_chunk or player_chunk == "\n":
             continue
 
-        # check if ball or player
-        if pos_chunk[0] == ":":  # ball data starts with ':
-            x, y, z = map(lambda x: float(x), pos_chunk.split(":")[1].split(","))
-            # ball["position"] = (x, y, z)  # z-coordinate is not yet supported
-            ball["position"] = (x, y)
-        else:  # player
+        # read team
+        chunk_data = player_chunk.split(",")
+        if chunk_data[0] in ["0", "3"]:
+            team = "Home"
+        elif chunk_data[0] in ["1", "4"]:
+            team = "Away"
+        else:
+            team = "Other"
 
-            # read team
-            chunk_data = pos_chunk.split(",")
-            if chunk_data[0] in ["0", "3"]:
-                team = "Home"
-            elif chunk_data[0] in ["1", "4"]:
-                team = "Away"
-            else:
-                team = "Other"
+        # read IDs
+        # pID = chunk_data[1]
+        jID = chunk_data[2]
 
-            # read IDs
-            # pID = chunk_data[1]
-            jID = chunk_data[2]
+        # read positions
+        x, y = map(lambda x: float(x), chunk_data[3:])
 
-            # read positions
-            x, y = map(lambda x: float(x), chunk_data[3:])
+        # assign
+        positions[team][jID] = (x, y)
 
-            # assign
-            positions[team][jID] = (x, y)
+    # ball chunk
+    if ball_chunk is not None:
+        x, y, z = map(lambda x: float(x), ball_chunk.split(";")[0].split(","))
+        # ball["position"] = (x, y, z)  # z-coordinate is not yet supported
+        ball["position"] = (x, y)
 
     return gameclock, segment, positions, ball
 
