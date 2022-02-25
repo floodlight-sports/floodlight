@@ -172,8 +172,8 @@ class Pitch:
              sport must not be passed as an argument.
 
         color_scheme: str, optional
-            Color scheme of the plot. One of {'normal', 'black_white'}. If not given '
-            normal' is the defaulte color scheme.
+            Color scheme of the plot. One of {'normal', 'black_white'}. If not given
+            'normal' is the defaulte color scheme.
 
         save: bool, optional
             You may want to save the graph. If the graphic should be saved 'save' must
@@ -214,7 +214,7 @@ class Pitch:
                 + f"{color_schemes}"
             )
 
-        # initialize essential parameters for plotting
+        # initialize essential parameters for plotting with matplotlib
         scalex = kwargs.get("scalex", False)
         scaley = kwargs.get("scaley", False)
 
@@ -268,12 +268,12 @@ class Pitch:
             data limits of the y values.
         color_scheme: str
              Color scheme of the plot. One of {'normal', 'black_white'}.
-             If not given 'normal' is the defaulte color scheme.
+             If not given 'normal' is the default color scheme.
         save: bool
             You may want to save the graph. If the graphic should be saved 'save'
             must be True. If not given as an argument the pitch is not going to be
             saved. Plots are going to be stored as .png on the same directory layer as
-            the repository
+            the repository.
         kwargs:
             You may pass optional arguments (`linewidth`} which can be used for the plot
             with matplotlib.
@@ -820,8 +820,8 @@ class Pitch:
             line = "white"
 
         # key data for football/soccer pitch. If the unit is "percent" the values
-        # are either adjusted based on length
-        # and width (if available) or set to default values (length = 105, width = 68)
+        # are either adjusted based on length and width (if available)
+        # or set to default values (length = 105, width = 68)
         xmin = self.xlim[0] if self.unit != "percent" else 0
         xmax = (
             self.xlim[1]
