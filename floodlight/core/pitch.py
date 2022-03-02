@@ -180,9 +180,9 @@ class Pitch:
             be True. If not given as an argument the pitch is not going to be saved.
 
         kwargs:
-            You may pass optional arguments (`linewidth`, `figsize`, 'scalex', 'scaley',
-            'x_size', 'y_size'} which can be used for the plot with matplotlib. For
-            example, pass the `linewidth` and `figsize` argument to modify the
+            You may pass optional arguments (`linewidth`, `figsize`, 'scalex','scaley',
+            'x_size', 'y_size'} which can be used for the plot with matplotlib.
+            For example, pass the `linewidth` and `figsize` argument to modify the
             visualization.
 
         ax: plt.axes, optional
