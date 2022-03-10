@@ -1,11 +1,11 @@
 import os
+import warnings
 from dataclasses import dataclass
 from typing import Tuple
-import warnings
 
 import matplotlib
-import matplotlib.pyplot as plt  # add to poetry environment?
-from matplotlib.patches import Arc, Wedge, Rectangle  # add to poetry environment?
+import matplotlib.pyplot as plt
+from matplotlib.patches import Arc, Wedge, Rectangle
 
 from floodlight.utils.types import Numeric
 
@@ -159,43 +159,53 @@ class Pitch:
         sport: str = None,
         color_scheme: str = None,
         save: bool = False,
+        path: str = str(os.path.dirname(os.path.realpath(__file__))),
+        show_plot: bool = True,
+        show_axis: bool = False,
         ax: plt.axes = None,
         **kwargs,
     ) -> plt.axes:
-        """Returns a plot for a given sport (i.e handball, soccer/football)
+        """Returns a plot for a given sport (i.e handball, football).
 
         Parameters
         ----------
         sport: str, optional
-            Sport for which the pitch is used. This is used to automatically generate
-             lines and markings. If sport is already declared in the pitch object the
-             sport must not be passed as an argument.
-
+            Sport for which the pitch is created. If the sport is already declared in
+            the pitch object the sport must not be passed as an argument.
         color_scheme: str, optional
-            Color scheme of the plot. One of {'normal', 'black_white'}. If not given
-            'normal' is the defaulte color scheme.
-
+            Color scheme of the plot. One of {'standard', 'bw'}. If not given
+            'standard' is the defaulte color scheme.
         save: bool, optional
             You may want to save the graph. If the graphic should be saved 'save' must
             be True. If not given as an argument the pitch is not going to be saved.
-
-        kwargs:
-            You may pass optional arguments (`linewidth`, `figsize`, 'scalex','scaley',
-            'x_size', 'y_size'} which can be used for the plot with matplotlib.
-            For example, pass the `linewidth` and `figsize` argument to modify the
-            visualization.
-
+        path: str, optional
+            Path to which the plot should be saved if 'save' is True. If not given as an
+            an argument the default value is the current working directory.
+        show_plot: bool, True
+            You may want to see the plot. The plot is shown per default. If you don't
+            want to see the plot the 'show_plot' variable must be set to False.
+        show_axis: bool, optional
+            You may want to show the axis. If 'show_axis' is True the axis are going to
+            be visible. If not given as an argument the axis are not going to be
+            visible.
         ax: plt.axes, optional
-            Axes from matplotlib library on which the playing field is plotted.
+            Axes from matplotlib library on which the playing field is plotted. If not
+            given as an argument a plt.axes object with standard configurations
+            of matplotlib will be created. In order to modify for instance the figsize
+            an plt.axes object must be created and passed as an argument.
+        kwargs:
+            You may pass optional arguments (`linewidth`, `zorder`, 'scalex','scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs
+            only getting passed to all the plot functions.
 
         Returns
         -------
         matplotlib.axes._subplots.AxesSubplot
-            An subplot to which all elements of the sport specific pitch are added.
+            An axes to which all elements of the sport specific pitch are added.
         """
-
-        color_schemes = ["black_white", "normal", None]
-        sports = ["football", "soccer", "handball"]
+        # list of existing color_schemes and sports
+        color_schemes = ["bw", "standard", None]
+        sports = ["football", "handball"]
         sport = sport or self.sport
 
         # check if valide sport was chosen
@@ -214,71 +224,93 @@ class Pitch:
                 + f"{color_schemes}"
             )
 
-        # initialize essential parameters for plotting with matplotlib
-        scalex = kwargs.get("scalex", False)
-        scaley = kwargs.get("scaley", False)
-
         # check wether an axes to plot is given or if a new axes element
         # has to be created
-        ax = ax or plt.subplots(**kwargs)[1]
-        ax.set_aspect(1)  # ensures that the ratio between length and width is correct
-        # regardless of the figsize
+        ax = ax or plt.subplots()[1]
+
+        # set ratio between x and y values of the plot to ensure that the ratio between
+        # length and width is correct regardless of the figsize.
+        if self.unit != "percent":
+            ax.set_aspect(1)
+        # set ratio if unit is percent and sport is football
+        elif self.unit == "percent" and (self.sport or sport) == "football":
+            if self.length and self.width:
+                ax.set_aspect(self.width / self.length)
+            # set ratio to standard pitch size of 68/105
+            else:
+                ax.set_aspect(68 / 105)  # standard ratio of length and width
+                warnings.warn(
+                    "Since the unit is 'percent' and no information on the actual pitch"
+                    " size in terms of 'length' and 'width' is provided the pitch is "
+                    "set to default values length: 105 and width: 68"
+                )
+        # set ratio if unit is percent and sport is handball
+        elif self.unit == "percent" and (self.sport or sport) == "handball":
+            ax.set_aspect(0.5)
 
         # create axes with handball pitch
         if sport == "handball":
             return self._plot_handball_pitch(
-                scalex=scalex,
-                scaley=scaley,
                 color_scheme=color_scheme,
                 save=save,
+                path=path,
+                show_plot=show_plot,
+                show_axis=show_axis,
                 ax=ax,
                 **kwargs,
             )
 
-        # create axes with soccer/football pitch
-        if sport == "soccer" or "football":
-            return self._plot_soccer_pitch(
-                scalex=scalex,
-                scaley=scaley,
+        # create axes with football pitch
+        if sport == "football":
+            return self._plot_football_pitch(
                 color_scheme=color_scheme,
                 save=save,
+                path=path,
+                show_plot=show_plot,
+                show_axis=show_axis,
                 ax=ax,
                 **kwargs,
             )
 
     def _plot_handball_pitch(
         self,
-        scalex: bool,
-        scaley: bool,
         color_scheme: str,
         save: bool,
+        path: str,
+        show_plot: bool,
+        show_axis: bool,
         ax: plt.axes,
         **kwargs,
     ):
 
-        """Plots a handball pitch on a given axes
+        """Plots a handball pitch on a given axes.
 
         Parameters
         ----------
-        scalex: bool
-            Determines if the view limits are adapted to the
-            data limits of the x values.
-        scaley: bool
-            Determines if the view limits are adapted to the
-            data limits of the y values.
         color_scheme: str
-             Color scheme of the plot. One of {'normal', 'black_white'}.
-             If not given 'normal' is the default color scheme.
+             Color scheme of the plot. One of {'standard', 'bw'}.If not given 'standard'
+              is the default color scheme.
         save: bool
             You may want to save the graph. If the graphic should be saved 'save'
             must be True. If not given as an argument the pitch is not going to be
-            saved. Plots are going to be stored as .png on the same directory layer as
+            saved. Plots are going to be stored as png in the same directory layer as
             the repository.
-        kwargs:
-            You may pass optional arguments (`linewidth`} which can be used for the plot
-            with matplotlib.
+        path: str
+            Path to which the plot should be saved if 'save' is True. If not given as an
+            an argument the default value is the current working directory.
+        show_plot: bool, True
+            You may want to see the plot. The plot is shown per default. If you don't
+            want to see the plot the 'show_plot' variable must be set to False.
+        show_axis: bool, optional
+            You may want to show the axis. If 'show_axis' is True the axis are going to
+            be visible. If not given as an argument the axis are not going to be
+            visible.
         ax: plt.axes
             Axes from matplotlib library on which the handball field is plotted.
+        kwargs:
+            You may pass optional arguments (`linewidth`, `zorder`, 'scalex','scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs
+            only getting passed to all the plot functions.
 
         Returns
         ----------
@@ -286,66 +318,86 @@ class Pitch:
             An axes to which all elements of the sport specific pitch are added.
         """
 
-        # customizing visualization
-        if color_scheme == "black_white":
-            ax.set_facecolor("white")
-            outline = "black"
-            innerline = "black"
-            fill = "white"
-            goal = "black"
-        else:
-            ax.set_facecolor("skyblue")
-            outline = "white"
-            innerline = "white"
-            fill = "khaki"
-            goal = "white"
+        # kwargs which are used to configure the plot with default values 1 and 0.
+        # all the other kwargs will be just passed to all the plot functions.
+        linewidth = kwargs.pop("linewidth", 1)
+        zorder = kwargs.pop("zorder", 0)
 
-        # key data for the handball pitch
+        # customizing visualization
+        if color_scheme == "bw":
+            ax.set_facecolor("white")  # color of the pitch
+            color_contour_lines = "black"
+            color_goal_area_fill = "white"
+            color_goal_posts = "black"
+        else:
+            ax.set_facecolor("skyblue")  # color of the pitch
+            color_contour_lines = "white"
+            color_goal_area_fill = "khaki"
+            color_goal_posts = "white"
+
+        # Positions and ranges on the field which are used for plotting all lines and
+        # arcs.
+        # All the positions and ranges are scaled based on percentages of the x-range
+        # and y-range.
+
+        # key positions for the handball pitch
         xmin, xmax = self.xlim
         ymin, ymax = self.ylim
-
         x_range = xmax - xmin
         y_range = ymax - ymin
         x_half = (xmax + xmin) / 2
         y_half = (ymax + ymin) / 2
 
-        linewidth = kwargs.get("linewidth", 1)
+        # Positions (x,y) on the handball pitch
+        pos_left_side_right_goal_post = (xmin, ymin + y_range * 0.425)
+        pos_left_side_left_goal_post = (xmin, ymin + y_range * 0.575)
+        pos_right_side_left_goal_post = (xmax, ymin + y_range * 0.425)
+        pos_right_side_right_goal_post = (xmax, ymin + y_range * 0.575)
+        pos_start_right_side_rect_goal_area = (
+            xmax - x_range * 0.15,
+            ymin + y_range * 0.425,
+        )
 
-        # points on the field which are used for plotting all lines and arcs
-        left_side_right_goal_post = (xmin, ymin + y_range * 0.425)
-        left_side_left_goal_post = (xmin, ymin + y_range * 0.575)
-        right_side_left_goal_post = (xmax, ymin + y_range * 0.425)
-        right_side_right_goal_post = (xmax, ymin + y_range * 0.575)
-        width_hight_free_throw_line = y_range * 0.9
-        width_hight_goal_area_line = y_range * 0.6
-        radius_goal_area_line_arc = y_range * 0.3
-        goal_width = y_range * 0.15
-        goal_height = y_range * 0.1
-        y_center_to_post = goal_width / 2
-        y_value_goal_lower_post = y_half - y_center_to_post
-        y_value_goal_upper_post = y_half + y_center_to_post
+        # Ranges on the handball pitch
+        y_height_free_throw_arc = y_range * 0.9
+        x_width_free_throw_arc = x_range * 0.45
+        y_height_goal_area_arc = y_range * 0.6
+        x_width_goal_area_arc = x_range * 0.3
+        radius_goal_area_arc = x_range * 0.15
+        width_goal = y_range * 0.15
+        x_height_goal = x_range * 0.025
+
+        # Y positions on the handball pitch
+        y_range_center_to_post = width_goal / 2
+        y_pos_goal_lower_post = y_half - y_range_center_to_post
+        y_pos_goal_upper_post = y_half + y_range_center_to_post
         y_pos_lower_goal_posts = ymin + y_range * 0.425
         y_pos_upper_goal_posts = ymin + y_range * 0.575
-        left_side_x_pos_goal_area_line_edge = xmin + (x_range * 0.15)
-        right_side_x_pos_goal_area_line_edge = xmax - (x_range * 0.15)
-        left_side_x_pos_free_throw_line_edge = xmin + (x_range * 0.225)
-        right_side_x_pos_free_throw_line_edge = xmax - (x_range * 0.225)
-        left_side_4m_line_x_pos = xmin + (x_range * 0.1)
         lower_y_pos_4m_line = ymin + (y_range * 0.49625)
         upper_y_pos_4m_line = ymin + (y_range * 0.50375)
-        left_side_7m_line_x_pos = xmin + (x_range * 0.175)
-        right_side_7m_line_x_pos = xmax - (x_range * 0.175)
         lower_y_pos_7m_line = ymin + (y_range * 0.475)
         upper_y_pos_7m_line = ymin + (y_range * 0.525)
-        x_margin = x_range / 40
-        y_margin = y_range / 20
+
+        # X positions on the handball pitch
+        x_pos_left_side_goal_area_line_edge = xmin + (x_range * 0.15)
+        x_pos_right_side_goal_area_line_edge = xmax - (x_range * 0.15)
+        x_pos_left_side_free_throw_line_edge = xmin + (x_range * 0.225)
+        x_pos_right_side_free_throw_line_edge = xmax - (x_range * 0.225)
+        x_pos_left_side_4m_line = xmin + (x_range * 0.1)
+        x_pos_right_side_4m_line = xmax - (x_range * 0.1)
+        x_pos_left_side_7m_line = xmin + (x_range * 0.175)
+        x_pos_right_side_7m_line = xmax - (x_range * 0.175)
+
+        # angle for the free throw arc changes when unit is 'percent'
+        angle = 10 if self.unit == "percent" else 0
+
+        # Margins of the plot
+        x_margin = x_range * 0.025
+        y_margin = y_range * 0.05
 
         # set up the boundaries of ax
         ax.set_xlim(
-            [
-                xmin - (goal_height + x_margin),
-                xmax + (goal_height + x_margin),
-            ]
+            [xmin - (x_height_goal + x_margin), xmax + (x_height_goal + x_margin)]
         )
         ax.set_ylim([ymin - y_margin, ymax + y_margin])
 
@@ -354,766 +406,830 @@ class Pitch:
         ax.plot(
             [xmin, xmin],
             [ymin, ymax],
-            color=outline,
-            scalex=False,
-            scaley=False,
+            color=color_contour_lines,
             linewidth=linewidth,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
             [xmax, xmax],
             [ymin, ymax],
-            color=outline,
-            scalex=False,
-            scaley=False,
+            color=color_contour_lines,
             linewidth=linewidth,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
             [xmin, xmax],
             [ymin, ymin],
-            color=outline,
-            scalex=False,
-            scaley=False,
+            color=color_contour_lines,
             linewidth=linewidth,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
             [xmin, xmax],
             [ymax, ymax],
-            color=outline,
-            scalex=False,
-            scaley=False,
+            color=color_contour_lines,
             linewidth=linewidth,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
 
         # midline
         ax.plot(
             [x_half, x_half],
             [ymin, ymax],
-            color=outline,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
+            **kwargs,
         )
 
         # free-throw lines
         # lower left
         ax.add_patch(
             Arc(
-                left_side_right_goal_post,
-                width=width_hight_free_throw_line,
-                height=width_hight_free_throw_line,
+                pos_left_side_right_goal_post,
+                width=x_width_free_throw_arc,
+                height=y_height_free_throw_arc,
                 angle=0,
-                theta1=290,
+                theta1=290 - angle,
                 theta2=360,
                 linestyle="dashed",
                 linewidth=linewidth,
-                color=innerline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # upper left
         ax.add_patch(
             Arc(
-                left_side_left_goal_post,
-                width=width_hight_free_throw_line,
-                height=width_hight_free_throw_line,
+                pos_left_side_left_goal_post,
+                width=x_width_free_throw_arc,
+                height=y_height_free_throw_arc,
                 angle=0,
                 theta1=0,
-                theta2=70,
+                theta2=70 + angle,
                 linestyle="dashed",
                 linewidth=linewidth,
-                color=innerline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # lower right
         ax.add_patch(
             Arc(
-                right_side_left_goal_post,
-                width=width_hight_free_throw_line,
-                height=width_hight_free_throw_line,
+                pos_right_side_left_goal_post,
+                width=x_width_free_throw_arc,
+                height=y_height_free_throw_arc,
                 angle=0,
                 theta1=180,
-                theta2=250,
+                theta2=250 + angle,
                 linestyle="dashed",
                 linewidth=linewidth,
-                color=innerline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # upper right
         ax.add_patch(
             Arc(
-                right_side_right_goal_post,
-                width=width_hight_free_throw_line,
-                height=width_hight_free_throw_line,
+                pos_right_side_right_goal_post,
+                width=x_width_free_throw_arc,
+                height=y_height_free_throw_arc,
                 angle=0,
-                theta1=110,
+                theta1=110 - angle,
                 theta2=180,
                 linestyle="dashed",
                 linewidth=linewidth,
-                color=innerline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
+        #
 
         # goal area lines
         # lower left
-        ax.add_patch(
-            Wedge(
-                left_side_right_goal_post,
-                r=radius_goal_area_line_arc,
-                theta1=270,
-                theta2=360,
-                linewidth=linewidth,
-                color=fill,
-                zorder=0,
+        # Filling the goal area
+        if self.unit != "percent":  # Since wedges can't be scaled
+            ax.add_patch(
+                Wedge(
+                    pos_left_side_right_goal_post,
+                    r=radius_goal_area_arc,
+                    theta1=270,
+                    theta2=360,
+                    linewidth=linewidth,
+                    color=color_goal_area_fill,
+                    zorder=zorder,
+                    **kwargs,
+                )
             )
-        )
+        # line
         ax.add_patch(
             Arc(
-                left_side_right_goal_post,
-                width=width_hight_goal_area_line,
-                height=width_hight_goal_area_line,
+                pos_left_side_right_goal_post,
+                height=y_height_goal_area_arc,
+                width=x_width_goal_area_arc,
                 angle=0,
                 theta1=270,
                 theta2=360,
                 linewidth=linewidth,
-                color=outline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # upper left
-        ax.add_patch(
-            Wedge(
-                left_side_left_goal_post,
-                r=radius_goal_area_line_arc,
-                theta1=0,
-                theta2=90,
-                linewidth=linewidth,
-                color=fill,
-                zorder=0,
+        # filling the goal area
+        if self.unit != "percent":  # Since wedges can't be scaled
+            ax.add_patch(
+                Wedge(
+                    pos_left_side_left_goal_post,
+                    r=radius_goal_area_arc,
+                    theta1=0,
+                    theta2=90,
+                    linewidth=linewidth,
+                    color=color_goal_area_fill,
+                    zorder=zorder,
+                    **kwargs,
+                )
             )
-        )
+        # line
         ax.add_patch(
             Arc(
-                left_side_left_goal_post,
-                width_hight_goal_area_line,
-                width_hight_goal_area_line,
+                pos_left_side_left_goal_post,
+                height=y_height_goal_area_arc,
+                width=x_width_goal_area_arc,
                 angle=0,
                 theta1=0,
                 theta2=90,
                 linewidth=linewidth,
-                color=outline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # lower right
-        ax.add_patch(
-            Wedge(
-                right_side_left_goal_post,
-                r=radius_goal_area_line_arc,
-                theta1=180,
-                theta2=270,
-                linewidth=linewidth,
-                color=fill,
-                zorder=0,
+        # filling the goal area
+        if self.unit != "percent":  # Since wedges can't be scaled
+            ax.add_patch(
+                Wedge(
+                    pos_right_side_left_goal_post,
+                    r=radius_goal_area_arc,
+                    theta1=180,
+                    theta2=270,
+                    linewidth=linewidth,
+                    color=color_goal_area_fill,
+                    zorder=zorder,
+                    **kwargs,
+                )
             )
-        )
+        # line
         ax.add_patch(
             Arc(
-                right_side_left_goal_post,
-                width_hight_goal_area_line,
-                width_hight_goal_area_line,
+                pos_right_side_left_goal_post,
+                height=y_height_goal_area_arc,
+                width=x_width_goal_area_arc,
                 angle=0,
                 theta1=180,
                 theta2=270,
                 linewidth=linewidth,
-                color=outline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # upper right
-        ax.add_patch(
-            Wedge(
-                right_side_right_goal_post,
-                r=radius_goal_area_line_arc,
-                theta1=90,
-                theta2=180,
-                linewidth=linewidth,
-                color=fill,
-                zorder=0,
+        # filling the goal area
+        if self.unit != "percent":  # Since wedges can't be scaled
+            ax.add_patch(
+                Wedge(
+                    pos_right_side_right_goal_post,
+                    r=radius_goal_area_arc,
+                    theta1=90,
+                    theta2=180,
+                    linewidth=linewidth,
+                    color=color_goal_area_fill,
+                    zorder=zorder,
+                    **kwargs,
+                )
             )
-        )
+        # line
         ax.add_patch(
             Arc(
-                right_side_right_goal_post,
-                width_hight_goal_area_line,
-                width_hight_goal_area_line,
+                pos_right_side_right_goal_post,
+                height=y_height_goal_area_arc,
+                width=x_width_goal_area_arc,
                 angle=0,
                 theta1=90,
                 theta2=180,
                 linewidth=linewidth,
-                color=outline,
-                zorder=0,
+                color=color_contour_lines,
+                zorder=zorder,
+                **kwargs,
             )
         )
         # mid left
-        ax.add_patch(
-            Rectangle(
-                left_side_right_goal_post,
-                width=radius_goal_area_line_arc,
-                height=goal_width,
-                color=fill,
-                zorder=0,
+        # filling the goal area
+        if self.unit != "percent":  # Since wedges can't be scaled the rectangles
+            ax.add_patch(  # are also not used to fill the goal area
+                Rectangle(
+                    pos_left_side_right_goal_post,
+                    width=radius_goal_area_arc,
+                    height=width_goal,
+                    color=color_goal_area_fill,
+                    zorder=zorder,
+                    **kwargs,
+                )
             )
-        )
         # mid right
-        ax.add_patch(
-            Rectangle(
-                (xmax - radius_goal_area_line_arc, y_pos_lower_goal_posts),
-                width=radius_goal_area_line_arc,
-                height=goal_width,
-                color=fill,
-                zorder=0,
+        # filling the goal area
+        if self.unit != "percent":  # Since wedges can't be scaled the rectangles
+            ax.add_patch(  # are also not used to fill the goal area
+                Rectangle(
+                    pos_start_right_side_rect_goal_area,
+                    width=radius_goal_area_arc,
+                    height=width_goal,
+                    color=color_goal_area_fill,
+                    zorder=zorder,
+                    **kwargs,
+                )
             )
-        )
 
         # vertical goal area lines
         ax.plot(
-            [left_side_x_pos_goal_area_line_edge, left_side_x_pos_goal_area_line_edge],
+            [x_pos_left_side_goal_area_line_edge, x_pos_left_side_goal_area_line_edge],
             [y_pos_lower_goal_posts, y_pos_upper_goal_posts],
-            color=outline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
             [
-                right_side_x_pos_goal_area_line_edge,
-                right_side_x_pos_goal_area_line_edge,
+                x_pos_right_side_goal_area_line_edge,
+                x_pos_right_side_goal_area_line_edge,
             ],
             [y_pos_lower_goal_posts, y_pos_upper_goal_posts],
-            color=outline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
-
+        # vetical free throw lines
         ax.plot(
             [
-                left_side_x_pos_free_throw_line_edge,
-                left_side_x_pos_free_throw_line_edge,
+                x_pos_left_side_free_throw_line_edge,
+                x_pos_left_side_free_throw_line_edge,
             ],
             [y_pos_lower_goal_posts, y_pos_upper_goal_posts],
-            color=innerline,
+            color=color_contour_lines,
             linewidth=linewidth,
             linestyle="dashed",
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
             [
-                right_side_x_pos_free_throw_line_edge,
-                right_side_x_pos_free_throw_line_edge,
+                x_pos_right_side_free_throw_line_edge,
+                x_pos_right_side_free_throw_line_edge,
             ],
             [y_pos_lower_goal_posts, y_pos_upper_goal_posts],
-            color=innerline,
+            color=color_contour_lines,
             linewidth=linewidth,
             linestyle="dashed",
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
 
         # 4 m lines
         ax.plot(
-            [left_side_4m_line_x_pos, left_side_4m_line_x_pos],
+            [x_pos_left_side_4m_line, x_pos_left_side_4m_line],
             [lower_y_pos_4m_line, upper_y_pos_4m_line],
-            color=outline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
-            [xmax - (x_range * 0.1), xmax - (x_range * 0.1)],
+            [x_pos_right_side_4m_line, x_pos_right_side_4m_line],
             [lower_y_pos_4m_line, upper_y_pos_4m_line],
-            color=outline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
 
         # 7 m lines
         ax.plot(
-            [left_side_7m_line_x_pos, left_side_7m_line_x_pos],
+            [x_pos_left_side_7m_line, x_pos_left_side_7m_line],
             [lower_y_pos_7m_line, upper_y_pos_7m_line],
-            color=innerline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
-            [right_side_7m_line_x_pos, right_side_7m_line_x_pos],
+            [x_pos_right_side_7m_line, x_pos_right_side_7m_line],
             [lower_y_pos_7m_line, upper_y_pos_7m_line],
-            color=innerline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
 
         # goals
         # left goal
         ax.plot(
-            [xmin - goal_height, xmin - goal_height],
-            [y_value_goal_lower_post, y_value_goal_upper_post],
-            color=goal,
+            [xmin - x_height_goal, xmin - x_height_goal],
+            [y_pos_goal_lower_post, y_pos_goal_upper_post],
+            color=color_goal_posts,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
-            [xmin - goal_height, xmin],
-            [y_value_goal_lower_post, y_value_goal_lower_post],
-            color=goal,
+            [xmin - x_height_goal, xmin],
+            [y_pos_goal_lower_post, y_pos_goal_lower_post],
+            color=color_goal_posts,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
-            [xmin - goal_height, xmin],
-            [y_value_goal_upper_post, y_value_goal_upper_post],
-            color=goal,
+            [xmin - x_height_goal, xmin],
+            [y_pos_goal_upper_post, y_pos_goal_upper_post],
+            color=color_goal_posts,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         # right goal
         ax.plot(
-            [xmax + goal_height, xmax + goal_height],
-            [y_value_goal_lower_post, y_value_goal_upper_post],
-            color=goal,
+            [xmax + x_height_goal, xmax + x_height_goal],
+            [y_pos_goal_lower_post, y_pos_goal_upper_post],
+            color=color_goal_posts,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
-            [xmax + goal_height, xmax],
-            [y_value_goal_lower_post, y_value_goal_lower_post],
-            color=goal,
+            [xmax + x_height_goal, xmax],
+            [y_pos_goal_lower_post, y_pos_goal_lower_post],
+            color=color_goal_posts,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         ax.plot(
-            [xmax + goal_height, xmax],
-            [y_value_goal_upper_post, y_value_goal_upper_post],
-            color=goal,
+            [xmax + x_height_goal, xmax],
+            [y_pos_goal_upper_post, y_pos_goal_upper_post],
+            color=color_goal_posts,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         # baseline
         ax.plot(
             [xmax, xmax],
             [ymin, ymax],
-            color=innerline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
         # baseline
         ax.plot(
             [xmin, xmin],
             [ymin, ymax],
-            color=innerline,
+            color=color_contour_lines,
             linewidth=linewidth,
-            scalex=False,
-            scaley=False,
-            zorder=0,
+            zorder=zorder,
+            **kwargs,
         )
 
         # remove labels and ticks
-        ax.xaxis.set_major_locator(matplotlib.ticker.NullLocator())
-        ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
+        if not show_axis:
+            ax.xaxis.set_major_locator(matplotlib.ticker.NullLocator())
+            ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
 
         if save:
-            path = os.path.abspath(
-                os.path.join(
-                    os.path.abspath(
-                        os.path.join(
-                            os.path.dirname(os.path.abspath(__file__)), os.pardir
-                        )
-                    ),
-                    os.pardir,
-                )
-            )
-            plt.savefig(str(path) + "_handball_pitch.png")
+            plt.savefig(path + "_handball_pitch.png")
+
+        if show_plot:
+            plt.show()
 
         return ax
 
-    def _plot_soccer_pitch(
+    def _plot_football_pitch(
         self,
-        scalex: bool,
-        scaley: bool,
         color_scheme: str,
         save: bool,
+        path: str,
+        show_plot: bool,
+        show_axis: bool,
         ax: plt.axes,
         **kwargs,
     ):
-        """Plots a soccer/football pitch on a given axes
+        """Plots a football pitch on a given axes.
 
         Parameters
         ----------
-        scalex: bool
-            Determines if the view limits are adapted to the data limits of the
-            x values.
-        scaley: bool
-            Determines if the view limits are adapted to the data limits of the
-            y values.
         color_scheme: str
-             Color scheme of the plot. One of {'normal', 'black_white'}. If not given
-             'normal' is the defaulte color scheme.
+             Color scheme of the plot. One of {'standard', 'bw'}. If not given
+             'standard' is the defaulte color scheme.
         save: bool, optional
             You may want to save the graph. If the graphic should be saved 'save' must
             be True. If not given as an argument the pitch is not going to be saved.
-            Plots are going to be stored as .png on the same directory layer as the
+            Plots are going to be stored as png on the same directory layer as the
             repository
+        path: str
+            Path to which the plot should be saved if 'save' is True. If not given as an
+            an argument the default value is the current working directory.
+        show_plot: bool, True
+            You may want to see the plot. The plot is shown per default. If you don't
+            want to see the plot the 'show_plot' variable must be set to False.
+        show_axis: bool, optional
+            You may want to show the axis. If 'show_axis' is True the axis are going to
+             be visible. If not given as an argument the axis are not going to be
+             visible.
         ax: plt.axes
-            Axes from matplotlib library on which the soccer/football field is plotted.
+            Axes from matplotlib library on which the football field is plotted.
         kwargs:
-            You may pass optional arguments (`linewidth`} which can be used for the
-            plot with matplotlib.
+            You may pass optional arguments (`linewidth`, `zorder`, 'scalex','scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs
+            only getting passed to all the plot functions.
 
         Returns
         ----------
         ax : matplotlib.axes._subplots.AxesSubplot
             An axes to which all elements of the sport specific pitch are added.
         """
+        # kwargs which are used to configure the plot with default values 1 and 0.
+        # all the other kwargs will be just passed to all the plot functions.
+        linewidth = kwargs.pop("linewidth", 1)
+        zorder = kwargs.pop("zorder", 0)
 
         # customizing visualization
-        if color_scheme == "black_white":
-            ax.set_facecolor("white")
-            line = "black"
+        if color_scheme == "bw":
+            ax.set_facecolor("white")  # color of the pitch
+            color_contour_lines = "black"
         else:
-            ax.set_facecolor("green")
-            line = "white"
+            ax.set_facecolor("green")  # color of the pitch
+            color_contour_lines = "white"
 
-        # key data for football/soccer pitch. If the unit is "percent" the values
-        # are either adjusted based on length and width (if available)
-        # or set to default values (length = 105, width = 68)
-        xmin = self.xlim[0] if self.unit != "percent" else 0
-        xmax = (
-            self.xlim[1]
-            if self.unit != "percent"
-            else self.length
+        # Since football pitch sizes can vary while the elements on the pitch
+        # (i.e penalty area) have the same size, the actual elements on the pitch can't
+        # be scaled based on the x- or y-range.
+        # Therefore a norm factor for the x and y direction is needed for every element
+        # on the pitch that has a fixeds size.
+        # The norm factor is specified based on the given unit.
+        # If the unit is 'm' or 'cm' the ratio between x and y is set to 1
+        # (see in the Pitch.plot() method ax.set_aspect(1)). But if the unit is
+        # 'percent' the ratio between width/length is set to ax.set_aspect(width/length)
+        # If an element like the goal area, which reaches 5.5 m into the x direction of
+        # the field, is drawn now, the fixed size of 5.5 m gets rescaled.
+
+        # norm_factor for all elements on the pitch that are scaled in the x direction
+        norm_factor_x = (
+            1
+            if self.unit == "m"
+            else 100
+            if self.unit == "cm"
+            else 100 / self.length
             if self.length
-            else 105
+            else 100 / 105
         )
-        ymin = self.ylim[0] if self.unit != "percent" else 0
-        ymax = (
-            self.ylim[1] if self.unit != "percent" else self.width if self.width else 68
+        # norm_factor for all elements on the pitch that are scaled in the y direction
+        norm_factor_y = (
+            1
+            if self.unit == "m"
+            else 100
+            if self.unit == "cm"
+            else 100 / self.width
+            if self.width
+            else 100 / 68
         )
 
-        if self.unit == "percent" and not self.length and not self.width:
-            warnings.warn(
-                "Since the unit is 'percent' and no information on the actual pitch "
-                "size in terms of 'length' and 'width' is provided the pitch is set to "
-                "default values length: 105 and width: 68"
-            )
+        # All the positions and ranges of certain elements on the pitch
+        # (i.e the penalty area) have fixed sizes and are scaled based on the
+        # x and y norm factors.
 
-        # factor to determine the actual size of the pitch and adjust all the
-        # elements (i.e goal area)
-        norm_factor = 1 if self.unit == "m" else 100 if self.unit == "cm" else 1
-
-        # key data for the soccer/football pitch
+        # key positions for the football pitch
+        xmin, xmax = self.xlim
+        ymin, ymax = self.ylim
         x_half = (xmax + xmin) / 2
         y_half = (ymax + ymin) / 2
-        linewidth = kwargs.get("linewidth", 1)
-        radius_points = 0.25 * norm_factor
-        goal_height = 2.44 * norm_factor
-        goal_width = 7.32 * norm_factor
-        y_center_to_post = goal_width / 2
+        x_radius_points = 0.25 * norm_factor_x * 2
+        y_radius_points = 0.25 * norm_factor_y * 2
+        x_goal_height = 2.44 * norm_factor_x
+        y_goal_width = 7.32 * norm_factor_y
+        y_range_center_to_post = y_goal_width / 2
 
         # goal area
-        left_side_x_value_goal_area_line = xmin + 5.5 * norm_factor
-        right_side_x_value_goal_area_line = xmax - 5.5 * norm_factor
-        y_value_goal_area_lower_post = y_half - 9.16 * norm_factor
-        y_value_goal_area_upper_post = y_half + 9.16 * norm_factor
+        x_pos_left_side_goal_area_line = xmin + 5.5 * norm_factor_x
+        x_pos_right_side_goal_area_line = xmax - 5.5 * norm_factor_x
+        y_pos_lower_goal_area = y_half - 9.16 * norm_factor_y
+        y_pos_upper_goal_area = y_half + 9.16 * norm_factor_y
 
         # goal
-        y_value_goal_lower_post = y_half - y_center_to_post
-        y_value_goal_upper_post = y_half + y_center_to_post
+        y_pos_goal_lower_post = y_half - y_range_center_to_post
+        y_pos_goal_upper_post = y_half + y_range_center_to_post
 
         # penalty area
-        left_side_x_value_penalty_area_line = xmin + 16.5 * norm_factor
-        y_value_penalty_area_lower_line = y_half - 20.16 * norm_factor
-        y_value_penalty_area_upper_line = y_half + 20.16 * norm_factor
-        right_side_x_value_penalty_area_line = xmax - 16.5 * norm_factor
-        left_side_penalty_arc = xmin + 11 * norm_factor
-        width_penalty_arc = 20.15 * norm_factor
-        right_side_penalty_arc = xmax - 11 * norm_factor
-        left_penalty_point = xmin + 11 * norm_factor
-        right_penalty_point = xmax - 11 * norm_factor
+        x_pos_left_side_penalty_area_line = xmin + 16.5 * norm_factor_x
+        y_pos_penalty_area_lower_line = y_half - 20.16 * norm_factor_y
+        y_pos_penalty_area_upper_line = y_half + 20.16 * norm_factor_y
+        x_pos_right_side_penalty_area_line = xmax - 16.5 * norm_factor_x
+        x_pos_left_side_center_penalty_arc = xmin + 11 * norm_factor_x
+        x_pos_right_side_center_penalty_arc = xmax - 11 * norm_factor_x
+        x_pos_left_side_penalty_point = xmin + 11 * norm_factor_x
+        x_pos_right_side_penalty_point = xmax - 11 * norm_factor_x
 
         # center circle
-        radius_center_circle = 9.15 * norm_factor
+        x_radius_center_circle = 9.15 * norm_factor_x * 2
+        y_radius_center_circle = 9.15 * norm_factor_y * 2
+
+        # angle for the penalty area arc changes when unit is 'percent'
+        angle = 10 if self.unit == "percent" else 0
 
         # field boundaries
-        ax.plot([xmin, xmax], [ymin, ymin], color=line, zorder=0, linewidth=linewidth)
-        ax.plot([xmin, xmax], [ymax, ymax], color=line, zorder=0, linewidth=linewidth)
-        ax.plot([xmin, xmin], [ymin, ymax], color=line, zorder=0, linewidth=linewidth)
-        ax.plot([xmax, xmax], [ymin, ymax], color=line, zorder=0, linewidth=linewidth)
         ax.plot(
-            [x_half, x_half], [ymin, ymax], color=line, zorder=0, linewidth=linewidth
+            [xmin, xmax],
+            [ymin, ymin],
+            color=color_contour_lines,
+            zorder=zorder,
+            linewidth=linewidth,
+        )
+        ax.plot(
+            [xmin, xmax],
+            [ymax, ymax],
+            color=color_contour_lines,
+            zorder=zorder,
+            linewidth=linewidth,
+        )
+        ax.plot(
+            [xmin, xmin],
+            [ymin, ymax],
+            color=color_contour_lines,
+            zorder=zorder,
+            linewidth=linewidth,
+        )
+        ax.plot(
+            [xmax, xmax],
+            [ymin, ymax],
+            color=color_contour_lines,
+            zorder=zorder,
+            linewidth=linewidth,
+        )
+        ax.plot(
+            [x_half, x_half],
+            [ymin, ymax],
+            color=color_contour_lines,
+            zorder=zorder,
+            linewidth=linewidth,
         )
 
         # goal area
         # goal area left
         ax.plot(
-            [left_side_x_value_goal_area_line, left_side_x_value_goal_area_line],
-            [y_value_goal_area_lower_post, y_value_goal_area_upper_post],
-            color=line,
-            zorder=0,
+            [x_pos_left_side_goal_area_line, x_pos_left_side_goal_area_line],
+            [y_pos_lower_goal_area, y_pos_upper_goal_area],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmin, left_side_x_value_goal_area_line],
-            [y_value_goal_area_lower_post, y_value_goal_area_lower_post],
-            color=line,
-            zorder=0,
+            [xmin, x_pos_left_side_goal_area_line],
+            [y_pos_lower_goal_area, y_pos_lower_goal_area],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmin, left_side_x_value_goal_area_line],
-            [y_value_goal_area_upper_post, y_value_goal_area_upper_post],
-            color=line,
-            zorder=0,
+            [xmin, x_pos_left_side_goal_area_line],
+            [y_pos_upper_goal_area, y_pos_upper_goal_area],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         # goal area right
         ax.plot(
-            [right_side_x_value_goal_area_line, right_side_x_value_goal_area_line],
-            [y_value_goal_area_lower_post, y_value_goal_area_upper_post],
-            color=line,
-            zorder=0,
+            [x_pos_right_side_goal_area_line, x_pos_right_side_goal_area_line],
+            [y_pos_lower_goal_area, y_pos_upper_goal_area],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmax, right_side_x_value_goal_area_line],
-            [y_value_goal_area_lower_post, y_value_goal_area_lower_post],
-            color=line,
-            zorder=0,
+            [xmax, x_pos_right_side_goal_area_line],
+            [y_pos_lower_goal_area, y_pos_lower_goal_area],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmax, right_side_x_value_goal_area_line],
-            [y_value_goal_area_upper_post, y_value_goal_area_upper_post],
-            color=line,
-            zorder=0,
+            [xmax, x_pos_right_side_goal_area_line],
+            [y_pos_upper_goal_area, y_pos_upper_goal_area],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
 
         # penalty area
         # penalty area left
         ax.plot(
-            [left_side_x_value_penalty_area_line, left_side_x_value_penalty_area_line],
-            [y_value_penalty_area_lower_line, y_value_penalty_area_upper_line],
-            color=line,
-            zorder=0,
+            [x_pos_left_side_penalty_area_line, x_pos_left_side_penalty_area_line],
+            [y_pos_penalty_area_lower_line, y_pos_penalty_area_upper_line],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmin, left_side_x_value_penalty_area_line],
-            [y_value_penalty_area_lower_line, y_value_penalty_area_lower_line],
-            color=line,
-            zorder=0,
+            [xmin, x_pos_left_side_penalty_area_line],
+            [y_pos_penalty_area_lower_line, y_pos_penalty_area_lower_line],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmin, left_side_x_value_penalty_area_line],
-            [y_value_penalty_area_upper_line, y_value_penalty_area_upper_line],
-            color=line,
-            zorder=0,
+            [xmin, x_pos_left_side_penalty_area_line],
+            [y_pos_penalty_area_upper_line, y_pos_penalty_area_upper_line],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         # penalty area right
         ax.plot(
             [
-                right_side_x_value_penalty_area_line,
-                right_side_x_value_penalty_area_line,
+                x_pos_right_side_penalty_area_line,
+                x_pos_right_side_penalty_area_line,
             ],
-            [y_value_penalty_area_lower_line, y_value_penalty_area_upper_line],
-            color=line,
-            zorder=0,
+            [y_pos_penalty_area_lower_line, y_pos_penalty_area_upper_line],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmax, right_side_x_value_penalty_area_line],
-            [y_value_penalty_area_lower_line, y_value_penalty_area_lower_line],
-            color=line,
-            zorder=0,
+            [xmax, x_pos_right_side_penalty_area_line],
+            [y_pos_penalty_area_lower_line, y_pos_penalty_area_lower_line],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmax, right_side_x_value_penalty_area_line],
-            [y_value_penalty_area_upper_line, y_value_penalty_area_upper_line],
-            color=line,
-            zorder=0,
+            [xmax, x_pos_right_side_penalty_area_line],
+            [y_pos_penalty_area_upper_line, y_pos_penalty_area_upper_line],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         # penalty point
+        # left
         ax.add_patch(
-            plt.Circle(
-                (left_penalty_point, y_half),
-                radius_points,
-                color=line,
-                zorder=0,
+            Arc(
+                (x_pos_left_side_penalty_point, y_half),
+                width=x_radius_points,
+                height=y_radius_points,
+                angle=0,
+                theta1=0,
+                theta2=360,
+                color=color_contour_lines,
+                zorder=zorder,
                 linewidth=linewidth,
             )
         )
+        # right
         ax.add_patch(
-            plt.Circle(
-                (right_penalty_point, y_half),
-                radius_points,
-                color=line,
-                zorder=0,
+            Arc(
+                (x_pos_right_side_penalty_point, y_half),
+                width=x_radius_points,
+                height=y_radius_points,
+                angle=0,
+                theta1=0,
+                theta2=360,
+                color=color_contour_lines,
+                zorder=zorder,
                 linewidth=linewidth,
             )
         )
         # penalty area circle left
         ax.add_patch(
             Arc(
-                (left_side_penalty_arc, y_half),
-                width=width_penalty_arc,
-                height=width_penalty_arc,
-                angle=302.5,
-                theta1=0,
-                theta2=115,
-                color=line,
-                zorder=0,
+                (x_pos_left_side_center_penalty_arc, y_half),
+                width=x_radius_center_circle,
+                height=y_radius_center_circle,
+                angle=0,
+                theta1=307.5 - angle,
+                theta2=52.5 + angle,
+                color=color_contour_lines,
+                zorder=zorder,
                 linewidth=linewidth,
             )
         )
         # penalty area circle right
         ax.add_patch(
             Arc(
-                (right_side_penalty_arc, y_half),
-                width=width_penalty_arc,
-                height=width_penalty_arc,
-                angle=122.5,
-                theta1=0,
-                theta2=115,
-                color=line,
-                zorder=0,
+                (x_pos_right_side_center_penalty_arc, y_half),
+                width=x_radius_center_circle,
+                height=y_radius_center_circle,
+                angle=0,
+                theta1=127.5 - angle,
+                theta2=232.5 + angle,
+                color=color_contour_lines,
+                zorder=zorder,
                 linewidth=linewidth,
             )
         )
-
         # goal
         # left goal
         ax.plot(
-            [xmin - goal_height, xmin - goal_height],
-            [y_value_goal_lower_post, y_value_goal_upper_post],
-            color=line,
-            zorder=0,
+            [xmin - x_goal_height, xmin - x_goal_height],
+            [y_pos_goal_lower_post, y_pos_goal_upper_post],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmin - goal_height, xmin],
-            [y_value_goal_upper_post, y_value_goal_upper_post],
-            color=line,
-            zorder=0,
+            [xmin - x_goal_height, xmin],
+            [y_pos_goal_upper_post, y_pos_goal_upper_post],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmin - goal_height, xmin],
-            [y_value_goal_lower_post, y_value_goal_lower_post],
-            color=line,
-            zorder=0,
+            [xmin - x_goal_height, xmin],
+            [y_pos_goal_lower_post, y_pos_goal_lower_post],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         # right goal
         ax.plot(
-            [xmax + goal_height, xmax + goal_height],
-            [y_value_goal_lower_post, y_value_goal_upper_post],
-            color=line,
-            zorder=0,
+            [xmax + x_goal_height, xmax + x_goal_height],
+            [y_pos_goal_lower_post, y_pos_goal_upper_post],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmax + goal_height, xmax],
-            [y_value_goal_upper_post, y_value_goal_upper_post],
-            color=line,
-            zorder=0,
+            [xmax + x_goal_height, xmax],
+            [y_pos_goal_upper_post, y_pos_goal_upper_post],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
         ax.plot(
-            [xmax + goal_height, xmax],
-            [y_value_goal_lower_post, y_value_goal_lower_post],
-            color=line,
-            zorder=0,
+            [xmax + x_goal_height, xmax],
+            [y_pos_goal_lower_post, y_pos_goal_lower_post],
+            color=color_contour_lines,
+            zorder=zorder,
             linewidth=linewidth,
         )
 
         # center circle
         ax.add_patch(
-            plt.Circle(
+            Arc(
                 (x_half, y_half),
-                radius_center_circle,
-                edgecolor=line,
-                fill=False,
-                zorder=0,
+                width=x_radius_center_circle,
+                height=y_radius_center_circle,
+                angle=0,
+                theta1=0,
+                theta2=360,
+                color=color_contour_lines,
+                zorder=zorder,
                 linewidth=linewidth,
             )
         )
+        # center point
         ax.add_patch(
-            plt.Circle(
+            Arc(
                 (x_half, y_half),
-                radius_points,
-                color=line,
-                zorder=0,
+                width=x_radius_points,
+                height=y_radius_points,
+                angle=0,
+                theta1=0,
+                theta2=360,
+                color=color_contour_lines,
+                zorder=zorder,
                 linewidth=linewidth,
             )
         )
 
         # remove labels and ticks
-        ax.xaxis.set_major_locator(matplotlib.ticker.NullLocator())
-        ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
+        if not show_axis:
+            ax.xaxis.set_major_locator(matplotlib.ticker.NullLocator())
+            ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
 
         if save:
-            path = os.path.abspath(
-                os.path.join(
-                    os.path.abspath(
-                        os.path.join(
-                            os.path.dirname(os.path.abspath(__file__)), os.pardir
-                        )
-                    ),
-                    os.pardir,
-                )
-            )
-            plt.savefig(str(path) + "_soccer_pitch.png")
+            plt.savefig(path + "/football_pitch.png")
+
+        if show_plot:
+            plt.show()
 
         return ax

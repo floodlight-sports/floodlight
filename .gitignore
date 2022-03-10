@@ -149,3 +149,4 @@ cython_debug/
 
 # Mac OS
 .DS_Store
+exec.py
