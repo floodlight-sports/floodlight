@@ -220,8 +220,7 @@ class Pitch:
         # check if a valide color scheme was chosen
         if color_scheme not in color_schemes:
             raise ValueError(
-                "No valid color scheme description. Choose one of: "
-                + f"{color_schemes}"
+                "No valid color scheme description. Choose one of:" + f"{color_schemes}"
             )
 
         # check wether an axes to plot is given or if a new axes element
