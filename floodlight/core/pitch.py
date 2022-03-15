@@ -1,4 +1,3 @@
-import os
 import warnings
 from dataclasses import dataclass
 from typing import Tuple
@@ -156,12 +155,8 @@ class Pitch:
 
     def plot(
         self,
-        sport: str = None,
         color_scheme: str = "standard",
-        save: bool = False,
-        path: str = str(os.path.dirname(os.path.realpath(__file__))),
-        show_plot: bool = True,
-        show_axis: bool = False,
+        show_axis_ticks: bool = False,
         ax: plt.axes = None,
         **kwargs,
     ) -> plt.axes:
@@ -169,22 +164,10 @@ class Pitch:
 
         Parameters
         ----------
-        sport: str, optional
-            Sport for which the field is to be created. If the sport was already
-            specified when the field object was instantiated, the argument does not need
-            to be passed.
         color_scheme: str, optional
             Color scheme of the plot. One of {'standard', 'bw'}. If not given
             'standard' is the defaulte color scheme.
-        save: bool, optional
-            If set to True the plot going to be saved. If not given as an argument the
-            pitch is not saved.
-        path: str, optional
-            Path to which the plot should be saved if 'save' is True. If not given as
-            argument the default value is the current working directory.
-        show_plot: bool, True
-            If set to False the plot is not shown. The plot is shown by default.
-        show_axis: bool, optional
+        show_axis_ticks: bool, optional
             If set to True, the axes are visible. If not specified as an argument, the
             axes are not visible.
         ax: plt.axes, optional
@@ -205,16 +188,16 @@ class Pitch:
         # list of existing color_schemes and sports
         color_schemes = ["bw", "standard"]
         sports = ["football", "handball"]
-        sport = sport or self.sport
+        sport = self.sport
 
         # check if valide sport was chosen
         if not sport:
             raise ValueError(
                 "To visualize a pitch the sport is needed. "
-                "For instance pitch.plot(sport = 'handball')"
+                "Give the object (Pitch) a sport (Pitch.sport)"
             )
         if sport not in sports:
-            raise ValueError("Choose a valid sport: " + f"{sports}")
+            raise ValueError(f"Choose a valid sport: {sports}")
 
         # check if a valide color scheme was chosen
         if color_scheme not in color_schemes:
@@ -231,7 +214,7 @@ class Pitch:
         if self.unit != "percent":
             ax.set_aspect(1)
         # set ratio if unit is percent and sport is football
-        elif self.unit == "percent" and (self.sport or sport) == "football":
+        elif self.unit == "percent" and sport == "football":
             if self.length and self.width:
                 ax.set_aspect(self.width / self.length)
             # set ratio to standard pitch size of 68/105
@@ -243,17 +226,14 @@ class Pitch:
                     "set to default values length: 105 and width: 68"
                 )
         # set ratio if unit is percent and sport is handball
-        elif self.unit == "percent" and (self.sport or sport) == "handball":
+        elif self.unit == "percent" and sport == "handball":
             ax.set_aspect(0.5)
 
         # create axes with handball pitch
         if sport == "handball":
             return self._plot_handball_pitch(
                 color_scheme=color_scheme,
-                save=save,
-                path=path,
-                show_plot=show_plot,
-                show_axis=show_axis,
+                show_axis_ticks=show_axis_ticks,
                 ax=ax,
                 **kwargs,
             )
@@ -262,21 +242,15 @@ class Pitch:
         if sport == "football":
             return self._plot_football_pitch(
                 color_scheme=color_scheme,
-                save=save,
-                path=path,
-                show_plot=show_plot,
-                show_axis=show_axis,
                 ax=ax,
+                show_axis_ticks=show_axis_ticks,
                 **kwargs,
             )
 
     def _plot_handball_pitch(
         self,
         color_scheme: str,
-        save: bool,
-        path: str,
-        show_plot: bool,
-        show_axis: bool,
+        show_axis_ticks: bool,
         ax: plt.axes,
         **kwargs,
     ):
@@ -287,15 +261,7 @@ class Pitch:
         color_scheme: str
              Color scheme of the plot. One of {'standard', 'bw'}. If not given
             'standard' is the defaulte color scheme.
-        save: bool
-            If set to True the plot going to be saved. If not given as an argument the
-            pitch is not saved.
-        path: str
-            Path to which the plot should be saved if 'save' is True. If not given as
-            argument the default value is the current working directory.
-        show_plot: bool, True
-            If set to False the plot is not shown. The plot is shown by default.
-        show_axis: bool, optional
+        show_axis_ticks: bool, optional
             If set to True, the axes are visible. If not specified as an argument, the
             axes are not visible.
         ax: plt.axes
@@ -805,25 +771,16 @@ class Pitch:
         )
 
         # remove labels and ticks
-        if not show_axis:
+        if not show_axis_ticks:
             ax.xaxis.set_major_locator(matplotlib.ticker.NullLocator())
             ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
-
-        if save:
-            plt.savefig(path + "_handball_pitch.png")
-
-        if show_plot:
-            plt.show()
 
         return ax
 
     def _plot_football_pitch(
         self,
         color_scheme: str,
-        save: bool,
-        path: str,
-        show_plot: bool,
-        show_axis: bool,
+        show_axis_ticks: bool,
         ax: plt.axes,
         **kwargs,
     ):
@@ -834,15 +791,7 @@ class Pitch:
         color_scheme: str
             Color scheme of the plot. One of {'standard', 'bw'}. If not given
             'standard' is the defaulte color scheme.
-        save: bool, optional
-            If set to True the plot going to be saved. If not given as an argument the
-            pitch is not saved.
-        path: str
-            Path to which the plot should be saved if 'save' is True. If not given as
-            argument the default value is the current working directory.
-        show_plot: bool, True
-            If set to False the plot is not shown. The plot is shown by default.
-        show_axis: bool, optional
+        show_axis_ticks: bool, optional
             If set to True, the axes are visible. If not specified as an argument, the
             axes are not visible.
         ax: plt.axes
@@ -1210,14 +1159,8 @@ class Pitch:
         )
 
         # remove labels and ticks
-        if not show_axis:
+        if not show_axis_ticks:
             ax.xaxis.set_major_locator(matplotlib.ticker.NullLocator())
             ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
-
-        if save:
-            plt.savefig(path + "/football_pitch.png")
-
-        if show_plot:
-            plt.show()
 
         return ax
