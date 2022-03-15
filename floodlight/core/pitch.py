@@ -157,7 +157,7 @@ class Pitch:
     def plot(
         self,
         sport: str = None,
-        color_scheme: str = None,
+        color_scheme: str = "standard",
         save: bool = False,
         path: str = str(os.path.dirname(os.path.realpath(__file__))),
         show_plot: bool = True,
@@ -170,41 +170,40 @@ class Pitch:
         Parameters
         ----------
         sport: str, optional
-            Sport for which the pitch is created. If the sport is already declared in
-            the pitch object the sport must not be passed as an argument.
+            Sport for which the field is to be created. If the sport was already
+            specified when the field object was instantiated, the argument does not need
+            to be passed.
         color_scheme: str, optional
             Color scheme of the plot. One of {'standard', 'bw'}. If not given
             'standard' is the defaulte color scheme.
         save: bool, optional
-            You may want to save the graph. If the graphic should be saved 'save' must
-            be True. If not given as an argument the pitch is not going to be saved.
+            If set to True the plot going to be saved. If not given as an argument the
+            pitch is not saved.
         path: str, optional
-            Path to which the plot should be saved if 'save' is True. If not given as an
-            an argument the default value is the current working directory.
+            Path to which the plot should be saved if 'save' is True. If not given as
+            argument the default value is the current working directory.
         show_plot: bool, True
-            You may want to see the plot. The plot is shown per default. If you don't
-            want to see the plot the 'show_plot' variable must be set to False.
+            If set to False the plot is not shown. The plot is shown by default.
         show_axis: bool, optional
-            You may want to show the axis. If 'show_axis' is True the axis are going to
-            be visible. If not given as an argument the axis are not going to be
-            visible.
+            If set to True, the axes are visible. If not specified as an argument, the
+            axes are not visible.
         ax: plt.axes, optional
             Axes from matplotlib library on which the playing field is plotted. If not
             given as an argument a plt.axes object with standard configurations
-            of matplotlib will be created. In order to modify for instance the figsize
+            of matplotlib is created. In order to modify for instance the figsize
             an plt.axes object must be created and passed as an argument.
         kwargs:
-            You may pass optional arguments (`linewidth`, `zorder`, 'scalex','scaley'}
-            which can be used for the plot functions from matplotlib. The kwargs
-            only getting passed to all the plot functions.
+            Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs are
+            only passed to all the plot functions.
 
         Returns
         -------
         matplotlib.axes._subplots.AxesSubplot
-            An axes to which all elements of the sport specific pitch are added.
+            An axes to which all elements of the sport-specific pitch are added.
         """
         # list of existing color_schemes and sports
-        color_schemes = ["bw", "standard", None]
+        color_schemes = ["bw", "standard"]
         sports = ["football", "handball"]
         sport = sport or self.sport
 
@@ -223,8 +222,8 @@ class Pitch:
                 "No valid color scheme description. Choose one of:" + f"{color_schemes}"
             )
 
-        # check wether an axes to plot is given or if a new axes element
-        # has to be created
+        # check wether an axes to plot is given or if a new axes element has to be
+        # created
         ax = ax or plt.subplots()[1]
 
         # set ratio between x and y values of the plot to ensure that the ratio between
@@ -281,40 +280,35 @@ class Pitch:
         ax: plt.axes,
         **kwargs,
     ):
-
         """Plots a handball pitch on a given axes.
 
         Parameters
         ----------
         color_scheme: str
-             Color scheme of the plot. One of {'standard', 'bw'}.If not given 'standard'
-              is the default color scheme.
+             Color scheme of the plot. One of {'standard', 'bw'}. If not given
+            'standard' is the defaulte color scheme.
         save: bool
-            You may want to save the graph. If the graphic should be saved 'save'
-            must be True. If not given as an argument the pitch is not going to be
-            saved. Plots are going to be stored as png in the same directory layer as
-            the repository.
+            If set to True the plot going to be saved. If not given as an argument the
+            pitch is not saved.
         path: str
-            Path to which the plot should be saved if 'save' is True. If not given as an
-            an argument the default value is the current working directory.
+            Path to which the plot should be saved if 'save' is True. If not given as
+            argument the default value is the current working directory.
         show_plot: bool, True
-            You may want to see the plot. The plot is shown per default. If you don't
-            want to see the plot the 'show_plot' variable must be set to False.
+            If set to False the plot is not shown. The plot is shown by default.
         show_axis: bool, optional
-            You may want to show the axis. If 'show_axis' is True the axis are going to
-            be visible. If not given as an argument the axis are not going to be
-            visible.
+            If set to True, the axes are visible. If not specified as an argument, the
+            axes are not visible.
         ax: plt.axes
             Axes from matplotlib library on which the handball field is plotted.
         kwargs:
-            You may pass optional arguments (`linewidth`, `zorder`, 'scalex','scaley'}
-            which can be used for the plot functions from matplotlib. The kwargs
-            only getting passed to all the plot functions.
+            Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs are
+            only passed to all the plot functions.
 
         Returns
         ----------
         ax : matplotlib.axes._subplots.AxesSubplot
-            An axes to which all elements of the sport specific pitch are added.
+            An axes to which all elements of the handball pitch are added.
         """
 
         # kwargs which are used to configure the plot with default values 1 and 0.
@@ -390,7 +384,7 @@ class Pitch:
         # angle for the free throw arc changes when unit is 'percent'
         angle = 10 if self.unit == "percent" else 0
 
-        # Margins of the plot
+        # margins of the plot
         x_margin = x_range * 0.025
         y_margin = y_range * 0.05
 
@@ -510,8 +504,6 @@ class Pitch:
                 **kwargs,
             )
         )
-        #
-
         # goal area lines
         # lower left
         # Filling the goal area
@@ -528,7 +520,7 @@ class Pitch:
                     **kwargs,
                 )
             )
-        # line
+        # goal area line
         ax.add_patch(
             Arc(
                 pos_left_side_right_goal_post,
@@ -558,7 +550,7 @@ class Pitch:
                     **kwargs,
                 )
             )
-        # line
+        # goal area line
         ax.add_patch(
             Arc(
                 pos_left_side_left_goal_post,
@@ -588,7 +580,7 @@ class Pitch:
                     **kwargs,
                 )
             )
-        # line
+        # goal area line
         ax.add_patch(
             Arc(
                 pos_right_side_left_goal_post,
@@ -618,7 +610,7 @@ class Pitch:
                     **kwargs,
                 )
             )
-        # line
+        # goal area line
         ax.add_patch(
             Arc(
                 pos_right_side_right_goal_post,
@@ -680,7 +672,7 @@ class Pitch:
             zorder=zorder,
             **kwargs,
         )
-        # vetical free throw lines
+        # vertical free throw lines
         ax.plot(
             [
                 x_pos_left_side_free_throw_line_edge,
@@ -840,34 +832,30 @@ class Pitch:
         Parameters
         ----------
         color_scheme: str
-             Color scheme of the plot. One of {'standard', 'bw'}. If not given
-             'standard' is the defaulte color scheme.
+            Color scheme of the plot. One of {'standard', 'bw'}. If not given
+            'standard' is the defaulte color scheme.
         save: bool, optional
-            You may want to save the graph. If the graphic should be saved 'save' must
-            be True. If not given as an argument the pitch is not going to be saved.
-            Plots are going to be stored as png on the same directory layer as the
-            repository
+            If set to True the plot going to be saved. If not given as an argument the
+            pitch is not saved.
         path: str
-            Path to which the plot should be saved if 'save' is True. If not given as an
-            an argument the default value is the current working directory.
+            Path to which the plot should be saved if 'save' is True. If not given as
+            argument the default value is the current working directory.
         show_plot: bool, True
-            You may want to see the plot. The plot is shown per default. If you don't
-            want to see the plot the 'show_plot' variable must be set to False.
+            If set to False the plot is not shown. The plot is shown by default.
         show_axis: bool, optional
-            You may want to show the axis. If 'show_axis' is True the axis are going to
-             be visible. If not given as an argument the axis are not going to be
-             visible.
+            If set to True, the axes are visible. If not specified as an argument, the
+            axes are not visible.
         ax: plt.axes
             Axes from matplotlib library on which the football field is plotted.
         kwargs:
-            You may pass optional arguments (`linewidth`, `zorder`, 'scalex','scaley'}
-            which can be used for the plot functions from matplotlib. The kwargs
-            only getting passed to all the plot functions.
+            Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs are
+            only passed to all the plot functions.
 
         Returns
         ----------
         ax : matplotlib.axes._subplots.AxesSubplot
-            An axes to which all elements of the sport specific pitch are added.
+            An axes to which all elements of the football pitch are added.
         """
         # kwargs which are used to configure the plot with default values 1 and 0.
         # all the other kwargs will be just passed to all the plot functions.
@@ -886,13 +874,14 @@ class Pitch:
         # (i.e penalty area) have the same size, the actual elements on the pitch can't
         # be scaled based on the x- or y-range.
         # Therefore a norm factor for the x and y direction is needed for every element
-        # on the pitch that has a fixeds size.
+        # on the pitch that has a fixed size.
         # The norm factor is specified based on the given unit.
         # If the unit is 'm' or 'cm' the ratio between x and y is set to 1
-        # (see in the Pitch.plot() method ax.set_aspect(1)). But if the unit is
-        # 'percent' the ratio between width/length is set to ax.set_aspect(width/length)
-        # If an element like the goal area, which reaches 5.5 m into the x direction of
-        # the field, is drawn now, the fixed size of 5.5 m gets rescaled.
+        # (see in the Pitch.plot() method ax.set_aspect(1)) and the norm factos are set
+        # to 1 ('m') or 100 ('cm'). But if the unit is 'percent' the ratio between
+        # width/length is set to ax.set_aspect(width/length).
+        # That means if an element like the goal area, is drawn, it get's rescaled based
+        # on the ratio of width and length.
 
         # norm_factor for all elements on the pitch that are scaled in the x direction
         norm_factor_x = (
