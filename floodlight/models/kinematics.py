@@ -1,8 +1,9 @@
 import warnings
 from dataclasses import dataclass
-from floodlight.utils.types import Numeric
 
 import numpy as np
+
+from floodlight.utils.types import Numeric
 from floodlight import Pitch, XY
 from floodlight.core.property import PlayerProperty
 
