@@ -40,6 +40,24 @@ class Code:
     def __setitem__(self, key, value):
         self.code[key] = value
 
+    def __eq__(self, other):
+        return self.code == other
+
+    def __ne__(self, other):
+        return self.code != other
+
+    def __gt__(self, other):
+        return self.code > other
+
+    def __lt__(self, other):
+        return self.code < other
+
+    def __ge__(self, other):
+        return self.code >= other
+
+    def __le__(self, other):
+        return self.code <= other
+
     @property
     def token(self) -> list:
         token = list(np.unique(self.code))
