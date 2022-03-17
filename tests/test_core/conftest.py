@@ -65,6 +65,15 @@ def example_code_int() -> Code:
     return code
 
 
+@pytest.fixture()
+def example_code_empty() -> Code:
+    array = np.array([])
+    name = "empty"
+    code = Code(code=array, name=name)
+
+    return code
+
+
 # Events
 @pytest.fixture()
 def example_events_data_minimal() -> pd.DataFrame:
