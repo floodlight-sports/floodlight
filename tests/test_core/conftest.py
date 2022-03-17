@@ -54,6 +54,17 @@ def example_code() -> Code:
     return code
 
 
+@pytest.fixture()
+def example_code_int() -> Code:
+    array = np.array([0, 1, 2, 3])
+    name = "intensity"
+    definitions = {0: "None", 1: "Low", 2: "Medium", 3: "High"}
+    framerate = 4
+    code = Code(code=array, name=name, definitions=definitions, framerate=framerate)
+
+    return code
+
+
 # Events
 @pytest.fixture()
 def example_events_data_minimal() -> pd.DataFrame:

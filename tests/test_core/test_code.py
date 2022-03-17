@@ -4,6 +4,28 @@ import pytest
 from floodlight.core.code import Code
 
 
+# Test dunder methods
+@pytest.mark.unit
+def test_dunder_methods(example_code: Code, example_code_int: Code) -> None:
+    example_code[1] = "R"
+    code_eq_R = [False, True, False, False, False, False, False, False, False, False]
+    code_ne_R = [True, False, True, True, True, True, True, True, True, True]
+
+    # __len__
+    assert len(example_code) == 10
+    # __getitem__ and __setitem__
+    assert example_code[0] == "A"
+    assert example_code[1] == "R"
+    # __eq__ and __ne__
+    assert ((example_code == "R") == code_eq_R).all()
+    assert ((example_code != "R") == code_ne_R).all()
+    # __gt__, __lt__, __ge__, and __le__
+    assert ((example_code_int < 1) == [True, False, False, False]).all()
+    assert ((example_code_int > 2) == [False, False, False, True]).all()
+    assert ((example_code_int <= 1) == [True, True, False, False]).all()
+    assert ((example_code_int >= 2) == [False, False, True, True]).all()
+
+
 # Test def token property
 @pytest.mark.unit
 def test_token(example_code: Code) -> None:
