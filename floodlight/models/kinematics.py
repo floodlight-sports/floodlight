@@ -52,11 +52,13 @@ class DistanceModel:
 
                     y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
 
-            'forward' will differentiate using the forward difference method:
+            'forward' will differentiate using the forward difference method and append
+            a '0' at the end of the array along axis 1:
 
                 .. math::
 
                     y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
+
 
         direction: str
             One of {'x', 'y', 'plane'} of None.
