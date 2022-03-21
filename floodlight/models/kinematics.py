@@ -196,47 +196,14 @@ class VelocityModel:
 
         """
 
-        if self.unit == "m":
-            unit_factor = (1, 1)
-        elif self.unit == "cm":
-            unit_factor = (100, 100)
-        elif self.unit == "percent":
-            unit_factor = (self.length / 100, self.width / 100)
-        else:
-            raise ValueError(
-                "Invalid argument: 'unit' has to be 'm', 'cm' or 'percent'!"
-            )
-
-        if direction == "plane":
-            if difference == "central":
-                differences_xy = np.gradient(xy.xy, axis=0)
-            elif difference == "forward":
-                differences_xy = np.diff(xy.xy, axis=0, append=0)
-            else:
-                raise ValueError(
-                    "Invalid argument: 'difference' has to be 'central' or 'forward'!"
-                )
-            distance_euclidean = np.hypot(
-                differences_xy[:, ::2] * unit_factor[0],
-                differences_xy[:, 1::2] * unit_factor[1],
-            )
-        elif direction == "x":
-            distance_euclidean = np.gradient(xy.x * unit_factor[0], axis=0)
-        elif direction == "y":
-            distance_euclidean = np.gradient(xy.y * unit_factor[1], axis=0)
-        else:
-            raise ValueError(
-                "Invalid argument: 'direction' has to be 'plane', 'x', 'y'!"
-            )
-        if difference == "central":
-            difference_dist = np.gradient(distance_euclidean, axis=0)
-        else:
-            difference_dist = np.diff(distance_euclidean, axis=0, append=0)
+        distance_model = DistanceModel(self.pitch)
+        distance_model.fit(xy, difference=difference, direction=direction)
+        distance_euclidean = distance_model.distance_covered()
 
         if velocity_unit == "m/s":
-            velocity = difference_dist / xy.framerate
+            velocity = distance_euclidean * xy.framerate
         elif velocity_unit == "km/h":
-            velocity = (difference_dist / xy.framerate) * 3.6
+            velocity = (distance_euclidean * xy.framerate) * 3.6
         else:
             raise ValueError(
                 "Invalid argument: 'velocity_unit' has to be 'm/s' or 'km/h'!"
