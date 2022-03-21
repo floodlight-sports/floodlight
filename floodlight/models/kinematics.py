@@ -145,6 +145,7 @@ class VelocityModel:
         self.unit = pitch.unit
         self.length = pitch.length
         self.width = pitch.width
+        self.pitch = pitch
         self._velocity = None
         self.framerate = None
 
@@ -201,9 +202,11 @@ class VelocityModel:
         distance_euclidean = distance_model.distance_covered()
 
         if velocity_unit == "m/s":
-            velocity = distance_euclidean * xy.framerate
+            velocity = distance_euclidean.property * distance_euclidean.framerate
         elif velocity_unit == "km/h":
-            velocity = (distance_euclidean * xy.framerate) * 3.6
+            velocity = (
+                distance_euclidean.property * distance_euclidean.framerate
+            ) * 3.6
         else:
             raise ValueError(
                 "Invalid argument: 'velocity_unit' has to be 'm/s' or 'km/h'!"
