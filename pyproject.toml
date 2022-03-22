@@ -78,3 +78,6 @@ exclude = '''
 markers = [
     "unit: marks unit tests (deselect with '-m \"not unit\"')",
 ]
+filterwarnings = [
+"ignore::UserWarning",
+]
