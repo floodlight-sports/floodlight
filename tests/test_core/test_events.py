@@ -35,30 +35,60 @@ def test_events_setter(example_events_data_minimal: pd.DataFrame) -> None:
 
 
 @pytest.mark.unit
-def test_column_properties() -> None:
-    # Arrange df with different columns
-    columns = ["eID", "at_x", "to_x", "my_col"]
-    df = pd.DataFrame(columns=columns)
-
-    # trigger post_init
-    with pytest.raises(ValueError):
-        events = Events(events=df)
-
-    # add missing column
-    columns.append("gameclock")
-    df = pd.DataFrame(columns=columns)
-    events = Events(events=df)
-
-    # Assert column properties
-    assert events.essential == ["eID", "gameclock"]
-    assert events.protected == ["at_x", "to_x"]
-    assert events.custom == ["my_col"]
-    assert events.essential_missing is None
-    assert len(events.protected_missing) > 3
+def test_essential_missing(
+    example_events_data_minimal_missing_essential: pd.DataFrame,
+) -> None:
+    try:
+        Events(example_events_data_minimal_missing_essential)
+        assert False
+    except ValueError:
+        assert True
 
 
 @pytest.mark.unit
-def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
+def test_essential_invalid(
+    example_events_data_minimal_invalid_essential: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_minimal_invalid_essential)
+
+    # Act
+    invalid_essential_columns = data.essential_invalid
+
+    # Assert
+    assert invalid_essential_columns == ["gameclock"]
+
+
+@pytest.mark.unit
+def test_protected_missing(
+    example_events_data_minimal: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_minimal)
+
+    # Act
+    missing_protected_columns = data.protected_missing
+
+    # Assert
+    assert len(missing_protected_columns) == 14
+
+
+@pytest.mark.unit
+def test_protected_invalid(
+    example_events_data_with_invalid_protected: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_with_invalid_protected)
+
+    # Act
+    invalid_protected_columns = data.protected_invalid
+
+    # Assert
+    assert invalid_protected_columns == ["outcome"]
+
+
+@pytest.mark.unit
+def test_add_frameclock_with_values(example_events_data_minimal: pd.DataFrame) -> None:
     # Arrange
     data = Events(example_events_data_minimal)
     framerate = 25
@@ -68,6 +98,21 @@ def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
 
     # Assert
     assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] == 55
+
+
+@pytest.mark.unit
+def test_add_frameclock_with_none(
+    example_events_data_minimal_with_none: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_minimal_with_none)
+    framerate = 25
+
+    # Act
+    data.add_frameclock(framerate)
+
+    # Assert
+    assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] < 0
 
 
 @pytest.mark.unit
