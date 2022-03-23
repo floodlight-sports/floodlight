@@ -98,3 +98,19 @@ def test_select_multi_condition(
 
     # Assert
     assert len(filtered_events) == 1
+
+@pytest.mark.unit
+def test_translation_function(example_events_data_xy: pd.DataFrame) -> None:
+
+    # Arrange
+    data = Events(example_events_data_xy)
+
+    # Act
+    data.translate((2, 2))
+    translated_data = data.events[['at_x','at_y']]
+    expected = pd.DataFrame({
+        "at_x": [3, 5],
+        "at_y": [4, 6],
+    })
+    # Assert
+    assert pd.DataFrame.equals(translated_data, expected)

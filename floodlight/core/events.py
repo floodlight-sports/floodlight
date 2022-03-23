@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from floodlight.utils.types import Numeric
 from floodlight.core.definitions import essential_events_columns, protected_columns
 
 
@@ -265,3 +266,15 @@ class Events:
                     filtered_events = filtered_events[filtered_events[column] == value]
 
         return filtered_events
+
+    def translate(self, shift: Tuple[Numeric, Numeric]):
+        """Translates data by shift vector.
+
+        Parameters
+        ----------
+        shift : list or array-like
+            Shift vector of form v = (x, y). Any iterable data type with two numeric
+            entries is accepted.
+        """
+        self.events['at_x'] = self.events['at_x'].map(lambda x: x + shift[0])
+        self.events['at_y'] = self.events['at_y'].map(lambda x: x + shift[0])
