@@ -141,7 +141,14 @@ class Pitch:
             raise ValueError(f"Unsupported template name '{template_name}'")
 
     @property
-    def center(self):
+    def is_metrical(self) -> bool:
+        is_metrical = False
+        if self.unit in ["m", "cm"]:
+            is_metrical = True
+        return is_metrical
+
+    @property
+    def center(self) -> tuple:
         center = (
             round((self.xlim[0] + self.xlim[1]) / 2, 3),
             round((self.ylim[0] + self.ylim[1]) / 2, 3),
