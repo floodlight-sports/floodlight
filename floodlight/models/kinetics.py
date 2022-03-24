@@ -13,7 +13,7 @@ class MetabolicPowerModel:
     """Class for calculating Metabolic Power of players on the pitch. Metabolic Power
     is defined as the energy expenditure over time necessary to move at a certain speed,
     and is calculated as the product of energy cost of transport per unit body mass and
-    distance .. math:: `\\frac{J}{kg * m}` and velocity .. math:: `\\frac{m}{s}`.
+    distance [:math:`\\frac{J}{kg \\cdot m}`] and velocity [:math:`\\frac{m}{s}`].
 
 
     Parameters
@@ -508,7 +508,7 @@ class MetabolicPowerModel:
         ----------
         eccr: int
             Energy cost of constant running. Standard is set to 3.6
-            .. math:: `\\frac{J}{kg * m}` according to di Prampero (2018). Can differ
+            :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
 
         Returns
@@ -533,7 +533,7 @@ class MetabolicPowerModel:
         ----------
         eccr: int
             Energy cost of constant running. Standard is set to 3.6
-            .. math:: `\\frac{J}{kg * m}` according to di Prampero (2018). Can differ
+            :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
 
         Returns
