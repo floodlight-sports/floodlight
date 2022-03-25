@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+import numpy as np
 
 from floodlight.core.events import Events
 
@@ -98,3 +99,35 @@ def test_select_multi_condition(
 
     # Assert
     assert len(filtered_events) == 1
+
+
+@pytest.mark.unit
+def test_translation_function(
+    example_events_data_xy,
+    example_events_data_xy_none,
+    example_events_data_minimal: pd.DataFrame,
+) -> None:
+
+    # Arrange
+    data = Events(example_events_data_xy)
+    data_none = Events(example_events_data_xy_none)
+    data_minimal = Events(example_events_data_minimal)
+    data_minimal_translated = Events(example_events_data_minimal)
+
+    # Act + Assert
+    data.translate((0, -38.6))
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [1, 3], "at_y": [-36.6, -34.6]}),
+    )
+
+    data_none.translate((3, 7))
+    assert pd.DataFrame.equals(
+        data_none.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+    )
+
+    data_minimal = Events(example_events_data_minimal)
+
+    data_minimal_translated.translate((1, 2))
+    assert data_minimal.events.equals(data_minimal_translated.events)
