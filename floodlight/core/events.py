@@ -276,5 +276,26 @@ class Events:
             Shift vector of form v = (x, y). Any iterable data type with two numeric
             entries is accepted.
         """
-        self.events['at_x'] = self.events['at_x'].map(lambda x: x + shift[0])
-        self.events['at_y'] = self.events['at_y'].map(lambda x: x + shift[0])
+        if "at_x" in self.protected and self.events["at_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["at_x"] = self.events["at_x"].map(lambda x: x + shift[0])
+
+        if "at_y" in self.protected and self.events["at_y"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["at_y"] = self.events["at_y"].map(lambda x: x + shift[1])
+
+        if "to_x" in self.protected and self.events["to_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["to_x"] = self.events["to_x"].map(lambda x: x + shift[0])
+
+        if "to_y" in self.protected and self.events["to_y"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["to_y"] = self.events["to_y"].map(lambda x: x + shift[1])
