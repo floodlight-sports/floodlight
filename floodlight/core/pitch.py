@@ -160,7 +160,7 @@ class Pitch:
         ax: plt.axes = None,
         **kwargs,
     ) -> plt.axes:
-        """Returns a plot for a given sport (i.e handball, football).
+        """Returns a plot of a pitch for a given sport (i.e handball, football).
 
         Parameters
         ----------
@@ -178,7 +178,7 @@ class Pitch:
         kwargs:
             Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
-            only passed to all the plot functions.
+            only passed to all the plot functions of matplotlib.
 
         Returns
         -------
@@ -194,7 +194,7 @@ class Pitch:
         if not sport:
             raise ValueError(
                 "To visualize a pitch the sport is needed. "
-                "Give the object (Pitch) a sport (Pitch.sport)"
+                "Give the pitch object a sport (e.g. Pitch.sport = 'football')"
             )
         if sport not in sports:
             raise ValueError(f"Choose a valid sport: {sports}")
@@ -269,7 +269,7 @@ class Pitch:
         kwargs:
             Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
-            only passed to all the plot functions.
+            only passed to all the plot functions of matplotlib.
 
         Returns
         ----------
@@ -799,7 +799,7 @@ class Pitch:
         kwargs:
             Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
-            only passed to all the plot functions.
+            only passed to all the plot functions of matplotlib.
 
         Returns
         ----------
@@ -830,7 +830,7 @@ class Pitch:
         # to 1 ('m') or 100 ('cm'). But if the unit is 'percent' the ratio between
         # width/length is set to ax.set_aspect(width/length).
         # That means if an element like the goal area, is drawn, it get's rescaled based
-        # on the ratio of width and length.
+        # on the ratio of width and length. The normfactor
 
         # norm_factor for all elements on the pitch that are scaled in the x direction
         norm_factor_x = (
