@@ -363,6 +363,7 @@ category = "main"
 optional = false
 python-versions = ">=3.7"
 
+[[package]]
 [package.dependencies]
 typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
 name = "lxml"
