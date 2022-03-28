@@ -355,3 +355,50 @@ class Events:
             self.scale(factor=-1, axis="x")
         else:
             raise ValueError(f"Expected axis to be one of {'x', 'y'}, got {axis}")
+
+    def rotate(self, alpha: float):
+        """Rotates data on given angle 'alpha' around the origin.
+
+        Parameters
+        ----------
+        alpha: float
+            Rotation angle in degrees. Alpha must be between -360 and 360. If positive
+            alpha, data is rotated in counter clockwise direction around the origin. If
+            negative, data is rotated in clockwise direction around the origin.
+        """
+        if not (-360 <= alpha <= 360):
+            raise ValueError(
+                f"Expected alpha to be from -360 to 360, got {alpha} instead"
+            )
+
+        phi = np.radians(alpha)
+        cos = np.cos(phi)
+        sin = np.sin(phi)
+
+        # construct rotation matrix
+        r = np.array([[cos, -sin], [sin, cos]]).transpose()
+
+        # perform rotation
+        if "at_x" in self.protected and self.events["at_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            if "at_y" in self.protected and self.events["at_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events[["at_x", "at_y"]] = pd.DataFrame(
+                    np.round(np.dot(self.events[["at_x", "at_y"]], r), 3)
+                )
+
+        if "to_x" in self.protected and self.events["to_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            if "to_y" in self.protected and self.events["to_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events[["to_x", "to_y"]] = pd.DataFrame(
+                    np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
+                )

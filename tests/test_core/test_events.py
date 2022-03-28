@@ -183,7 +183,7 @@ def test_reflect_function(
     data = Events(example_events_data_xy)
     data_none = Events(example_events_data_xy_none)
     data_minimal = Events(example_events_data_minimal)
-    data_minimal_reflect = Events(example_events_data_minimal)
+    data_minimal_reflected = Events(example_events_data_minimal)
 
     # Act + Assert
     data.reflect(axis="y")
@@ -212,5 +212,5 @@ def test_reflect_function(
     with pytest.raises(ValueError):
         data_none.reflect(axis="z")
 
-    data_minimal_reflect.reflect("x")
-    assert data_minimal.events.equals(data_minimal_reflect.events)
+    data_minimal_reflected.reflect("x")
+    assert data_minimal.events.equals(data_minimal_reflected.events)
