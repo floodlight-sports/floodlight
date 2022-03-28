@@ -339,3 +339,19 @@ class Events:
                 "float64",
             ]:
                 self.events["to_y"] = self.events["to_y"].map(lambda x: x * factor)
+
+    def reflect(self, axis: str):
+        """Reflects data on given `axis`.
+
+        Parameters
+        ----------
+        axis : str
+            Index of reflection axis. If set to "x", data is reflected on x-axis,
+            if set to "y", data is reflected on y-axis.
+        """
+        if axis == "x":
+            self.scale(factor=-1, axis="y")
+        elif axis == "y":
+            self.scale(factor=-1, axis="x")
+        else:
+            raise ValueError(f"Expected axis to be one of {'x', 'y'}, got {axis}")
