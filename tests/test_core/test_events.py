@@ -170,3 +170,47 @@ def test_scale_function(
 
     data_minimal_scaled.scale(2)
     assert data_minimal.events.equals(data_minimal_scaled.events)
+
+
+@pytest.mark.unit
+def test_reflect_function(
+    example_events_data_xy,
+    example_events_data_xy_none,
+    example_events_data_minimal: pd.DataFrame,
+) -> None:
+
+    # Arrange
+    data = Events(example_events_data_xy)
+    data_none = Events(example_events_data_xy_none)
+    data_minimal = Events(example_events_data_minimal)
+    data_minimal_reflect = Events(example_events_data_minimal)
+
+    # Act + Assert
+    data.reflect(axis="y")
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]], pd.DataFrame({"at_x": [-1, -3], "at_y": [2, 4]})
+    )
+    data.reflect(axis="x")
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [-1, -3], "at_y": [-2, -4]}),
+    )
+    with pytest.raises(ValueError):
+        data.reflect(axis="z")
+
+    # Act + Assert
+    data_none.reflect(axis="x")
+    assert pd.DataFrame.equals(
+        data_none.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+    )
+    data_none.reflect(axis="y")
+    assert pd.DataFrame.equals(
+        data_none.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+    )
+    with pytest.raises(ValueError):
+        data_none.reflect(axis="z")
+
+    data_minimal_reflect.reflect("x")
+    assert data_minimal.events.equals(data_minimal_reflect.events)
