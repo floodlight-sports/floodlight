@@ -127,7 +127,5 @@ def test_translation_function(
         pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
     )
 
-    data_minimal = Events(example_events_data_minimal)
-
     data_minimal_translated.translate((1, 2))
     assert data_minimal.events.equals(data_minimal_translated.events)

@@ -299,3 +299,43 @@ class Events:
             "float64",
         ]:
             self.events["to_y"] = self.events["to_y"].map(lambda x: x + shift[1])
+
+    def scale(self, factor: float, axis: str = None):
+        """Scales data by a given factor and optionally selected axis.
+
+        Parameters
+        ----------
+        factor : float
+            Scaling factor.
+        axis : str, optional
+            Index of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
+            data is scaled on y-axis. If none is provided, data is scaled in both
+            directions (default).
+        """
+
+        if axis not in ["x", "y", None]:
+            raise ValueError(f"Expected axis to be one of {'x', 'y', None}, got {axis}")
+
+        if axis is None or axis == "x":
+            if "at_x" in self.protected and self.events["at_x"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["at_x"] = self.events["at_x"].map(lambda x: x * factor)
+            if "to_x" in self.protected and self.events["to_x"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["at_x"] = self.events["at_x"].map(lambda x: x * factor)
+
+        if axis is None or axis == "y":
+            if "at_y" in self.protected and self.events["at_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["at_y"] = self.events["at_y"].map(lambda x: x * factor)
+            if "to_y" in self.protected and self.events["to_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["to_y"] = self.events["to_y"].map(lambda x: x * factor)
