@@ -5,8 +5,8 @@ from matplotlib.patches import Arc, Wedge, Rectangle
 
 def plot_handball_pitch(
     xlim, ylim, unit, color_scheme: str, show_axis_ticks: bool, ax: plt.axes, **kwargs
-):
-    """Plots a handball pitch on a given axes.
+) -> matplotlib.axes:
+    """Plots a handball pitch on a given matplotlib.axes.
 
     Parameters
     ----------
@@ -549,8 +549,8 @@ def plot_football_pitch(
     show_axis_ticks: bool,
     ax: plt.axes,
     **kwargs,
-):
-    """Plots a football pitch on a given axes.
+) -> matplotlib.axes:
+    """Plots a football pitch on a given matplotlib.axes.
 
     Parameters
     ----------

@@ -2,6 +2,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Tuple
 
+import matplotlib
 import matplotlib.pyplot as plt
 
 from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch
@@ -158,8 +159,8 @@ class Pitch:
         show_axis_ticks: bool = False,
         ax: plt.axes = None,
         **kwargs,
-    ) -> plt.axes:
-        """Returns a plot of a pitch for a given sport (i.e handball, football).
+    ) -> matplotlib.axes:
+        """Plots a pitch on a matplotlib.axes for a given sport.
 
         Parameters
         ----------
@@ -171,9 +172,9 @@ class Pitch:
             axes are not visible.
         ax: plt.axes, optional
             Axes from matplotlib library on which the playing field is plotted. If not
-            given as an argument a plt.axes object with standard configurations
+            given as an argument a matplotlib.axes object with standard configurations
             of matplotlib is created. In order to modify for instance the figsize
-            an plt.axes object must be created and passed as an argument.
+            an matplotlib.axes object must be created and passed as an argument.
         kwargs:
             Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
@@ -228,7 +229,7 @@ class Pitch:
         elif self.unit == "percent" and sport == "handball":
             ax.set_aspect(0.5)
 
-        # create axes with handball pitch
+        # create matplotlib.axes with handball pitch
         if sport == "handball":
             return plot_handball_pitch(
                 self.xlim,
@@ -240,7 +241,7 @@ class Pitch:
                 **kwargs,
             )
 
-        # create axes with football pitch
+        # create matplotlib.axes with football pitch
         if sport == "football":
             return plot_football_pitch(
                 self.xlim,

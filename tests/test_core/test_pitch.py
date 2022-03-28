@@ -2,7 +2,6 @@ import pytest
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 from floodlight.core.pitch import Pitch
 
 
