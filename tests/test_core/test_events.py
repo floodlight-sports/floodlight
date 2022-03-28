@@ -214,3 +214,39 @@ def test_reflect_function(
 
     data_minimal_reflected.reflect("x")
     assert data_minimal.events.equals(data_minimal_reflected.events)
+
+
+@pytest.mark.unit
+def test_rotate(
+    example_events_data_xy,
+    example_events_data_xy_none,
+    example_events_data_minimal: pd.DataFrame,
+) -> None:
+
+    # Arrange
+    data = Events(example_events_data_xy)
+    data_none = Events(example_events_data_xy_none)
+    data_minimal = Events(example_events_data_minimal)
+    data_minimal_rotated = Events(example_events_data_minimal)
+
+    # Act + Assert
+    data.rotate(90)
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [-2.0, -4.0], "at_y": [1.0, 3.0]}),
+    )
+
+    data.rotate(-90)
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [1.0, 3.0], "at_y": [2.0, 4.0]}),
+    )
+
+    data_none.rotate(90)
+    assert pd.DataFrame.equals(
+        data_none.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+    )
+
+    data_minimal_rotated.rotate(90)
+    assert data_minimal.events.equals(data_minimal_rotated.events)
