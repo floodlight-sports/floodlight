@@ -129,3 +129,44 @@ def test_translation_function(
 
     data_minimal_translated.translate((1, 2))
     assert data_minimal.events.equals(data_minimal_translated.events)
+
+
+@pytest.mark.unit
+def test_scale_function(
+    example_events_data_xy,
+    example_events_data_xy_none,
+    example_events_data_minimal: pd.DataFrame,
+) -> None:
+
+    # Arrange
+    data = Events(example_events_data_xy)
+    data_none = Events(example_events_data_xy_none)
+    data_minimal = Events(example_events_data_minimal)
+    data_minimal_scaled = Events(example_events_data_minimal)
+
+    # Act + Assert
+    data.scale(factor=2)
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]], pd.DataFrame({"at_x": [2, 6], "at_y": [4, 8]})
+    )
+    data.scale(factor=-2.9, axis="x")
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [-5.8, -17.4], "at_y": [4, 8]}),
+    )
+    data.scale(factor=0, axis="y")
+    assert pd.DataFrame.equals(
+        data.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [-5.8, -17.4], "at_y": [0, 0]}),
+    )
+    with pytest.raises(ValueError):
+        data.scale(factor=1, axis="z")
+
+    data_none.scale(factor=2)
+    assert pd.DataFrame.equals(
+        data_none.events[["at_x", "at_y"]],
+        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+    )
+
+    data_minimal_scaled.scale(2)
+    assert data_minimal.events.equals(data_minimal_scaled.events)
