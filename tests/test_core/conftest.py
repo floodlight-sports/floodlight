@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from floodlight.core.code import Code
+from floodlight.core.pitch import Pitch
 
 
 # Sample data for easy creation of core objects
@@ -72,3 +73,21 @@ def example_events_data_with_outcome_and_none() -> pd.DataFrame:
         "outcome": [0, 1, None, 0, None],
     }
     return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_pitch_football() -> Pitch:
+    football_pitch = Pitch(
+        xlim=(0, 105), ylim=(0, 68), unit="m", boundaries="fixed", sport="football"
+    )
+
+    return football_pitch
+
+
+@pytest.fixture()
+def example_pitch_handball() -> Pitch:
+    handball_pitch = Pitch(
+        xlim=(0, 40), ylim=(0, 20), unit="m", boundaries="fixed", sport="handball"
+    )
+
+    return handball_pitch

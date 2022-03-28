@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Tuple
 
 import matplotlib.pyplot as plt
-from floodlight.vis.plotting import plot_handball_pitch, plot_football_pitch
 
+from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch
 from floodlight.utils.types import Numeric
 
 
@@ -165,7 +165,7 @@ class Pitch:
         ----------
         color_scheme: str, optional
             Color scheme of the plot. One of {'standard', 'bw'}. If not given
-            'standard' is the defaulte color scheme.
+            'standard' is the default color scheme.
         show_axis_ticks: bool, optional
             If set to True, the axes are visible. If not specified as an argument, the
             axes are not visible.
@@ -221,7 +221,7 @@ class Pitch:
                 ax.set_aspect(68 / 105)  # standard ratio of length and width
                 warnings.warn(
                     "Since the unit is 'percent' and no information on the actual pitch"
-                    " size in terms of 'length' and 'width' is provided the pitch is "
+                    "size in terms of 'length' and 'width' is provided the pitch is "
                     "set to default values length: 105 and width: 68"
                 )
         # set ratio if unit is percent and sport is handball

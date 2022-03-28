@@ -23,7 +23,7 @@ def plot_handball_pitch(
         {'m', 'cm', 'percent'}.
     color_scheme: str
         Color scheme of the plot. One of {'standard', 'bw'}. If not given
-        'standard' is the defaulte color scheme.
+        'standard' is the default color scheme.
     show_axis_ticks: bool
         If set to True, the axes are visible. If not specified as an argument, the
         axes are not visible.
@@ -571,7 +571,7 @@ def plot_football_pitch(
         {'m', 'cm', 'percent'}.
     color_scheme: str
         Color scheme of the plot. One of {'standard', 'bw'}. If not given
-        'standard' is the defaulte color scheme.
+        'standard' is the default color scheme.
     show_axis_ticks: bool
         If set to True, the axes are visible. If not specified as an argument, the
         axes are not visible.
