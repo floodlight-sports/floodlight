@@ -181,7 +181,7 @@ class Pitch:
 
         Returns
         -------
-        matplotlib.axes._subplots.AxesSubplot
+        matplotlib.axes
             An axes to which all elements of the sport-specific pitch are added.
         """
         # list of existing color_schemes and sports

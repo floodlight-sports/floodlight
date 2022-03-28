@@ -4,22 +4,27 @@ from matplotlib.patches import Arc, Wedge, Rectangle
 
 
 def plot_handball_pitch(
-    xlim,
-    ylim,
-    unit,
-    color_scheme: str,
-    show_axis_ticks: bool,
-    ax: plt.axes,
-    **kwargs,
+    xlim, ylim, unit, color_scheme: str, show_axis_ticks: bool, ax: plt.axes, **kwargs
 ):
     """Plots a handball pitch on a given axes.
 
     Parameters
     ----------
+    xlim: Tuple[Numeric, Numeric]
+        Limits of pitch boundaries in longitudinal direction. This tuple has the form
+        (x_min, x_max) and delimits the length of the pitch (not of any actual data)
+        within the coordinate system.
+    ylim: Tuple[Numeric, Numeric]
+        Limits of pitch boundaries in lateral direction. This tuple has the form
+        (y_min, y_max) and delimits the width of the pitch (not of any actual data)
+        within the coordinate system.
+    unit: str
+        The unit in which data is measured along axes. Possible types are
+        {'m', 'cm', 'percent'}.
     color_scheme: str
-         Color scheme of the plot. One of {'standard', 'bw'}. If not given
+        Color scheme of the plot. One of {'standard', 'bw'}. If not given
         'standard' is the defaulte color scheme.
-    show_axis_ticks: bool, optional
+    show_axis_ticks: bool
         If set to True, the axes are visible. If not specified as an argument, the
         axes are not visible.
     ax: plt.axes
@@ -31,7 +36,7 @@ def plot_handball_pitch(
 
     Returns
     ----------
-    ax : matplotlib.axes._subplots.AxesSubplot
+    ax : matplotlib.axes
         An axes to which all elements of the handball pitch are added.
     """
 
@@ -549,10 +554,25 @@ def plot_football_pitch(
 
     Parameters
     ----------
+    xlim: Tuple[Numeric, Numeric]
+        Limits of pitch boundaries in longitudinal direction. This tuple has the form
+        (x_min, x_max) and delimits the length of the pitch (not of any actual data)
+        within the coordinate system.
+    ylim: Tuple[Numeric, Numeric]
+        Limits of pitch boundaries in lateral direction. This tuple has the form
+        (y_min, y_max) and delimits the width of the pitch (not of any actual data)
+        within the coordinate system.
+    length: Numeric
+        Length of the actual pitch in `unit`.
+    width: Numeric, optional
+        Width of the actual pitch in `unit`.
+    unit: str
+        The unit in which data is measured along axes. Possible types are
+        {'m', 'cm', 'percent'}.
     color_scheme: str
         Color scheme of the plot. One of {'standard', 'bw'}. If not given
         'standard' is the defaulte color scheme.
-    show_axis_ticks: bool, optional
+    show_axis_ticks: bool
         If set to True, the axes are visible. If not specified as an argument, the
         axes are not visible.
     ax: plt.axes
@@ -564,7 +584,7 @@ def plot_football_pitch(
 
     Returns
     ----------
-    ax : matplotlib.axes._subplots.AxesSubplot
+    ax : matplotlib.axes
         An axes to which all elements of the football pitch are added.
     """
     # kwargs which are used to configure the plot with default values 1 and 0.
@@ -591,7 +611,7 @@ def plot_football_pitch(
     # to 1 ('m') or 100 ('cm'). But if the unit is 'percent' the ratio between
     # width/length is set to ax.set_aspect(width/length).
     # That means if an element like the goal area, is drawn, it get's rescaled based
-    # on the ratio of width and length. The normfactor
+    # on the ratio of width and length.
 
     # norm_factor for all elements on the pitch that are scaled in the x direction
     norm_factor_x = (
