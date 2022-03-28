@@ -243,11 +243,11 @@ class Pitch:
         # create axes with football pitch
         if sport == "football":
             return plot_football_pitch(
-                self.unit,
-                self.length,
-                self.width,
                 self.xlim,
                 self.ylim,
+                self.length,
+                self.width,
+                self.unit,
                 color_scheme=color_scheme,
                 show_axis_ticks=show_axis_ticks,
                 ax=ax,

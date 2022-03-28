@@ -535,11 +535,11 @@ def plot_handball_pitch(
 
 
 def plot_football_pitch(
-    unit,
-    length,
-    width,
     xlim,
     ylim,
+    length,
+    width,
+    unit,
     color_scheme: str,
     show_axis_ticks: bool,
     ax: plt.axes,
