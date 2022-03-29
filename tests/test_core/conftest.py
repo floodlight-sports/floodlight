@@ -65,7 +65,44 @@ def example_events_data_minimal() -> pd.DataFrame:
 
 
 @pytest.fixture()
-def example_events_data_with_outcome_and_none() -> pd.DataFrame:
+def example_events_data_minimal_with_none() -> pd.DataFrame:
+    data = {
+        "eID": [None, 2],
+        "gameclock": [1.1, None],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_minimal_missing_essential() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "outcome": [0, 1],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_minimal_invalid_essential() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [-1.1, 2.2],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_invalid_protected() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [1.1, 2.2],
+        "jID": [10, -11],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_with_outcome_none() -> pd.DataFrame:
     data = {
         "eID": [1, 2, 2, 4, 1],
         "gameclock": [1.1412, 2.4122, 5.213, 11.214, 21.12552],

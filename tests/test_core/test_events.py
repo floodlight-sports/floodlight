@@ -46,6 +46,7 @@ def test_essential_missing(
 
 
 @pytest.mark.unit
+@pytest.mark.filterwarnings("ignore: Floodlight Events column")
 def test_essential_invalid(
     example_events_data_minimal_invalid_essential: pd.DataFrame,
 ) -> None:
@@ -75,16 +76,16 @@ def test_protected_missing(
 
 @pytest.mark.unit
 def test_protected_invalid(
-    example_events_data_with_invalid_protected: pd.DataFrame,
+    example_events_data_invalid_protected: pd.DataFrame,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_with_invalid_protected)
+    data = Events(example_events_data_invalid_protected)
 
     # Act
     invalid_protected_columns = data.protected_invalid
 
     # Assert
-    assert invalid_protected_columns == ["outcome"]
+    assert invalid_protected_columns == ["jID"]
 
 
 @pytest.mark.unit
@@ -117,10 +118,10 @@ def test_add_frameclock_with_none(
 
 @pytest.mark.unit
 def test_select_single_condition(
-    example_events_data_with_outcome_and_none: pd.DataFrame,
+    example_events_data_with_outcome_none,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_with_outcome_and_none)
+    data = Events(example_events_data_with_outcome_none)
 
     # Act
     outcome_one = data.select([("outcome", 1)])
@@ -133,10 +134,10 @@ def test_select_single_condition(
 
 @pytest.mark.unit
 def test_select_multi_condition(
-    example_events_data_with_outcome_and_none: pd.DataFrame,
+    example_events_data_with_outcome_none,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_with_outcome_and_none)
+    data = Events(example_events_data_with_outcome_none)
 
     # Act
     filtered_events = data.select([("eID", 1), ("outcome", None)])
