@@ -364,7 +364,7 @@ class Events:
         alpha: float
             Rotation angle in degrees. Alpha must be between -360 and 360. If positive
             alpha, data is rotated in counter clockwise direction around the origin. If
-            negative, data is rotated in clockwise direction around the origin.
+            negative, data is rotated in clockwise direction.
         """
         if not (-360 <= alpha <= 360):
             raise ValueError(
