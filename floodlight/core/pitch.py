@@ -165,18 +165,16 @@ class Pitch:
         Parameters
         ----------
         color_scheme: str, optional
-            Color scheme of the plot. One of {'standard', 'bw'}. If not given
-            'standard' is the default color scheme.
+            Color scheme of the plot. One of {'standard', 'bw'}.  If not given
+            default = 'standard'.
         show_axis_ticks: bool, optional
-            If set to True, the axes are visible. If not specified as an argument, the
-            axes are not visible.
+            If set to True, the axis ticks are visible. If not specified as an argument,
+            the axes are not visible.
         ax: plt.axes, optional
-            Axes from matplotlib library on which the playing field is plotted. If not
-            given as an argument a matplotlib.axes object with standard configurations
-            of matplotlib is created. In order to modify for instance the figsize
-            an matplotlib.axes object must be created and passed as an argument.
+            Axes from matplotlib library on which the playing field is plotted. If ax is
+            None, a default-sized matplotlib.axes object is created.
         kwargs:
-            Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
+            Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
             only passed to all the plot functions of matplotlib.
 
@@ -191,13 +189,10 @@ class Pitch:
         sport = self.sport
 
         # check if valide sport was chosen
-        if not sport:
+        if sport not in sports or sport is None:
             raise ValueError(
-                "To visualize a pitch the sport is needed. "
-                "Give the pitch object a sport (e.g. Pitch.sport = 'football')"
+                f"Expected self.sport to be one of {sports}, got {self.sport}"
             )
-        if sport not in sports:
-            raise ValueError(f"Choose a valid sport: {sports}")
 
         # check if a valide color scheme was chosen
         if color_scheme not in color_schemes:
@@ -211,6 +206,9 @@ class Pitch:
 
         # set ratio between x and y values of the plot to ensure that the ratio between
         # length and width is correct regardless of the figsize.
+        default_length = 105
+        default_width = 68
+
         if self.unit != "percent":
             ax.set_aspect(1)
         # set ratio if unit is percent and sport is football
@@ -218,12 +216,12 @@ class Pitch:
             if self.length and self.width:
                 ax.set_aspect(self.width / self.length)
             # set ratio to standard pitch size of 68/105
-            else:
-                ax.set_aspect(68 / 105)  # standard ratio of length and width
+            else:  # standard ratio of length and width
+                ax.set_aspect(default_width / default_length)
                 warnings.warn(
-                    "Since the unit is 'percent' and no information on the actual pitch"
-                    "size in terms of 'length' and 'width' is provided the pitch is "
-                    "set to default values length: 105 and width: 68"
+                    "Since self.unit == 'percent' but self.length and self.width are "
+                    f"None the pitch is set to default values length: {default_length} "
+                    f"and width: {default_width}"
                 )
         # set ratio if unit is percent and sport is handball
         elif self.unit == "percent" and sport == "handball":

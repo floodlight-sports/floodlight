@@ -189,6 +189,7 @@ def test_plot_handball_pitch_aspect_ratio_unit_cm() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.filterwarnings("ignore: Since self.unit == 'percent'")
 def test_plot_football_pitch_aspect_ratio_unit_percent_without_width_length() -> None:
     # Arrange
     pitch = Pitch(

@@ -25,12 +25,12 @@ def plot_handball_pitch(
         Color scheme of the plot. One of {'standard', 'bw'}. If not given
         'standard' is the default color scheme.
     show_axis_ticks: bool
-        If set to True, the axes are visible. If not specified as an argument, the
+        If set to True, the axis ticks are visible. If not specified as an argument, the
         axes are not visible.
     ax: plt.axes
         Axes from matplotlib library on which the handball field is plotted.
     kwargs:
-        Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
+        Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
         which can be used for the plot functions from matplotlib. The kwargs are
         only passed to all the plot functions of matplotlib.
 
@@ -573,12 +573,12 @@ def plot_football_pitch(
         Color scheme of the plot. One of {'standard', 'bw'}. If not given
         'standard' is the default color scheme.
     show_axis_ticks: bool
-        If set to True, the axes are visible. If not specified as an argument, the
+        If set to True, the axis ticks are visible. If not specified as an argument, the
         axes are not visible.
     ax: plt.axes
         Axes from matplotlib library on which the football field is plotted.
     kwargs:
-        Optional keyworded arguments (`linewidth`, `zorder`, 'scalex', 'scaley'}
+        Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
         which can be used for the plot functions from matplotlib. The kwargs are
         only passed to all the plot functions of matplotlib.
 
