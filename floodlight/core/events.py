@@ -379,26 +379,38 @@ class Events:
         r = np.array([[cos, -sin], [sin, cos]]).transpose()
 
         # perform rotation
-        if "at_x" in self.protected and self.events["at_x"].dtype in [
-            "int64",
-            "float64",
-        ]:
-            if "at_y" in self.protected and self.events["at_y"].dtype in [
+        if (
+            "at_x" in self.protected
+            and self.events["at_x"].dtype
+            in [
                 "int64",
                 "float64",
-            ]:
-                self.events[["at_x", "at_y"]] = pd.DataFrame(
-                    np.round(np.dot(self.events[["at_x", "at_y"]], r), 3)
-                )
+            ]
+            and "at_y" in self.protected
+            and self.events["at_y"].dtype
+            in [
+                "int64",
+                "float64",
+            ]
+        ):
+            self.events[["at_x", "at_y"]] = pd.DataFrame(
+                np.round(np.dot(self.events[["at_x", "at_y"]], r), 3)
+            )
 
-        if "to_x" in self.protected and self.events["to_x"].dtype in [
-            "int64",
-            "float64",
-        ]:
-            if "to_y" in self.protected and self.events["to_y"].dtype in [
+        if (
+            "to_x" in self.protected
+            and self.events["to_x"].dtype
+            in [
                 "int64",
                 "float64",
-            ]:
-                self.events[["to_x", "to_y"]] = pd.DataFrame(
-                    np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
-                )
+            ]
+            and "to_y" in self.protected
+            and self.events["to_y"].dtype
+            in [
+                "int64",
+                "float64",
+            ]
+        ):
+            self.events[["to_x", "to_y"]] = pd.DataFrame(
+                np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
+            )
