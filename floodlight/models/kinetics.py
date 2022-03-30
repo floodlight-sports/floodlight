@@ -481,7 +481,64 @@ class MetabolicPowerModel:
         metabolic_power = energy_cost_running * velocity.property
 
         self._metabolic_power = metabolic_power / xy.framerate
-
+  # constants
+  EDGES = np.array([-0.3, -0.2, -0.1,  0,  0.1,  0.2,  0.3,  0.4])
+  COEFF = np.array([
+              [0.28, -1.66, 3.81, -3.96, 4.01],
+              [0.03, -0.15, 0.98, -2.25, 3.14],
+              [0.69, -3.21, 5.94, -5.07, 2.79],
+              [1.25, -6.57, 13.14, -11.15, 5.35],
+              [0.68, -4.17, 10.17, -10.31, 8.66],
+              [3.80, -14.91, 22.94, -14.53, 11.24],
+              [44.95, -122.88, 126.94, -57.46, 21.39],
+              [94.62, -213.94, 184.43, -68.49, 25.04],
+          ])
+  
+  
+  
+  def get_interpolation_weight_matrix(es):
+      T = es.shape[0]
+      N = es.shape[1]
+      W = np.zeros((T, N, len(EDGES)))
+      # dim = (T, N, zones)
+  
+      idxs = EDGES.searchsorted(es)
+  
+      # mask for non-edge casees
+      mask = (idxs > 0) & (idxs < 8)
+  
+      grid_t, grid_n = np.mgrid[0:T, 0:N]
+  
+      W[grid_t[mask], grid_n[mask], idxs[mask]-1] = (EDGES[idxs[mask]] - es[mask]) * 10
+      W[grid_t[mask], grid_n[mask], idxs[mask]] = (es[mask] - EDGES[idxs[mask]-1]) * 10
+  
+      # edge cases
+      W[idxs == 0, 0] = 1
+      W[idxs == 8, 7] = 1
+  
+      # maybe not needed:
+      W = W.round(3)
+      
+      return W
+  
+  
+  def calc_ecw(es, vel, em):
+      W = get_interpolation_weight_matrix(es)
+  
+      WC = np.matmul(W, COEFF)
+      V = np.stack(
+          (
+              np.power(vel, 4),
+              np.power(vel, 3),
+              np.power(vel, 2),
+              vel,
+              np.ones(vel.shape)
+          ), axis=-1
+      )
+      
+      ECW = np.multiply(np.multiply(WC, V).sum(axis=2), em)
+      
+      return ECW
     def metabolic_power(self):
         metabolic_power = PlayerProperty(
             property=self._metabolic_power,
