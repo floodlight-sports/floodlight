@@ -169,7 +169,7 @@ class Pitch:
             default = 'standard'.
         show_axis_ticks: bool, optional
             If set to True, the axis ticks are visible. If not specified as an argument,
-            the axes are not visible.
+            the axes ticks are not visible.
         ax: matplotlib.axes, optional
             Axes from matplotlib library on which the playing field is plotted. If ax is
             None, a default-sized matplotlib.axes object is created.
@@ -191,13 +191,13 @@ class Pitch:
         # check if valide sport was chosen
         if sport not in sports or sport is None:
             raise ValueError(
-                f"Expected self.sport to be one of {sports}, got {self.sport}"
+                f"Expected self.sport to be from {sports}, got {self.sport}"
             )
 
         # check if a valide color scheme was chosen
         if color_scheme not in color_schemes:
             raise ValueError(
-                "No valid color scheme description. Choose one of:" + f"{color_schemes}"
+                f"Expected color_scheme to be from {color_schemes}, got {color_scheme}"
             )
 
         # check wether an axes to plot is given or if a new axes element has to be
