@@ -6,16 +6,24 @@ def plot_positions(
     xy: np.ndarray, frame: int, ball: bool, ax: matplotlib.axes, **kwargs
 ) -> matplotlib.axes:
     """
-        Plots x and y positions for a given frame on a matplotlib.axes.
+        Plots positions for a given frame on a matplotlib.axes.
     plot
         Parameters
         -----------
-
+        xy: np.ndarray
+            Full data array containing x- and y-coordinates, where each player's
+            coordinates occupy two consecutive columns.
+        frame: int
+            Frame for which the positions are plotted.
+        ball: bool
+            If set to False marker="o". Else marker="."
+        ax: matplotlib.axes
+            Axes from matplotlib library on which the positions are plotted.
 
         Returns
         -------
         matplotib.axes
-            A matplotlib.axes to which x and y positions of a given frame are added.
+            A matplotlib.axes on which x and y-positions of a given frame are plotted.
     """
 
     # kwargs which are used to configure the plot with default values.
