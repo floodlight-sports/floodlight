@@ -362,9 +362,9 @@ class Events:
         Parameters
         ----------
         alpha: float
-            Rotation angle in degrees. Alpha must be between -360 and 360. If positive
-            alpha, data is rotated in counter clockwise direction around the origin. If
-            negative, data is rotated in clockwise direction.
+            Rotation angle in degrees. Alpha must be between -360 and 360.
+            If positive alpha, data is rotated in counter clockwise direction.
+            If negative, data is rotated in clockwise direction around the origin.
         """
         if not (-360 <= alpha <= 360):
             raise ValueError(
@@ -378,38 +378,25 @@ class Events:
         # construct rotation matrix
         r = np.array([[cos, -sin], [sin, cos]]).transpose()
 
-        # perform rotation
-        if (
-            "at_x" in self.protected
-            and self.events["at_x"].dtype
-            in [
-                "int64",
-                "float64",
-            ]
-            and "at_y" in self.protected
-            and self.events["at_y"].dtype
-            in [
-                "int64",
-                "float64",
-            ]
+        if np.all(
+            (
+                "at_x" in self.protected,
+                self.events["at_x"].dtype in ["int64", "float64"],
+                "at_y" in self.protected,
+                self.events["at_y"].dtype in ["int64", "float64"],
+            )
         ):
             self.events[["at_x", "at_y"]] = pd.DataFrame(
                 np.round(np.dot(self.events[["at_x", "at_y"]], r), 3)
             )
 
-        if (
-            "to_x" in self.protected
-            and self.events["to_x"].dtype
-            in [
-                "int64",
-                "float64",
-            ]
-            and "to_y" in self.protected
-            and self.events["to_y"].dtype
-            in [
-                "int64",
-                "float64",
-            ]
+        if np.all(
+            (
+                "at_x" in self.protected,
+                self.events["at_x"].dtype in ["int64", "float64"],
+                "at_y" in self.protected,
+                self.events["at_y"].dtype in ["int64", "float64"],
+            )
         ):
             self.events[["to_x", "to_y"]] = pd.DataFrame(
                 np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
