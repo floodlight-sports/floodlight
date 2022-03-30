@@ -1,6 +1,11 @@
+import warnings
 from dataclasses import dataclass
 from typing import Tuple
 
+import matplotlib
+import matplotlib.pyplot as plt
+
+from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch
 from floodlight.utils.types import Numeric
 
 
@@ -147,3 +152,103 @@ class Pitch:
             round((self.ylim[0] + self.ylim[1]) / 2, 3),
         )
         return center
+
+    def plot(
+        self,
+        color_scheme: str = "standard",
+        show_axis_ticks: bool = False,
+        ax: matplotlib.axes = None,
+        **kwargs,
+    ) -> matplotlib.axes:
+        """Plots a pitch on a matplotlib.axes for a given sport.
+
+        Parameters
+        ----------
+        color_scheme: str, optional
+            Color scheme of the plot. One of {'standard', 'bw'}.  If not given
+            default = 'standard'.
+        show_axis_ticks: bool, optional
+            If set to True, the axis ticks are visible. If not specified as an argument,
+            the axes are not visible.
+        ax: matplotlib.axes, optional
+            Axes from matplotlib library on which the playing field is plotted. If ax is
+            None, a default-sized matplotlib.axes object is created.
+        kwargs:
+            Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
+            which can be used for the plot functions from matplotlib. The kwargs are
+            only passed to all the plot functions of matplotlib.
+
+        Returns
+        -------
+        matplotlib.axes
+            An axes to which all elements of the sport-specific pitch are added.
+        """
+        # list of existing color_schemes and sports
+        color_schemes = ["bw", "standard"]
+        sports = ["football", "handball"]
+        sport = self.sport
+
+        # check if valide sport was chosen
+        if sport not in sports or sport is None:
+            raise ValueError(
+                f"Expected self.sport to be one of {sports}, got {self.sport}"
+            )
+
+        # check if a valide color scheme was chosen
+        if color_scheme not in color_schemes:
+            raise ValueError(
+                "No valid color scheme description. Choose one of:" + f"{color_schemes}"
+            )
+
+        # check wether an axes to plot is given or if a new axes element has to be
+        # created
+        ax = ax or plt.subplots()[1]
+
+        # set ratio between x and y values of the plot to ensure that the ratio between
+        # length and width is correct regardless of the figsize.
+        default_length = 105
+        default_width = 68
+
+        if self.unit != "percent":
+            ax.set_aspect(1)
+        # set ratio if unit is percent and sport is football
+        elif self.unit == "percent" and sport == "football":
+            if self.length and self.width:
+                ax.set_aspect(self.width / self.length)
+            # set ratio to standard pitch size of 68/105
+            else:  # standard ratio of length and width
+                ax.set_aspect(default_width / default_length)
+                warnings.warn(
+                    "Since self.unit == 'percent' but self.length and self.width are "
+                    f"None the pitch is set to default values length: {default_length} "
+                    f"and width: {default_width}"
+                )
+        # set ratio if unit is percent and sport is handball
+        elif self.unit == "percent" and sport == "handball":
+            ax.set_aspect(0.5)
+
+        # create matplotlib.axes with handball pitch
+        if sport == "handball":
+            return plot_handball_pitch(
+                self.xlim,
+                self.ylim,
+                self.unit,
+                color_scheme=color_scheme,
+                show_axis_ticks=show_axis_ticks,
+                ax=ax,
+                **kwargs,
+            )
+
+        # create matplotlib.axes with football pitch
+        if sport == "football":
+            return plot_football_pitch(
+                self.xlim,
+                self.ylim,
+                self.length,
+                self.width,
+                self.unit,
+                color_scheme=color_scheme,
+                show_axis_ticks=show_axis_ticks,
+                ax=ax,
+                **kwargs,
+            )
