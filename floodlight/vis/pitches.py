@@ -35,7 +35,7 @@ def plot_handball_pitch(
         the default color scheme.
     show_axis_ticks: bool
         If set to True, the axis ticks are visible. If not specified as an argument, the
-        axis are not visible.
+        axis ticks are not visible.
     ax: matplotlib.axes
         Axes from matplotlib library on which the handball field is plotted.
     kwargs:
@@ -583,7 +583,7 @@ def plot_football_pitch(
         the default color scheme.
     show_axis_ticks: bool
         If set to True, the axis ticks are visible. If not specified as an argument, the
-        axis are not visible.
+        axis ticks are not visible.
     ax: matplotlib.axes
         Axes from matplotlib library on which the football field is plotted.
     kwargs:
