@@ -157,7 +157,7 @@ class Pitch:
         self,
         color_scheme: str = "standard",
         show_axis_ticks: bool = False,
-        ax: plt.axes = None,
+        ax: matplotlib.axes = None,
         **kwargs,
     ) -> matplotlib.axes:
         """Plots a pitch on a matplotlib.axes for a given sport.
@@ -170,7 +170,7 @@ class Pitch:
         show_axis_ticks: bool, optional
             If set to True, the axis ticks are visible. If not specified as an argument,
             the axes are not visible.
-        ax: plt.axes, optional
+        ax: matplotlib.axes, optional
             Axes from matplotlib library on which the playing field is plotted. If ax is
             None, a default-sized matplotlib.axes object is created.
         kwargs:

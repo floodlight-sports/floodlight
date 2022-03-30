@@ -1,10 +1,19 @@
+from typing import Tuple
+
 import matplotlib
-import matplotlib.pyplot as plt
 from matplotlib.patches import Arc, Wedge, Rectangle
+
+from floodlight.utils.types import Numeric
 
 
 def plot_handball_pitch(
-    xlim, ylim, unit, color_scheme: str, show_axis_ticks: bool, ax: plt.axes, **kwargs
+    xlim: Tuple[Numeric, Numeric],
+    ylim: Tuple[Numeric, Numeric],
+    unit: str,
+    color_scheme: str,
+    show_axis_ticks: bool,
+    ax: matplotlib.axes,
+    **kwargs,
 ) -> matplotlib.axes:
     """Plots a handball pitch on a given matplotlib.axes.
 
@@ -22,15 +31,15 @@ def plot_handball_pitch(
         The unit in which data is measured along axes. Possible types are
         {'m', 'cm', 'percent'}.
     color_scheme: str
-        Color scheme of the plot. One of {'standard', 'bw'}. If not given
-        'standard' is the default color scheme.
+        Color scheme of the plot. One of {'standard', 'bw'}. If not given'standard' is
+        the default color scheme.
     show_axis_ticks: bool
         If set to True, the axis ticks are visible. If not specified as an argument, the
-        axes are not visible.
-    ax: plt.axes
+        axis are not visible.
+    ax: matplotlib.axes
         Axes from matplotlib library on which the handball field is plotted.
     kwargs:
-        Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
+        Optional keyworded arguments {'linewidth', 'zorder', 'scalex', 'scaley'}
         which can be used for the plot functions from matplotlib. The kwargs are
         only passed to all the plot functions of matplotlib.
 
@@ -540,14 +549,14 @@ def plot_handball_pitch(
 
 
 def plot_football_pitch(
-    xlim,
-    ylim,
-    length,
-    width,
-    unit,
+    xlim: Tuple[Numeric, Numeric],
+    ylim: Tuple[Numeric, Numeric],
+    length: Numeric,
+    width: Numeric,
+    unit: str,
     color_scheme: str,
     show_axis_ticks: bool,
-    ax: plt.axes,
+    ax: matplotlib.axes,
     **kwargs,
 ) -> matplotlib.axes:
     """Plots a football pitch on a given matplotlib.axes.
@@ -570,15 +579,15 @@ def plot_football_pitch(
         The unit in which data is measured along axes. Possible types are
         {'m', 'cm', 'percent'}.
     color_scheme: str
-        Color scheme of the plot. One of {'standard', 'bw'}. If not given
-        'standard' is the default color scheme.
+        Color scheme of the plot. One of {'standard', 'bw'}. If not given'standard' is
+        the default color scheme.
     show_axis_ticks: bool
         If set to True, the axis ticks are visible. If not specified as an argument, the
-        axes are not visible.
-    ax: plt.axes
+        axis are not visible.
+    ax: matplotlib.axes
         Axes from matplotlib library on which the football field is plotted.
     kwargs:
-        Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
+        Optional keyworded arguments {'linewidth', 'zorder', 'scalex', 'scaley'}
         which can be used for the plot functions from matplotlib. The kwargs are
         only passed to all the plot functions of matplotlib.
 
