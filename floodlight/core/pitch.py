@@ -174,7 +174,7 @@ class Pitch:
             Axes from matplotlib library on which the playing field is plotted. If ax is
             None, a default-sized matplotlib.axes object is created.
         kwargs:
-            Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
+            Optional keyworded arguments {'linewidth', 'zorder', 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
             only passed to all the plot functions of matplotlib.
 
