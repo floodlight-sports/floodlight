@@ -1,10 +1,13 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Tuple
+from typing import Union
 
+import matplotlib
 import numpy as np
 
 from floodlight.utils.types import Numeric
+from floodlight.vis import xy_positions
 
 
 @dataclass
@@ -217,3 +220,42 @@ class XY:
             )
 
         return xy_sliced
+
+    def plot(
+        self,
+        type: str,
+        t: Union[int, Tuple[int, int]],
+        ball: bool = False,
+        ax: matplotlib.axes = None,
+        **kwargs,
+    ) -> matplotlib.axes:
+        """Wrapper function that calls the actual plotting methods based on the type.
+
+        Parameters
+        ----------
+        type: str
+            One of {positions, trajectories}. Determines which plotting function is
+            called.
+        t: Union[int, Tuple [int, int]]
+            Frame for which postions should be plotted if type == 'positions', or a
+            range of frames if type == 'trajectories'.
+        ball: bool, optional
+            If ball == True the positions and lines are modified.
+        ax: matplotlib.axes, optional
+            Axes from matplotlib library to plot on. If ax is None, a default-sized
+            matplotlib.axes object is created.
+        kwargs:
+            Optional keyworded arguments {'color', 'zorder', 'marker', 'linestyle',
+            'alpha'} which can be used for the plot functions from matplotlib.
+            The kwargs are only passed to all the plot functions of matplotlib.
+        Returns
+        -------
+        matplotlib.axes
+            An axes with the specified plot type.
+        """
+
+        # Get function for the given type
+        plot_function = getattr(xy_positions, f"plot_{type}")
+
+        # Call function for given type and return it
+        return plot_function(self.xy, t, ball, ax=ax, **kwargs)
