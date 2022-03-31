@@ -248,5 +248,5 @@ def test_rotate(
         pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
     )
 
-    data_minimal_rotated.rotate(90)
+    data_minimal_rotated.rotate(0)
     assert data_minimal.events.equals(data_minimal_rotated.events)
