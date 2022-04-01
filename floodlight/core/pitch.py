@@ -178,7 +178,7 @@ class Pitch:
             which can be used for the plot functions from matplotlib. The kwargs are
             only passed to all the plot functions of matplotlib.
 
-        Returns
+        Return
         -------
         matplotlib.axes
             An axes to which all elements of the sport-specific pitch are added.
