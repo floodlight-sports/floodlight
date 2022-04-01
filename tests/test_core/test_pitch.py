@@ -1,6 +1,5 @@
-import pytest
 import matplotlib.pyplot as plt
-import numpy as np
+import pytest
 
 from floodlight.core.pitch import Pitch
 
@@ -68,10 +67,23 @@ def test_center_property() -> None:
     assert pitch3.center == (20.0, 0.0)
 
 
-# Test def plot(self color_scheme: str = "standard", show_axis_ticks: bool = False,
-#               ax: plt.axes = None, **kwargs)
+# Decorator function to close figure after testing
+def handle_figure_opening(func):
+    def wrapper(*args, **kwargs):
+        func(*args, **kwargs)
+        plt.close()
+
+
+# Test def plot(
+#   self,
+#   color_scheme: str = "standard",
+#   show_axis_ticks: bool = False,
+#   ax: plt.axes = None,
+#   **kwargs)
+
 # Test return
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_football_return_matplotlib_axes_without_given_as_argument(
     example_pitch_football,
 ) -> None:
@@ -83,7 +95,8 @@ def test_plot_football_return_matplotlib_axes_without_given_as_argument(
     assert type(ax) == type(axes)
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_handball_pitch_return_matplotlib_axes_without_given_as_argument(
     example_pitch_handball,
 ) -> None:
@@ -95,7 +108,8 @@ def test_plot_handball_pitch_return_matplotlib_axes_without_given_as_argument(
     assert type(ax) == type(axes)
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_football_pitch_return_matplotlib_axes_with_axes_given_as_argument(
     example_pitch_football,
 ) -> None:
@@ -107,7 +121,8 @@ def test_plot_football_pitch_return_matplotlib_axes_with_axes_given_as_argument(
     assert ax == axes
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_handball_pitch_return_matplotlib_axes_with_axes_given_as_argument(
     example_pitch_handball,
 ) -> None:
@@ -120,7 +135,8 @@ def test_plot_handball_pitch_return_matplotlib_axes_with_axes_given_as_argument(
 
 
 # Test value error if wrong sport is given
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_value_error_unvalid_sport() -> None:
     # Arrange
     pitch = Pitch(
@@ -132,7 +148,8 @@ def test_plot_value_error_unvalid_sport() -> None:
 
 
 # Test value error if wrong color_scheme is given
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_value_error_unvalid_color_scheme(example_pitch_football) -> None:
     # Assert
     with pytest.raises(ValueError):
@@ -140,7 +157,8 @@ def test_plot_value_error_unvalid_color_scheme(example_pitch_football) -> None:
 
 
 # Test aspect ratio for given sports and unit (and width/length)
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_football_pitch_aspect_ratio_unit_m() -> None:
     # Arrange
     pitch = Pitch(
@@ -152,7 +170,8 @@ def test_plot_football_pitch_aspect_ratio_unit_m() -> None:
     assert ax.get_aspect() == 1.0
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_handball_pitch_aspect_ratio_unit_m() -> None:
     # Arrange
     pitch = Pitch(
@@ -164,7 +183,8 @@ def test_plot_handball_pitch_aspect_ratio_unit_m() -> None:
     assert ax.get_aspect() == 1.0
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_football_pitch_aspect_ratio_unit_cm() -> None:
     # Arrange
     pitch = Pitch(
@@ -176,7 +196,8 @@ def test_plot_football_pitch_aspect_ratio_unit_cm() -> None:
     assert ax.get_aspect() == 1.0
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_handball_pitch_aspect_ratio_unit_cm() -> None:
     # Arrange
     pitch = Pitch(
@@ -188,7 +209,8 @@ def test_plot_handball_pitch_aspect_ratio_unit_cm() -> None:
     assert ax.get_aspect() == 1.0
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 @pytest.mark.filterwarnings("ignore: Since self.unit == 'percent'")
 def test_plot_football_pitch_aspect_ratio_unit_percent_without_width_length() -> None:
     # Arrange
@@ -205,7 +227,8 @@ def test_plot_football_pitch_aspect_ratio_unit_percent_without_width_length() ->
     assert ax.get_aspect() == (68 / 105)
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_football_pitch_aspect_ratio_unit_percent_with_width_length() -> None:
     # Arrange
     pitch = Pitch(
@@ -223,7 +246,8 @@ def test_plot_football_pitch_aspect_ratio_unit_percent_with_width_length() -> No
     assert ax.get_aspect() == (60 / 100)
 
 
-@pytest.mark.unit
+@handle_figure_opening
+@pytest.mark.plot
 def test_plot_handball_pitch_aspect_ratio_unit_percent() -> None:
     # Arrange
     pitch = Pitch(
@@ -237,27 +261,3 @@ def test_plot_handball_pitch_aspect_ratio_unit_percent() -> None:
     ax = pitch.plot()
     # Assert
     assert ax.get_aspect() == 0.5
-
-
-# Test ticks
-@pytest.mark.unit
-def test_plot_football_pitch_show_axis_ticks_default(example_pitch_football) -> None:
-    # Act
-    ax = example_pitch_football.plot()
-    # Assert
-    assert ax.get_xticks() == []
-    assert ax.get_yticks() == []
-
-
-@pytest.mark.unit
-def test_plot_football_pitch_show_axis_ticks_True(example_pitch_football) -> None:
-    # Act
-    ax = example_pitch_football.plot(show_axis_ticks=True)
-    # Assert
-    assert np.array_equal(
-        np.array(ax.get_xticks()), np.array([-20, 0, 20, 40, 60, 80, 100, 120])
-    )
-    assert np.array_equal(
-        np.array(ax.get_yticks()),
-        np.array([-10.0, 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]),
-    )
