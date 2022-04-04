@@ -93,7 +93,7 @@ class MetabolicPowerModel:
 
         self._framerate = xy.framerate
 
-        def _calc_v_trans(es: np.ndarray):
+        def _calc_v_trans(es: np.ndarray) -> np.ndarray:
             # Coefficients of polynomial to calculate the walk-run-transition
             # velocity based on the equivalent slope from di Prampero (2018).
             coeff = np.array((-107.05, 113.13, -1.13, -15.84, -1.7, 2.27))
@@ -113,7 +113,7 @@ class MetabolicPowerModel:
 
             return v_trans
 
-        def _is_running(vel: np.ndarray, es: np.ndarray):
+        def _is_running(vel: np.ndarray, es: np.ndarray) -> np.ndarray:
             """
             Checks if athlete is walking or running based on the model of di Prampero
             (2018).
@@ -136,7 +136,7 @@ class MetabolicPowerModel:
 
             return is_running
 
-        def _get_interpolation_weight_matrix(es: np.ndarray):
+        def _get_interpolation_weight_matrix(es: np.ndarray) -> np.ndarray:
             """Calculates interpolation weight matrix.
 
             Parameters
@@ -188,7 +188,7 @@ class MetabolicPowerModel:
 
             return W
 
-        def calc_ecw(es: np.ndarray, vel: np.ndarray, em: np.ndarray):
+        def calc_ecw(es: np.ndarray, vel: np.ndarray, em: np.ndarray) -> np.ndarray:
             """Calculates energy cost of walking based on formula (13), (14) and table
             1 in di Prampero & Osgnach (2018).
 
@@ -234,7 +234,7 @@ class MetabolicPowerModel:
 
             return ECW
 
-        def calc_ecr(es: np.ndarray, em: np.ndarray):
+        def calc_ecr(es: np.ndarray, em: np.ndarray) -> np.ndarray:
             """Calculates Energy cost of running based on formula (3) and (4) from
             Minetti & Parvei (2018).
 
@@ -269,7 +269,7 @@ class MetabolicPowerModel:
 
             return ecr
 
-        def calc_ecl(es: np.ndarray, vel: np.ndarray, em: np.ndarray):
+        def calc_ecl(es: np.ndarray, vel: np.ndarray, em: np.ndarray) -> np.ndarray:
             """Calculate Energy cost of locomotion.
 
             Parameters
@@ -295,7 +295,9 @@ class MetabolicPowerModel:
 
             return ecl
 
-        def calc_metabolic_power(es: np.ndarray, vel: np.ndarray, em: np.ndarray):
+        def calc_metabolic_power(
+            es: np.ndarray, vel: np.ndarray, em: np.ndarray
+        ) -> np.ndarray:
             """Calculates metabolic power as the product of energy cost of locomotion
             and velocity.
 
@@ -345,7 +347,7 @@ class MetabolicPowerModel:
 
         self._metabolic_power = metabolic_power
 
-    def metabolic_power(self):
+    def metabolic_power(self) -> PlayerProperty:
         metabolic_power = PlayerProperty(
             property=self._metabolic_power,
             name="metabolic_power",
@@ -353,7 +355,7 @@ class MetabolicPowerModel:
         )
         return metabolic_power
 
-    def cumulative_metabolic_power(self):
+    def cumulative_metabolic_power(self) -> PlayerProperty:
         cum_metp = np.nancumsum(self._metabolic_power, axis=0)
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
@@ -362,7 +364,7 @@ class MetabolicPowerModel:
         )
         return cumulative_metabolic_power
 
-    def equivalent_distance(self, eccr: int = 3.6):
+    def equivalent_distance(self, eccr: int = 3.6) -> PlayerProperty:
         """Instantaneous equivalent distance, defined as the distance a player could
         have run if moving at a constant speed and calculated as the fraction of
         metabolic work and the cost of constant running.
@@ -386,7 +388,7 @@ class MetabolicPowerModel:
         )
         return cumulative_metabolic_power
 
-    def cumulative_equivalent_distance(self, eccr: int = 3.6):
+    def cumulative_equivalent_distance(self, eccr: int = 3.6) -> PlayerProperty:
         """
         Cumulative equivalent distance defined as the distance a player could have run
         if moving at a constant speed and calculated as the fraction of metabolic work
