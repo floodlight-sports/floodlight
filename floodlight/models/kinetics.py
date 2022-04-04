@@ -93,7 +93,7 @@ class MetabolicPowerModel:
 
         self._framerate = xy.framerate
 
-        def _calc_v_trans(es: np.ndarray[float]):
+        def _calc_v_trans(es: np.ndarray):
             # Coefficients of polynomial to calculate the walk-run-transition
             # velocity based on the equivalent slope from di Prampero (2018).
             coeff = np.array((-107.05, 113.13, -1.13, -15.84, -1.7, 2.27))
@@ -113,7 +113,7 @@ class MetabolicPowerModel:
 
             return v_trans
 
-        def _is_running(vel: np.ndarray[float], es: np.ndarray[float]):
+        def _is_running(vel: np.ndarray, es: np.ndarray):
             """
             Checks if athlete is walking or running based on the model of di Prampero
             (2018).
@@ -136,7 +136,7 @@ class MetabolicPowerModel:
 
             return is_running
 
-        def _get_interpolation_weight_matrix(es: np.ndarray[float]):
+        def _get_interpolation_weight_matrix(es: np.ndarray):
             """Calculates interpolation weight matrix.
 
             Parameters
@@ -188,9 +188,7 @@ class MetabolicPowerModel:
 
             return W
 
-        def calc_ecw(
-            es: np.ndarray[float], vel: np.ndarray[float], em: np.ndarray[float]
-        ):
+        def calc_ecw(es: np.ndarray, vel: np.ndarray, em: np.ndarray):
             """Calculates energy cost of walking based on formula (13), (14) and table
             1 in di Prampero & Osgnach (2018).
 
@@ -236,7 +234,7 @@ class MetabolicPowerModel:
 
             return ECW
 
-        def calc_ecr(es: np.ndarray[float], em: np.ndarray[float]):
+        def calc_ecr(es: np.ndarray, em: np.ndarray):
             """Calculates Energy cost of running based on formula (3) and (4) from
             Minetti & Parvei (2018).
 
@@ -258,11 +256,11 @@ class MetabolicPowerModel:
             running. J Exp Biol. 2018;221:jeb.182303. doi: 10.1242/jeb.182303
             """
             # Cost of negative gradient from Minetti (2018)
-            def _cng(es: np.ndarray[float]):
+            def _cng(es: np.ndarray):
                 return -8.34 * es + 3.6 * np.exp(13 * es)
 
             # Cost of positive gradient
-            def _cpg(es: np.ndarray[float]):
+            def _cpg(es: np.ndarray):
                 return 39.5 * es + 3.6 * np.exp(-4 * es)
 
             # Energy cost of running. Where es < 0 calculate cost of negative gradient.
@@ -271,9 +269,7 @@ class MetabolicPowerModel:
 
             return ecr
 
-        def calc_ecl(
-            es: np.ndarray[float], vel: np.ndarray[float], em: np.ndarray[float]
-        ):
+        def calc_ecl(es: np.ndarray, vel: np.ndarray, em: np.ndarray):
             """Calculate Energy cost of locomotion.
 
             Parameters
@@ -299,9 +295,7 @@ class MetabolicPowerModel:
 
             return ecl
 
-        def calc_metabolic_power(
-            es: np.ndarray[float], vel: np.ndarray[float], em: np.ndarray[float]
-        ):
+        def calc_metabolic_power(es: np.ndarray, vel: np.ndarray, em: np.ndarray):
             """Calculates metabolic power as the product of energy cost of locomotion
             and velocity.
 
