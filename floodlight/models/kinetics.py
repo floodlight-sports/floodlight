@@ -31,7 +31,11 @@ class MetabolicPowerModel:
         self.pitch = pitch
         self._framerate = None
         self._metabolic_power = None
+        # Edges of equivalent slope for using the corresponding polynomial to calculate
+        # energy cost of walking at a certain velocity from di Prampero (2018).
         self.EDGES = np.array([-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4])
+        # Coefficients of polynomials to calculate energy cost of walking from di
+        # Prampero (2018).
         self.COEFF = np.array(
             [
                 [0.28, -1.66, 3.81, -3.96, 4.01],
@@ -44,6 +48,7 @@ class MetabolicPowerModel:
                 [94.62, -213.94, 184.43, -68.49, 25.04],
             ]
         )
+        # Coefficient of air resistance from di Prampero (2018).
         self.k = 0.0037
 
     def fit(
@@ -81,7 +86,11 @@ class MetabolicPowerModel:
             None will calculate distance in both directions.
         """
 
+        self._framerate = xy.framerate
+
         def _calc_v_trans(es):
+            # Coefficients of polynomial to calculate the walk-run-transition
+            # velocity based on the equivalent slope from di Prampero (2018).
             coeff = np.array((-107.05, 113.13, -1.13, -15.84, -1.7, 2.27))
             es_power = np.stack(
                 (
@@ -115,7 +124,7 @@ class MetabolicPowerModel:
                 True: Athlete is running
                 False: Athlete is walking
             """
-
+            # Calculate walk-run-transition velocity
             v_trans = _calc_v_trans(es)
 
             is_running = (vel >= v_trans) | (vel > 2.5)
@@ -123,18 +132,28 @@ class MetabolicPowerModel:
             return is_running
 
         def _get_interpolation_weight_matrix(es):
+            # Number of frames
             T = es.shape[0]
+            # Number of players
             N = es.shape[1]
+            # Pre-allocated interpolation weight matrix with 3 dimensions (T frames, N
+            # players, len(EDGES)=8 polynomials)
             W = np.zeros((T, N, len(self.EDGES)))
-            # dim = (T, N, zones)
 
+            # Index of each ES regarding its position in EDGES.
+            # E.g. ES = 0.25 -> ES will be sorted between EDGES[5] and EDGES[6],
+            # idxs = 6
             idxs = self.EDGES.searchsorted(es)
 
-            # mask for non-edge casees
+            # mask for non-edge cases (ES outside of EDGES)
             mask = (idxs > 0) & (idxs < 8)
 
+            # Initialize grids for appropriate indexing of W along axis=0 (time) and
+            # axis=1 (player)
             grid_t, grid_n = np.mgrid[0:T, 0:N]
 
+            # Fill W with the right interpolation weights for each time t (axis=0),
+            # player n (axis=1) and polynomial (axis=2)
             W[grid_t[mask], grid_n[mask], idxs[mask] - 1] = (
                 self.EDGES[idxs[mask]] - es[mask]
             ) * 10
@@ -142,19 +161,21 @@ class MetabolicPowerModel:
                 es[mask] - self.EDGES[idxs[mask] - 1]
             ) * 10
 
-            # edge cases
+            # Fill edge cases (ES outside of EDGES) with 1 because they are not
+            # interpolated
             W[idxs == 0, 0] = 1
             W[idxs == 8, 7] = 1
-
-            # maybe not needed:
-            # W = W.round(3)
 
             return W
 
         def calc_ecw(es, vel, em):
+            # Interpolation weight matrix
             W = _get_interpolation_weight_matrix(es)
 
+            # Matrix product of EDGES and W, ie. weighted factors in polynomials
             WC = np.matmul(W, self.COEFF)
+
+            # Calcualte vel^4 + vel^3 + vel^2 + vel + 1 for every frame and player
             V = np.stack(
                 (
                     np.power(vel, 4),
@@ -166,51 +187,63 @@ class MetabolicPowerModel:
                 axis=-1,
             )
 
+            # Multiply WC and V. Calculate sum of terms. Multiply with em
             ECW = np.multiply(np.multiply(WC, V).sum(axis=2), em)
 
             return ECW
 
         def calc_ecr(es, em):
+            # Cost of negative gradient from Minetti (2018)
             def _cng(es):
                 return -8.34 * es + 3.6 * np.exp(13 * es)
 
+            # Cost of positive gradient
             def _cpg(es):
                 return 39.5 * es + 3.6 * np.exp(-4 * es)
 
-            ecr = np.piecewise(es, [es <= 0, es > 0], [_cng, _cpg]) * em
+            # Energy cost of running. Where es < 0 calculate cost of negative gradient.
+            # Where es >= 0 calculate cost of positive gradient.
+            ecr = np.piecewise(es, [es < 0, es >= 0], [_cng, _cpg]) * em
 
             return ecr
 
         def calc_ecl(es, vel, em):
+            # Check where locomotion is running
             running = _is_running(vel, es)
-
+            # Calculate energy cost of walking for entire array
             ecl = calc_ecw(es, vel, em)
+            # Substitute ecw with energy cost of running where locomotion is running
             ecl[running] = calc_ecr(es[running], em[running])
 
             return ecl
 
         def calc_metabolic_power(es, vel, em):
+            # Calculate energy cost of locomotion
             ecl = calc_ecl(es, vel, em)
-            metabolic_power = ecl * vel / 20
+            # Calculate metabolic power as product of ecl and velocity (m/s)
+            metabolic_power = ecl * vel / self._framerate
 
             return metabolic_power
 
-        self._framerate = xy.framerate
-
+        # Velocity
         velocity_model = VelocityModel(self.pitch)
         velocity_model.fit(xy, difference=difference, axis=axis)
         velocity = velocity_model.velocity()
 
+        # Acceleration
         acceleration_model = AccelerationModel(self.pitch)
         acceleration_model.fit(xy, difference=difference, axis=axis)
         acceleration = acceleration_model.acceleration()
 
+        # Equivalent slope
         equivalent_slope = (acceleration.property / g) + (
             (self.k * np.square(velocity.property)) / g
         )
 
+        # Equivalent mass
         equivalent_mass = np.sqrt(np.square(equivalent_slope) + 1)
 
+        # Metabolic power
         metabolic_power = calc_metabolic_power(
             equivalent_slope, velocity.property, equivalent_mass
         )
