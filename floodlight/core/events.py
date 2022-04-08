@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from floodlight.utils.types import Numeric
 from floodlight.core.definitions import essential_events_columns, protected_columns
 
 
@@ -265,3 +266,138 @@ class Events:
                     filtered_events = filtered_events[filtered_events[column] == value]
 
         return filtered_events
+
+    def translate(self, shift: Tuple[Numeric, Numeric]):
+        """Translates data by shift vector.
+
+        Parameters
+        ----------
+        shift : list or array-like
+            Shift vector of form v = (x, y). Any iterable data type with two numeric
+            entries is accepted.
+        """
+        if "at_x" in self.protected and self.events["at_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["at_x"] = self.events["at_x"].map(lambda x: x + shift[0])
+
+        if "at_y" in self.protected and self.events["at_y"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["at_y"] = self.events["at_y"].map(lambda x: x + shift[1])
+
+        if "to_x" in self.protected and self.events["to_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["to_x"] = self.events["to_x"].map(lambda x: x + shift[0])
+
+        if "to_y" in self.protected and self.events["to_y"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            self.events["to_y"] = self.events["to_y"].map(lambda x: x + shift[1])
+
+    def scale(self, factor: float, axis: str = None):
+        """Scales data by a given factor and optionally selected axis.
+
+        Parameters
+        ----------
+        factor : float
+            Scaling factor.
+        axis : str, optional
+            Index of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
+            data is scaled on y-axis. If none is provided, data is scaled in both
+            directions (default).
+        """
+
+        if axis not in ["x", "y", None]:
+            raise ValueError(f"Expected axis to be one of {'x', 'y', None}, got {axis}")
+
+        if axis is None or axis == "x":
+            if "at_x" in self.protected and self.events["at_x"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["at_x"] = self.events["at_x"].map(lambda x: x * factor)
+            if "to_x" in self.protected and self.events["to_x"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["at_x"] = self.events["at_x"].map(lambda x: x * factor)
+
+        if axis is None or axis == "y":
+            if "at_y" in self.protected and self.events["at_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["at_y"] = self.events["at_y"].map(lambda x: x * factor)
+            if "to_y" in self.protected and self.events["to_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events["to_y"] = self.events["to_y"].map(lambda x: x * factor)
+
+    def reflect(self, axis: str):
+        """Reflects data on given `axis`.
+
+        Parameters
+        ----------
+        axis : str
+            Index of reflection axis. If set to "x", data is reflected on x-axis,
+            if set to "y", data is reflected on y-axis.
+        """
+        if axis == "x":
+            self.scale(factor=-1, axis="y")
+        elif axis == "y":
+            self.scale(factor=-1, axis="x")
+        else:
+            raise ValueError(f"Expected axis to be one of {'x', 'y'}, got {axis}")
+
+    def rotate(self, alpha: float):
+        """Rotates data on given angle 'alpha' around the origin.
+
+        Parameters
+        ----------
+        alpha: float
+            Rotation angle in degrees. Alpha must be between -360 and 360.
+            If positive alpha, data is rotated in counter clockwise direction.
+            If negative, data is rotated in clockwise direction around the origin.
+        """
+        if not (-360 <= alpha <= 360):
+            raise ValueError(
+                f"Expected alpha to be from -360 to 360, got {alpha} instead"
+            )
+
+        phi = np.radians(alpha)
+        cos = np.cos(phi)
+        sin = np.sin(phi)
+
+        # construct rotation matrix
+        r = np.array([[cos, -sin], [sin, cos]]).transpose()
+
+        if "at_x" in self.protected and self.events["at_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            if "at_y" in self.protected and self.events["at_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events[["at_x", "at_y"]] = pd.DataFrame(
+                    np.round(np.dot(self.events[["at_x", "at_y"]], r), 3)
+                )
+
+        if "to_x" in self.protected and self.events["to_x"].dtype in [
+            "int64",
+            "float64",
+        ]:
+            if "to_y" in self.protected and self.events["to_y"].dtype in [
+                "int64",
+                "float64",
+            ]:
+                self.events[["to_x", "to_y"]] = pd.DataFrame(
+                    np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
+                )

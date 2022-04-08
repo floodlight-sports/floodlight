@@ -92,3 +92,25 @@ def example_events_data_with_outcome_and_none() -> pd.DataFrame:
         "outcome": [0, 1, None, 0, None],
     }
     return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_xy() -> pd.DataFrame:
+    data = {
+        "eID": [0, 0],
+        "gameclock": [0.1, 0.2],
+        "at_x": [1, 3],
+        "at_y": [2, 4],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_xy_none() -> pd.DataFrame:
+    data = {
+        "eID": [0, 0],
+        "gameclock": [0.1, 0.2],
+        "at_x": [np.NAN, np.NAN],
+        "at_y": [np.NAN, np.NAN],
+    }
+    return pd.DataFrame(data)
