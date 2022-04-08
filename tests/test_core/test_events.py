@@ -54,7 +54,7 @@ def test_column_properties() -> None:
     assert events.essential == ["eID", "gameclock"]
     assert events.protected == ["at_x", "to_x"]
     assert events.custom == ["my_col"]
-    assert events.essential_missing is None
+    assert events.essential_missing == []
     assert len(events.protected_missing) > 3
 
 

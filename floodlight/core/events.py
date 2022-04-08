@@ -52,7 +52,7 @@ class Events:
     def __post_init__(self):
         # check for missing essential columns
         missing_columns = self.essential_missing
-        if missing_columns is not None:
+        if missing_columns:
             raise ValueError(
                 f"Floodlight Events object is missing the essential "
                 f"column(s) {missing_columns}!"
@@ -60,7 +60,7 @@ class Events:
 
         # warn if value ranges are violated
         incorrect_columns = self.essential_invalid
-        if incorrect_columns is not None:
+        if incorrect_columns:
             for col in incorrect_columns:
                 warnings.warn(
                     f"Floodlight Events column {col} does not match the defined value"
@@ -110,10 +110,7 @@ class Events:
             col for col in essential_events_columns if col not in self.essential
         ]
 
-        if not missing_columns:
-            return None
-        else:
-            return missing_columns
+        return missing_columns
 
     @property
     def essential_invalid(self):
@@ -123,9 +120,6 @@ class Events:
             if not self.column_values_in_range(col, essential_events_columns)
         ]
 
-        if not invalid_columns:
-            invalid_columns = None
-
         return invalid_columns
 
     @property
@@ -133,9 +127,6 @@ class Events:
         missing_columns = [
             col for col in protected_columns if col not in self.protected
         ]
-
-        if not missing_columns:
-            missing_columns = None
 
         return missing_columns
 
@@ -146,9 +137,6 @@ class Events:
             for col in self.protected
             if not self.column_values_in_range(col, protected_columns)
         ]
-
-        if not invalid_columns:
-            invalid_columns = None
 
         return invalid_columns
 
