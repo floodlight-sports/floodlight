@@ -59,6 +59,60 @@ def test_column_properties() -> None:
 
 
 @pytest.mark.unit
+def test_essential_missing(
+    example_events_data_minimal_missing_essential: pd.DataFrame,
+) -> None:
+    try:
+        Events(example_events_data_minimal_missing_essential)
+        assert False
+    except ValueError:
+        assert True
+
+
+@pytest.mark.unit
+@pytest.mark.filterwarnings("ignore: Floodlight Events column")
+def test_essential_invalid(
+    example_events_data_minimal_invalid_essential: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_minimal_invalid_essential)
+
+    # Act
+    invalid_essential_columns = data.essential_invalid
+
+    # Assert
+    assert invalid_essential_columns == ["gameclock"]
+
+
+@pytest.mark.unit
+def test_protected_missing(
+    example_events_data_minimal: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_minimal)
+
+    # Act
+    missing_protected_columns = data.protected_missing
+
+    # Assert
+    assert len(missing_protected_columns) == 14
+
+
+@pytest.mark.unit
+def test_protected_invalid(
+    example_events_data_invalid_protected: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_invalid_protected)
+
+    # Act
+    invalid_protected_columns = data.protected_invalid
+
+    # Assert
+    assert invalid_protected_columns == ["jID"]
+
+
+@pytest.mark.unit
 def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
     # Arrange
     data = Events(example_events_data_minimal)
@@ -72,11 +126,39 @@ def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
 
 
 @pytest.mark.unit
-def test_select_single_condition(
-    example_events_data_with_outcome_and_none: pd.DataFrame,
+def test_add_frameclock_with_values(example_events_data_minimal: pd.DataFrame) -> None:
+    # Arrange
+    data = Events(example_events_data_minimal)
+    framerate = 25
+
+    # Act
+    data.add_frameclock(framerate)
+
+    # Assert
+    assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] == 55
+
+
+@pytest.mark.unit
+def test_add_frameclock_with_none(
+    example_events_data_minimal_with_none: pd.DataFrame,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_with_outcome_and_none)
+    data = Events(example_events_data_minimal_with_none)
+    framerate = 25
+
+    # Act
+    data.add_frameclock(framerate)
+
+    # Assert
+    assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] < 0
+
+
+@pytest.mark.unit
+def test_select_single_condition(
+    example_events_data_with_outcome_none,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_with_outcome_none)
 
     # Act
     outcome_one = data.select([("outcome", 1)])
@@ -89,10 +171,10 @@ def test_select_single_condition(
 
 @pytest.mark.unit
 def test_select_multi_condition(
-    example_events_data_with_outcome_and_none: pd.DataFrame,
+    example_events_data_with_outcome_none,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_with_outcome_and_none)
+    data = Events(example_events_data_with_outcome_none)
 
     # Act
     filtered_events = data.select([("eID", 1), ("outcome", None)])
