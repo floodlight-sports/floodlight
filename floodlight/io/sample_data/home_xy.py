@@ -3,6 +3,8 @@ from floodlight.core.xy import XY
 
 
 # 1st half
+#: XY-coordinates for the home team playing from left to right in the first half.
+
 xy_home_ht1 = np.array(
     [
         [
@@ -4236,6 +4238,7 @@ xy_home_ht1 = XY(xy=xy_home_ht1, framerate=5, direction="lr")
 
 
 # 2nd half
+#: XY-coordinates for the home team playing from right to left in the second half.
 xy_home_ht2 = np.array(
     [
         [

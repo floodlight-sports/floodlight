@@ -3,6 +3,7 @@ from floodlight.core.events import Events
 
 
 # 1st half
+#: Events assigned to home team in first half.
 events_home_ht1 = pd.DataFrame()
 
 events_home_ht1 = events_home_ht1.append(
@@ -164,6 +165,7 @@ events_home_ht1 = Events(events_home_ht1)
 
 
 # 2nd half
+#: Events assigned to home team in second half.
 events_home_ht2 = pd.DataFrame()
 
 events_home_ht2 = events_home_ht2.append(

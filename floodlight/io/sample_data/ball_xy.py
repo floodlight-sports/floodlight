@@ -3,6 +3,7 @@ from floodlight.core.xy import XY
 
 
 # 1st half
+#: XY-coordinates for the ball in the first half
 xy_ball_ht1 = np.array(
     [
         [0.00000000e00, 0.00000000e00],
@@ -188,6 +189,7 @@ xy_ball_ht1 = XY(xy=xy_ball_ht1, framerate=5)
 
 
 # 2nd half
+#: XY-coordinates for the ball in the second half
 xy_ball_ht2 = np.array(
     [
         [0.0, 0.0],

@@ -2,6 +2,7 @@ import numpy as np
 from floodlight.core.code import Code
 
 # 1st half
+#: Code indicating dead or alive ball in the first half.
 ballstatus_ht1 = np.array(
     [
         1.0,
@@ -183,6 +184,15 @@ ballstatus_ht1 = np.array(
     ]
 )
 
+
+ballstatus_ht1 = Code(
+    code=ballstatus_ht1,
+    name="ballstatus",
+    definitions={0: "Dead", 1: "Alive"},
+    framerate=5,
+)
+
+#: Code indicating home or away possession in the first half.
 possession_ht1 = np.array(
     [
         1.0,
@@ -363,14 +373,6 @@ possession_ht1 = np.array(
         1.0,
     ]
 )
-
-ballstatus_ht1 = Code(
-    code=ballstatus_ht1,
-    name="ballstatus",
-    definitions={0: "Dead", 1: "Alive"},
-    framerate=5,
-)
-
 possession_ht1 = Code(
     code=possession_ht1,
     name="possession",
@@ -380,6 +382,7 @@ possession_ht1 = Code(
 
 
 # 2nd half
+#: Code indicating dead or alive ball in the second half.
 ballstatus_ht2 = np.array(
     [
         1.0,
@@ -534,6 +537,15 @@ ballstatus_ht2 = np.array(
         1.0,
     ]
 )
+
+ballstatus_ht2 = Code(
+    code=ballstatus_ht2,
+    name="ballstatus",
+    definitions={0: "Dead", 1: "Alive"},
+    framerate=5,
+)
+
+#: Code indicating home or away possession in the second half.
 possession_ht2 = np.array(
     [
         2.0,
@@ -687,13 +699,6 @@ possession_ht2 = np.array(
         1.0,
         1.0,
     ]
-)
-
-ballstatus_ht2 = Code(
-    code=ballstatus_ht2,
-    name="ballstatus",
-    definitions={0: "Dead", 1: "Alive"},
-    framerate=5,
 )
 
 possession_ht2 = Code(

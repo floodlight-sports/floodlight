@@ -2,6 +2,7 @@ import pandas as pd
 from floodlight.core.events import Events
 
 # 1st half
+#: Events assigned to away team in first half.
 events_away_ht1 = pd.DataFrame()
 
 events_away_ht1 = events_away_ht1.append(
@@ -64,6 +65,7 @@ events_away_ht1 = Events(events_away_ht1)
 
 
 # 2nd half
+#: Events assigned to away team in second half.
 events_away_ht2 = pd.DataFrame()
 
 events_away_ht2 = events_away_ht2.append(
