@@ -184,7 +184,6 @@ ballstatus_ht1 = np.array(
     ]
 )
 
-
 ballstatus_ht1 = Code(
     code=ballstatus_ht1,
     name="ballstatus",
@@ -373,6 +372,7 @@ possession_ht1 = np.array(
         1.0,
     ]
 )
+
 possession_ht1 = Code(
     code=possession_ht1,
     name="possession",
