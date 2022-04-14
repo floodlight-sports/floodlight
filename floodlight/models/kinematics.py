@@ -113,7 +113,7 @@ class VelocityModel:
     """
 
     def __init__(self, pitch: Pitch = None):
-        super.__init__(pitch)
+        super().__init__(pitch)
         self._framerate = None
         self._velocity = None
 
