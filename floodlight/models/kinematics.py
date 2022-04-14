@@ -4,9 +4,10 @@ import numpy as np
 
 from floodlight import Pitch, XY
 from floodlight.core.property import PlayerProperty
+from floodlight.models.base import BaseModel
 
 
-class DistanceModel:
+class DistanceModel(BaseModel):
     """Class for calculating distances of players on the pitch.
 
     Parameters
@@ -16,8 +17,8 @@ class DistanceModel:
 
     """
 
-    def __init__(self, pitch: Pitch):
-        self.pitch = pitch
+    def __init__(self, pitch: Pitch = None):
+        super().__init__(pitch)
         self._framerate = None
         self._distance_euclidean = None
 
@@ -55,7 +56,7 @@ class DistanceModel:
 
         self._framerate = xy.framerate
 
-        if self.pitch.unit == "percent":
+        if self._pitch.unit == "percent":
             raise warnings.warn(
                 "Pitch unit is percent. Euclidean calculations may be distorted!"
             )
@@ -111,8 +112,8 @@ class VelocityModel:
 
     """
 
-    def __init__(self, pitch):
-        self.pitch = pitch
+    def __init__(self, pitch: Pitch = None):
+        super.__init__(pitch)
         self._framerate = None
         self._velocity = None
 
@@ -153,7 +154,7 @@ class VelocityModel:
 
         self._framerate = xy.framerate
 
-        distance_model = DistanceModel(self.pitch)
+        distance_model = DistanceModel(self._pitch)
         distance_model.fit(xy, difference=difference, axis=axis)
         distance_euclidean = distance_model.distance_covered()
 
@@ -181,8 +182,8 @@ class AccelerationModel:
 
     """
 
-    def __init__(self, pitch):
-        self.pitch = pitch
+    def __init__(self, pitch: Pitch = None):
+        super().__init__(pitch)
         self._framerate = None
         self._acceleration = None
 
@@ -223,7 +224,7 @@ class AccelerationModel:
 
         self._framerate = xy.framerate
 
-        velocity_model = VelocityModel(self.pitch)
+        velocity_model = VelocityModel(self._pitch)
         velocity_model.fit(xy, difference=difference, axis=axis)
         velocity = velocity_model.velocity()
 
