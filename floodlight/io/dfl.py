@@ -59,6 +59,7 @@ def _create_periods_from_dat(
                     f"{int(round(1 / delta.total_seconds()))} Hz"
                 )
                 framerate_est = int(round(1 / delta.total_seconds()))
+
         frame_set.clear()
 
     return periods, framerate_est
@@ -649,6 +650,8 @@ def read_position_data_xml(
             xydata[team][segment][start:end, y_col] = np.array(
                 [float(frame.get("Y")) for frame in frames]
             )
+
+        frame_set.clear()
 
     # create XY objects
     home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)
