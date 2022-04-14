@@ -59,6 +59,14 @@ class XY:
     def y(self, y_data: np.ndarray):
         self.xy[:, 1::2] = y_data
 
+    @property
+    def N(self) -> int:
+        """Returns the object's number of players."""
+        n_columns = self.xy.shape[1]
+        if (n_columns % 2) != 0:
+            raise ValueError(f"XY has an odd number of columns ({n_columns})")
+        return n_columns // 2
+
     def frame(self, t: int) -> np.ndarray:
         """Returns data for given frame *t*.
 
