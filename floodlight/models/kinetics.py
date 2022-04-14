@@ -5,7 +5,6 @@ from scipy.constants import g
 from floodlight.utils.types import Numeric
 
 from floodlight.core.xy import XY
-from floodlight.core.pitch import Pitch
 from floodlight.core.property import PlayerProperty
 from floodlight.models.base import BaseModel
 from floodlight.models.kinematics import VelocityModel, AccelerationModel
@@ -20,12 +19,6 @@ class MetabolicPowerModel(BaseModel):
     Osgnach (2018). Energy cost of running is calculated with the updated formula of
     Minetti & Parvei (2018).
 
-    Parameters
-    __________
-    pitch: Pitch
-        Pitch object of the data. Should at least include information about the data's
-        unit. If pitch.unit is 'percent', length and width of the pitch are also needed.
-
     References
     __________
     di Prampero PE, Osgnach C. Metabolic power in team sports - Part 1: An update. Int J
@@ -35,10 +28,9 @@ class MetabolicPowerModel(BaseModel):
     Exp Biol. 2018;221:jeb.182303. doi: 10.1242/jeb.182303
     """
 
-    def __init__(self, pitch: Pitch = None):
-        super().__init__(pitch)
-        self._framerate = None
-        self._metabolic_power = None
+    def __init__(self):
+        super().__init__()
+        self._metabolic_power_ = None
 
     @staticmethod
     def _calc_es(vel, acc):
@@ -384,15 +376,13 @@ class MetabolicPowerModel(BaseModel):
             None will calculate distance in both directions.
         """
 
-        self._framerate = xy.framerate
-
         # Velocity
-        velocity_model = VelocityModel(self._pitch)
+        velocity_model = VelocityModel()
         velocity_model.fit(xy, difference=difference, axis=axis)
         velocity = velocity_model.velocity()
 
         # Acceleration
-        acceleration_model = AccelerationModel(self._pitch)
+        acceleration_model = AccelerationModel()
         acceleration_model.fit(xy, difference=difference, axis=axis)
         acceleration = acceleration_model.acceleration()
 
@@ -405,25 +395,27 @@ class MetabolicPowerModel(BaseModel):
 
         # Metabolic power
         metabolic_power = MetabolicPowerModel._calc_metabolic_power(
-            equivalent_slope, velocity.property, equivalent_mass, self._framerate
+            equivalent_slope, velocity.property, equivalent_mass, xy.framerate
         )
 
-        self._metabolic_power = metabolic_power
+        self._metabolic_power_ = PlayerProperty(
+            property=metabolic_power,
+            name="metabolic_power",
+            framerate=xy.framerate,
+        )
 
     def metabolic_power(self) -> PlayerProperty:
-        metabolic_power = PlayerProperty(
-            property=self._metabolic_power,
-            name="metabolic_power",
-            framerate=self._framerate,
-        )
+        """"""
+        metabolic_power = self._metabolic_power_
         return metabolic_power
 
     def cumulative_metabolic_power(self) -> PlayerProperty:
-        cum_metp = np.nancumsum(self._metabolic_power, axis=0)
+        """"""
+        cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
             name="cumulative_metabolic_power",
-            framerate=self._framerate,
+            framerate=self._metabolic_power_.framerate,
         )
         return cumulative_metabolic_power
 
@@ -445,9 +437,11 @@ class MetabolicPowerModel(BaseModel):
             PlayerProperty of the instantaneous equivalent distance covered.
         """
 
-        eq_dist = self._metabolic_power / eccr
+        eq_dist = self._metabolic_power_.property / eccr
         cumulative_metabolic_power = PlayerProperty(
-            property=eq_dist, name="equivalent_distance", framerate=self._framerate
+            property=eq_dist,
+            name="equivalent_distance",
+            framerate=self._metabolic_power_.framerate,
         )
         return cumulative_metabolic_power
 
@@ -470,12 +464,12 @@ class MetabolicPowerModel(BaseModel):
             PlayerProperty of the cumulative equivalent distance covered.
         """
 
-        cum_metp = np.nancumsum(self._metabolic_power, axis=0)
+        cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
         cum_eqdist = cum_metp / eccr
 
         cumulative_equivalent_distance = PlayerProperty(
             property=cum_eqdist,
             name="cumulative_equivalent_distance",
-            framerate=self._framerate,
+            framerate=self._metabolic_power_.framerate,
         )
         return cumulative_equivalent_distance
