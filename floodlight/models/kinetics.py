@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 
 from scipy.constants import g
@@ -9,10 +7,11 @@ from floodlight.utils.types import Numeric
 from floodlight.core.xy import XY
 from floodlight.core.pitch import Pitch
 from floodlight.core.property import PlayerProperty
+from floodlight.models.base import BaseModel
 from floodlight.models.kinematics import VelocityModel, AccelerationModel
 
 
-class MetabolicPowerModel:
+class MetabolicPowerModel(BaseModel):
     """Class for calculating Metabolic Power of players on the pitch. Metabolic Power
     is defined as the energy expenditure over time necessary to move at a certain speed,
     and is calculated as the product of energy cost of transport per unit body mass and
@@ -36,8 +35,8 @@ class MetabolicPowerModel:
     Exp Biol. 2018;221:jeb.182303. doi: 10.1242/jeb.182303
     """
 
-    def __init__(self, pitch: Pitch):
-        self.pitch = pitch
+    def __init__(self, pitch: Pitch = None):
+        super().__init__(pitch)
         self._framerate = None
         self._metabolic_power = None
 
@@ -387,16 +386,13 @@ class MetabolicPowerModel:
 
         self._framerate = xy.framerate
 
-        if self.pitch.unit != "m":
-            warnings.warn("Coordinates have to in meter for accurate results!")
-
         # Velocity
-        velocity_model = VelocityModel(self.pitch)
+        velocity_model = VelocityModel(self._pitch)
         velocity_model.fit(xy, difference=difference, axis=axis)
         velocity = velocity_model.velocity()
 
         # Acceleration
-        acceleration_model = AccelerationModel(self.pitch)
+        acceleration_model = AccelerationModel(self._pitch)
         acceleration_model.fit(xy, difference=difference, axis=axis)
         acceleration = acceleration_model.acceleration()
 
