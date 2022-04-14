@@ -1,8 +1,6 @@
-import warnings
-
 import numpy as np
 
-from floodlight import Pitch, XY
+from floodlight import XY
 from floodlight.core.property import PlayerProperty
 from floodlight.models.base import BaseModel
 
@@ -17,10 +15,9 @@ class DistanceModel(BaseModel):
 
     """
 
-    def __init__(self, pitch: Pitch = None):
-        super().__init__(pitch)
-        self._framerate = None
-        self._distance_euclidean = None
+    def __init__(self):
+        super().__init__()
+        self._distance_euclidean_ = None
 
     def fit(self, xy: XY, difference: str = "central", axis: str = None):
         """Fits a model to calculate euclidean distances to an xy object.
@@ -54,13 +51,6 @@ class DistanceModel(BaseModel):
 
         """
 
-        self._framerate = xy.framerate
-
-        if self._pitch.unit == "percent":
-            raise warnings.warn(
-                "Pitch unit is percent. Euclidean calculations may be distorted!"
-            )
-
         if axis is None:
             if difference == "central":
                 differences_xy = np.gradient(xy.xy, axis=0)
@@ -81,22 +71,23 @@ class DistanceModel(BaseModel):
         else:
             raise ValueError("Invalid argument: 'axis' has to be None, 'x' or 'y'!")
 
-        self._distance_euclidean = distance_euclidean
+        self._distance_euclidean_ = PlayerProperty(
+            property=distance_euclidean, name="distance_covered", framerate=xy.framerate
+        )
 
     def distance_covered(self):
-        distance = PlayerProperty(
-            property=self._distance_euclidean,
-            name="distance_covered",
-            framerate=self._framerate,
-        )
+        """"""
+        distance = self._distance_euclidean_
         return distance
 
     def cumulative_distance_covered(self):
-        cum_dist = np.nancumsum(self._distance_euclidean, axis=0)
+        """"""
+        dist = self._distance_euclidean_.property
+        cum_dist = np.nancumsum(dist, axis=0)
         cumulative_distance = PlayerProperty(
             property=cum_dist,
             name="cumulative_distance_covered",
-            framerate=self._framerate,
+            framerate=self._distance_euclidean_.framerate,
         )
         return cumulative_distance
 
@@ -112,10 +103,9 @@ class VelocityModel(BaseModel):
 
     """
 
-    def __init__(self, pitch: Pitch = None):
-        super().__init__(pitch)
-        self._framerate = None
-        self._velocity = None
+    def __init__(self):
+        super().__init__()
+        self._velocity_ = None
 
     def fit(
         self,
@@ -152,22 +142,19 @@ class VelocityModel(BaseModel):
             None will calculate distance in both directions.
         """
 
-        self._framerate = xy.framerate
-
-        distance_model = DistanceModel(self._pitch)
+        distance_model = DistanceModel()
         distance_model.fit(xy, difference=difference, axis=axis)
         distance_euclidean = distance_model.distance_covered()
 
         velocity = distance_euclidean.property * distance_euclidean.framerate
 
-        self._velocity = velocity
+        self._velocity_ = PlayerProperty(
+            property=velocity, name="velocity", framerate=xy.framerate
+        )
 
     def velocity(self):
-        velocity = PlayerProperty(
-            property=self._velocity,
-            name="velocity",
-            framerate=self._framerate,
-        )
+        """"""
+        velocity = self._velocity_
         return velocity
 
 
@@ -182,10 +169,9 @@ class AccelerationModel(BaseModel):
 
     """
 
-    def __init__(self, pitch: Pitch = None):
-        super().__init__(pitch)
-        self._framerate = None
-        self._acceleration = None
+    def __init__(self):
+        super().__init__()
+        self._acceleration_ = None
 
     def fit(
         self,
@@ -222,9 +208,7 @@ class AccelerationModel(BaseModel):
             None will calculate distance in both directions.
         """
 
-        self._framerate = xy.framerate
-
-        velocity_model = VelocityModel(self._pitch)
+        velocity_model = VelocityModel()
         velocity_model.fit(xy, difference=difference, axis=axis)
         velocity = velocity_model.velocity()
 
@@ -235,12 +219,13 @@ class AccelerationModel(BaseModel):
                 np.diff(velocity.property, axis=0, append=0) * velocity.framerate
             )
 
-        self._acceleration = acceleration
+        self._acceleration_ = PlayerProperty(
+            property=acceleration,
+            name="acceleration",
+            framerate=xy.framerate,
+        )
 
     def acceleration(self):
-        acceleration = PlayerProperty(
-            property=self._acceleration,
-            name="acceleration",
-            framerate=self._framerate,
-        )
+        """"""
+        acceleration = self._acceleration_
         return acceleration
