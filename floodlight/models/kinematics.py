@@ -101,7 +101,7 @@ class DistanceModel(BaseModel):
         return cumulative_distance
 
 
-class VelocityModel:
+class VelocityModel(BaseModel):
     """Class for calculating velocities of players on the pitch.
 
     Parameters
@@ -171,7 +171,7 @@ class VelocityModel:
         return velocity
 
 
-class AccelerationModel:
+class AccelerationModel(BaseModel):
     """Class for calculating accelerations of players on the pitch.
 
     Parameters
