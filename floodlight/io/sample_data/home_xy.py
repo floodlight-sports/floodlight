@@ -3,7 +3,7 @@ from floodlight.core.xy import XY
 
 
 # 1st half
-home_ht1 = np.array(
+xy_home_ht1 = np.array(
     [
         [
             -5.25000000e01,
@@ -4232,11 +4232,11 @@ home_ht1 = np.array(
     ]
 )
 
-home_ht1 = XY(xy=home_ht1, framerate=5, direction="lr")
+xy_home_ht1 = XY(xy=xy_home_ht1, framerate=5, direction="lr")
 
 
 # 2nd half
-home_ht2 = np.array(
+xy_home_ht2 = np.array(
     [
         [
             5.25000000e01,
@@ -7841,4 +7841,4 @@ home_ht2 = np.array(
     ]
 )
 
-home_ht2 = XY(xy=home_ht2, framerate=5, direction="rl")
+xy_home_ht2 = XY(xy=xy_home_ht2, framerate=5, direction="rl")

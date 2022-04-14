@@ -1,6 +1,6 @@
 from floodlight.core.pitch import Pitch
 
-sample_pitch = Pitch(
+pitch = Pitch(
     xlim=(-52.5, 52.5),
     ylim=(-34, 34),
     unit="m",

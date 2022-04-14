@@ -3,7 +3,7 @@ from floodlight.core.xy import XY
 
 
 # 1st half
-ball_ht1 = np.array(
+xy_ball_ht1 = np.array(
     [
         [0.00000000e00, 0.00000000e00],
         [-1.00000000e00, 2.00000000e-01],
@@ -184,11 +184,11 @@ ball_ht1 = np.array(
     ]
 )
 
-ball_ht1 = XY(xy=ball_ht1, framerate=5)
+xy_ball_ht1 = XY(xy=xy_ball_ht1, framerate=5)
 
 
 # 2nd half
-ball_ht2 = np.array(
+xy_ball_ht2 = np.array(
     [
         [0.0, 0.0],
         [0.0, 1.0],
@@ -343,4 +343,4 @@ ball_ht2 = np.array(
     ]
 )
 
-ball_ht2 = XY(xy=ball_ht2, framerate=5)
+xy_ball_ht2 = XY(xy=xy_ball_ht2, framerate=5)
