@@ -37,7 +37,7 @@ def _create_periods_from_dat(
 
     # retrieve information from ball frame sets
     for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
-        if frame_set.get("TeamId") == "Ball":
+        if frame_set.get("TeamId").lower() == "ball":
             frames = [frame for frame in frame_set.iterfind("Frame")]
             periods[frame_set.get("GameSection")] = (
                 int(frames[0].get("N")),
@@ -59,6 +59,7 @@ def _create_periods_from_dat(
                     f"{int(round(1 / delta.total_seconds()))} Hz"
                 )
                 framerate_est = int(round(1 / delta.total_seconds()))
+        frame_set.clear()
 
     return periods, framerate_est
 
@@ -90,7 +91,12 @@ def create_links_from_mat_info(
     links_pID_to_jID = {}
     teams = root.find("MatchInformation").find("Teams")
     home = root.find("MatchInformation").find("General").get("HomeTeamId")
-    away = root.find("MatchInformation").find("General").get("AwayTeamId")
+    if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
+        away = root.find("MatchInformation").find("General").get("AwayTeamId")
+    elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
+        away = root.find("MatchInformation").find("General").get("GuestTeamId")
+    else:
+        away = None
 
     for team in teams:
         if team.get("TeamId") == home:
@@ -387,13 +393,15 @@ def read_event_data_xml(
     kickoff_whistles = {}
     final_whistles = {}
     for whistle in root.findall("Event/KickoffWhistle"):
-        kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-            whistle.getparent().get("EventTime")
-        )
+        if whistle.get("GameSection") is not None:
+            kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
+                whistle.getparent().get("EventTime")
+            )
     for whistle in root.findall("Event/FinalWhistle"):
-        final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-            whistle.getparent().get("EventTime")
-        )
+        if whistle.get("GameSection") is not None:
+            final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
+                whistle.getparent().get("EventTime")
+            )
 
     # initialize periods
     segments = list(kickoff_whistles.keys())
@@ -461,7 +469,7 @@ def read_event_data_xml(
 
     # reformatting DataFrame
     teams = events[segments[0]]["tID"].unique()
-    team_events = {team: None for team in teams}
+    team_events = {segment: {} for segment in segments}
     for segment in segments:
         # sort rows in ascending order
         events[segment] = events[segment].sort_values("gameclock")
@@ -597,7 +605,7 @@ def read_position_data_xml(
     for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
 
         # ball
-        if frame_set.get("TeamId") == "Ball":
+        if frame_set.get("TeamId").lower() == "ball":
             # (x, y) position
             segment = frame_set.get("GameSection")
             xydata["Ball"][segment][:, 0] = np.array(
