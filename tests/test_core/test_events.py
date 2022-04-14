@@ -113,6 +113,25 @@ def test_protected_invalid(
 
 
 @pytest.mark.unit
+def test_column_values_in_range(
+    example_events_data_invalid_protected: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_invalid_protected)
+    from floodlight.core.definitions import essential_events_columns, protected_columns
+
+    # Act
+    eID_in_range = data.column_values_in_range("eID", essential_events_columns)
+    gameclock_in_range = data.column_values_in_range(
+        "gameclock", essential_events_columns
+    )
+    jID_in_range = data.column_values_in_range("jID", protected_columns)
+
+    # Assert
+    assert eID_in_range and gameclock_in_range and not jID_in_range
+
+
+@pytest.mark.unit
 def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
     # Arrange
     data = Events(example_events_data_minimal)
