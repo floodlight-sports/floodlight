@@ -53,6 +53,16 @@ def test_template_statsperform() -> None:
     assert pitch.boundaries == "flexible"
 
 
+# Test def is_metrical(self) property
+@pytest.mark.unit
+def test_is_metrical_property() -> None:
+    pitch1 = Pitch.from_template("opta", length=110, width=68)
+    pitch2 = Pitch.from_template("tracab", length=110, width=68)
+
+    assert pitch1.is_metrical is False
+    assert pitch2.is_metrical is True
+
+
 # Test def center(self) property
 @pytest.mark.unit
 def test_center_property() -> None:

@@ -69,6 +69,19 @@ def test_x_string(example_xy_data_string: np.ndarray) -> None:
     assert np.array_equal(x_position, np.array([["1", "3"], ["5", "7"]]))
 
 
+# Test def N(self) property
+@pytest.mark.unit
+def test_N(example_xy_data_pos_int: np.ndarray) -> None:
+    uneven_array = np.array([[1, 2, 3], [5, 6, 7]])
+
+    xy1 = XY(example_xy_data_pos_int)
+    xy2 = XY(uneven_array)
+
+    assert xy1.N == 2
+    with pytest.raises(ValueError):
+        print(xy2.N)
+
+
 # Test def frame(self, t)
 @pytest.mark.unit
 def test_frame(example_xy_data_pos_int: np.ndarray) -> None:
