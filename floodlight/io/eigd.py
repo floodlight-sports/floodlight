@@ -1,10 +1,12 @@
+import shutil
+import tempfile
 import urllib.request
-from settings import EIGD_HOST_URL
-import h5py
 from typing import List
 
+from settings import EIGD_HOST_URL, ROOT_DIR
 
-def load_eigd():
+
+def load_eigd() -> List:
     return ["No", "Yes"]
 
 
@@ -23,4 +25,9 @@ def _download():
 
 
 def _unpack():
-    pass
+    status, file = _download()
+
+    tmp = tempfile.NamedTemporaryFile()
+    tmp.write(file)
+
+    shutil.unpack_archive(tmp.name, f'{ROOT_DIR}/tmp', format='zip')

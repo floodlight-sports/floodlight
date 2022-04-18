@@ -1,6 +1,7 @@
 import pytest
+import h5py
 import urllib.request
-from floodlight.io.eigd import load_eigd, _download
+from floodlight.io.eigd import load_eigd, _download, _unpack
 
 
 @pytest.mark.unit
@@ -30,4 +31,5 @@ def test__download(monkeypatch):
 
 @pytest.mark.unit
 def test__unpack():
-    pass
+    res = _unpack()
+    assert res is True
