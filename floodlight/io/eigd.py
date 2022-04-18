@@ -11,16 +11,7 @@ def load_eigd() -> List:
 
 
 def _download():
-    # try:
     response = urllib.request.urlopen(EIGD_HOST_URL)
-    # except Exception as ex:
-    #     print(ex)
-    # else:
-    #     content = response.read()
-    #     print(content)
-    # finally:
-    #     print(content)
-
     return response.status, response.read()
 
 
