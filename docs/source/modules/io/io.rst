@@ -11,5 +11,6 @@ Collection of parsing modules for different provider data.
    dfl
    kinexon
    opta
+   sample_data
    statsperform
    tracab
