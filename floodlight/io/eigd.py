@@ -26,3 +26,4 @@ def _unpack():
     tmp.write(file)
 
     shutil.unpack_archive(tmp.name, f'{ROOT_DIR}/tmp', format='zip')
+    tmp.close()
