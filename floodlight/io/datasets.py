@@ -4,7 +4,7 @@ from typing import Tuple
 
 import h5py
 
-from floodlight.io.utils import extract_zip, down_loader
+from floodlight.io.utils import extract_zip, download_from_url
 from floodlight import XY, Pitch
 from settings import DATA_DIR
 
@@ -109,6 +109,6 @@ class EIGDDataset:
 
         """
         tmp = tempfile.NamedTemporaryFile()
-        tmp.write(down_loader(self._EIGD_HOST_URL))
+        tmp.write(download_from_url(self._EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
         tmp.close()

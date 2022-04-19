@@ -19,7 +19,7 @@ def extract_zip(filepath: str, target: str, format: str = "zip") -> None:
     shutil.unpack_archive(filepath, target, format=format)
 
 
-def down_loader(path: str) -> ByteString:
+def download_from_url(path: str) -> ByteString:
     """
 
     Parameters
