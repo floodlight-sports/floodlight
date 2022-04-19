@@ -91,12 +91,7 @@ class EIGDDataset:
         )
 
     def _download_and_extract(self) -> None:
-        """
-
-        Returns
-        -------
-
-        """
+        """downloads an archive file into temporary storage and extracts the content to the file system."""
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(download_from_url(self._EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
