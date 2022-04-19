@@ -130,8 +130,3 @@ class EIGDDataset:
         tmp.write(download_from_url(self._EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
         tmp.close()
-
-
-a = EIGDDataset()
-data = a.get()
-print("hellopw")
