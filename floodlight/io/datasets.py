@@ -5,7 +5,7 @@ import h5py
 
 from floodlight.io.utils import extract_zip, down_loader
 from floodlight import XY, Pitch
-from settings import EIGD_HOST_URL, DATA_DIR
+from settings import EIGD_HOST_URL, DATA_DIR, EIGD_FILE_EXT
 
 
 class Eigd_Iterator:
@@ -42,8 +42,7 @@ class Eigd:
         return Eigd_Iterator(self)
 
     def get_dataset(self, match="48dcd3", segment="00-06-00"):
-        file_ext = "h5"
-        file_name = os.path.join(self._data_dir, f'{match}_{segment}.{file_ext}')
+        file_name = os.path.join(self._data_dir, f'{match}_{segment}.{EIGD_FILE_EXT}')
 
         if not os.path.isfile(file_name):
             raise FileNotFoundError(
