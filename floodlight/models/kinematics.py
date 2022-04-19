@@ -6,13 +6,43 @@ from floodlight.models.base import BaseModel
 
 
 class DistanceModel(BaseModel):
-    """Class for calculating distances of players on the pitch.
+    """Computations for euclidean distances of all players.
 
-    Parameters
-    __________
-    pitch: Pitch
-        Pitch object of the data.
+    Upon calling the :func:`~DistanceModel.fit`-method, this model calculates the
+    framewise euclidean distance for each player. The following calculations can
+    subsequently be queried by calling the corresponding methods:
 
+        - Frame-wise Distance Covered --> :func:`~DistanceModel.distance_covered`
+        - Cumulative Distance Covered -->
+        :func:`~DistanceModel.cumulative_distance_covered`
+
+    Notes
+    -----
+    The model calculates the distance in the unit of the corresponding position data.
+    This may lead to distortions when used in combination with models that use SI units
+    or when the unit is percent.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from floodlight import XY
+    >>> from floodlight.models.kinematics import DistanceModel
+
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))))
+
+    >>> dm = DistanceModel()
+    >>> dm.fit(xy)
+
+    >>> dm.distance_covered()
+    PlayerProperty(property=array([[1.        ],
+       [0.70710678],
+       [1.11803399],
+       [1.41421356]]), name='distance_covered', framerate=20)
+    >>> dm.cumulative_distance_covered()
+    PlayerProperty(property=array([[1.        ],
+       [0.70710678],
+       [1.11803399],
+       [1.41421356]]), name='distance_covered', framerate=20)
     """
 
     def __init__(self):
@@ -42,13 +72,10 @@ class DistanceModel(BaseModel):
                     y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
 
 
-        axis: str or None
-            One of {'x', 'y', None}.
-            Indicates the direction to calculate the distance in.
-            'x' will only calculate distance in the direction of the x-coordinate.
-            'y' will only calculate distance in the direction of the y-coordinate.
-            None will calculate distance in the x/y-plane.
-
+            axis: {None, 'x', 'y'}, optional
+                Optional argument that restricts distance calculation to either the x-
+                or y-dimension of the data. If set to None (default), distances are
+                calculated in both dimensions.
         """
 
         if axis is None:
@@ -58,7 +85,7 @@ class DistanceModel(BaseModel):
                 differences_xy = np.diff(xy.xy, axis=0, append=0)
             else:
                 raise ValueError(
-                    "Invalid argument: 'difference' has to be 'central' or 'forward'!"
+                    f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
                 )
             distance_euclidean = np.hypot(
                 differences_xy[:, ::2],
@@ -69,19 +96,36 @@ class DistanceModel(BaseModel):
         elif axis == "y":
             distance_euclidean = np.gradient(xy.y, axis=0)
         else:
-            raise ValueError("Invalid argument: 'axis' has to be None, 'x' or 'y'!")
+            raise ValueError(
+                f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
+            )
 
         self._distance_euclidean_ = PlayerProperty(
             property=distance_euclidean, name="distance_covered", framerate=xy.framerate
         )
 
     def distance_covered(self):
-        """"""
-        distance = self._distance_euclidean_
-        return distance
+        """Returns the frame-wise distance covered as computed by the fit method.
+
+        Returns
+        -------
+        distance_euclidean: XY
+            An XY object of shape (T, N), where T is the total number of frames and N is
+            the number of players. The columns contain the frame-wise euclidean distance
+            covered.
+        """
+        return self._distance_euclidean_
 
     def cumulative_distance_covered(self):
-        """"""
+        """Returns the cumulative distance covered.
+
+        Returns
+        -------
+        cumulative_distance_euclidean: XY
+            An XY object of shape (T, N), where T is the total number of frames and N is
+            the number of players. The columns contain the cumulative euclidean distance
+            covered calculated by numpy.nancumsum() over axis=0.
+        """
         dist = self._distance_euclidean_.property
         cum_dist = np.nancumsum(dist, axis=0)
         cumulative_distance = PlayerProperty(
@@ -93,14 +137,36 @@ class DistanceModel(BaseModel):
 
 
 class VelocityModel(BaseModel):
-    """Class for calculating velocities of players on the pitch.
+    """Computations for velocities of all players.
 
-    Parameters
-    __________
-    pitch: Pitch
-        Pitch object of the data. Should at least include information about the data's
-        unit. If pitch.unit is 'percent', length and width of the pitch are also needed.
+    Upon calling the :func:`~VelocityModel.fit`-method, this model calculates the
+    framewise velocity for each player. The calculation can subsequently be queried by
+    calling the corresponding method:
 
+        - Frame-wise velocity --> :func:`~VelocityModel.velocity`
+
+    Notes
+    -----
+    The model calculates the velocity in the unit of the corresponding position data per
+    second. This may lead to distortions when used in combination with models that use
+    SI units or when the unit is percent.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from floodlight import XY
+    >>> from floodlight.models.kinematics import VelocityModel
+
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))))
+
+    >>> vm = VelocityModel()
+    >>> vm.fit(xy)
+
+    >>> vm.velocity()
+    PlayerProperty(property=array([[20.        ],
+       [14.14213562],
+       [22.36067977],
+       [28.28427125]]), name='velocity', framerate=20)
     """
 
     def __init__(self):
@@ -113,7 +179,7 @@ class VelocityModel(BaseModel):
         difference: str = "central",
         axis: str = None,
     ):
-        """Fits a model to calculate euclidean distances to an xy object.
+        """Fits a model to calculate velocities to an xy object.
 
         Parameters
         ----------
@@ -134,12 +200,11 @@ class VelocityModel(BaseModel):
 
                     y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
 
-        axis: str or None
-            One of {'x', 'y', None}.
-            Indicates the direction to calculate the distance in.
-            'x' will only calculate distance in the direction of the x-coordinate.
-            'y' will only calculate distance in the direction of the y-coordinate.
-            None will calculate distance in both directions.
+
+            axis: {None, 'x', 'y'}, optional
+                Optional argument that restricts distance calculation to either the x-
+                or y-dimension of the data. If set to None (default), distances are
+                calculated in both dimensions.
         """
 
         distance_model = DistanceModel()
@@ -153,20 +218,48 @@ class VelocityModel(BaseModel):
         )
 
     def velocity(self):
-        """"""
-        velocity = self._velocity_
-        return velocity
+        """Returns the frame-wise velocity as computed by the fit method.
+
+        Returns
+        -------
+        velocity: XY
+            An XY object of shape (T, N), where T is the total number of frames and N is
+            the number of players. The columns contain the frame-wise velocity.
+        """
+        return self._velocity_
 
 
 class AccelerationModel(BaseModel):
-    """Class for calculating accelerations of players on the pitch.
+    """Computations for velocities of all players.
 
-    Parameters
-    __________
-    pitch: Pitch
-        Pitch object of the data. Should at least include information about the data's
-        unit. If pitch.unit is 'percent', length and width of the pitch are also needed.
+    Upon calling the :func:`~AccelerationModel.fit`-method, this model calculates the
+    framewise acceleration for each player. The calculation can subsequently be queried
+    by calling the corresponding method:
 
+        - Frame-wise acceleration --> :func:`~AccelerationModel.acceleration`
+
+    Notes
+    -----
+    The model calculates the velocity in the unit of the corresponding position data per
+    second. This may lead to distortions when used in combination with models that use
+    SI units or when the unit is percent.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from floodlight import XY
+    >>> from floodlight.models.kinematics import AccelerationModel
+
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))))
+
+    >>> am = AccelerationModel()
+    >>> am.fit(xy)
+
+    >>> am.acceleration()
+    PlayerProperty(property=array([[-117.15728753],
+       [  23.60679775],
+       [ 141.42135624],
+       [ 118.47182945]]), name='acceleration', framerate=20)
     """
 
     def __init__(self):
@@ -179,7 +272,7 @@ class AccelerationModel(BaseModel):
         difference: str = "central",
         axis: str = None,
     ):
-        """Fits a model to calculate euclidean distances to an xy object.
+        """Fits a model to calculate acceleration to an xy object.
 
         Parameters
         ----------
@@ -200,12 +293,11 @@ class AccelerationModel(BaseModel):
 
                     y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
 
-        axis: str
-            One of {'x', 'y', None}.
-            Indicates the direction to calculate the distance in.
-            'x' will only calculate distance in the direction of the x-coordinate.
-            'y' will only calculate distance in the direction of the y-coordinate.
-            None will calculate distance in both directions.
+
+            axis: {None, 'x', 'y'}, optional
+                Optional argument that restricts distance calculation to either the x-
+                or y-dimension of the data. If set to None (default), distances are
+                calculated in both dimensions.
         """
 
         velocity_model = VelocityModel()
@@ -226,6 +318,12 @@ class AccelerationModel(BaseModel):
         )
 
     def acceleration(self):
-        """"""
-        acceleration = self._acceleration_
-        return acceleration
+        """Returns the frame-wise acceleration as computed by the fit method.
+
+        Returns
+        -------
+        acceleration: XY
+            An XY object of shape (T, N), where T is the total number of frames and N is
+            the number of players. The columns contain the frame-wise acceleration.
+        """
+        return self._acceleration_
