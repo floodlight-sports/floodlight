@@ -31,7 +31,7 @@ class Eigd:
         }
     """
 
-    def __init__(self, dataset_path='eigd_dataset'):
+    def __init__(self, dataset_path="eigd_dataset"):
         """
 
         :param dataset_path:
@@ -46,14 +46,16 @@ class Eigd:
     def __iter__(self):
         return Eigd_Iterator(self)
 
-    def get_dataset(self, match: str = "48dcd3", segment: str = "00-06-00") -> Tuple[XY, XY, XY]:
+    def get_dataset(
+        self, match: str = "48dcd3", segment: str = "00-06-00"
+    ) -> Tuple[XY, XY, XY]:
         """
 
         :param match:
         :param segment:
         :return:
         """
-        file_name = os.path.join(self._data_dir, f'{match}_{segment}.{EIGD_FILE_EXT}')
+        file_name = os.path.join(self._data_dir, f"{match}_{segment}.{EIGD_FILE_EXT}")
 
         if not os.path.isfile(file_name):
             raise FileNotFoundError(
@@ -65,13 +67,21 @@ class Eigd:
         return (
             XY(xy=pos_dict["team_a"], framerate=EIGD_FRAMERATE),
             XY(xy=pos_dict["team_b"], framerate=EIGD_FRAMERATE),
-            XY(xy=pos_dict["balls"], framerate=EIGD_FRAMERATE)
+            XY(xy=pos_dict["balls"], framerate=EIGD_FRAMERATE),
         )
 
     @property
     def get_pitch(self) -> Pitch:
         """Returns a Pitch object corresponding to the EIGD-data."""
-        return Pitch(xlim=(0, 40), ylim=(0, 20), unit="m", boundaries="fixed", length=40, width=20, sport="handball")
+        return Pitch(
+            xlim=(0, 40),
+            ylim=(0, 20),
+            unit="m",
+            boundaries="fixed",
+            length=40,
+            width=20,
+            sport="handball",
+        )
 
     def _download_and_extract(self) -> None:
         """

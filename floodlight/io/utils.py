@@ -3,7 +3,7 @@ import urllib.request
 from typing import ByteString
 
 
-def extract_zip(filepath: str, target: str, format: str = 'zip') -> None:
+def extract_zip(filepath: str, target: str, format: str = "zip") -> None:
     """
 
     :param filepath:

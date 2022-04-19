@@ -13,12 +13,13 @@ def test_load_eigd() -> None:
 @pytest.mark.unit
 def test__download(monkeypatch):
     pass
+
     class MockResponse(object):
         def __init__(self):
-            self.fp = 'Hello World'
+            self.fp = "Hello World"
             self.status = 200
             self.reason = "OK"
-            self.url = 'https://test.com/file.zip'
+            self.url = "https://test.com/file.zip"
 
         def read(self):
             return self.fp
