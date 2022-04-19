@@ -25,7 +25,9 @@ class EIGDDataset:
 
     def __init__(self, dataset_path="eigd_dataset"):
         self._EIGD_SCHEMA = "https"
-        self._EIGD_BASE_URL = "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/resource/fd24e032-742d-4609-9052-cec310a2a563/download"
+        self._EIGD_BASE_URL = \
+            "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/" \
+            "resource/fd24e032-742d-4609-9052-cec310a2a563/download"
         self._EIGD_FILENAME = "eigd-h_pos.zip"
         self._EIGD_HOST_URL = (
             f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
@@ -41,7 +43,7 @@ class EIGDDataset:
             self._download_and_extract()
 
     def get(
-        self, match: str = "48dcd3", segment: str = "00-06-00"
+            self, match: str = "48dcd3", segment: str = "00-06-00"
     ) -> Tuple[XY, XY, XY]:
         """
 
@@ -60,7 +62,8 @@ class EIGDDataset:
 
         if not os.path.isfile(file_name):
             raise FileNotFoundError(
-                f"Could not load file, check class description for valid match and segment values ({file_name})."
+                f"Could not load file, check class description for valid match "
+                f"and segment values ({file_name})."
             )
 
         with h5py.File(file_name) as h5f:
@@ -85,8 +88,16 @@ class EIGDDataset:
         )
 
     def _download_and_extract(self) -> None:
-        """Downloads an archive file into temporary storage and extracts the content to the file system."""
+        """
+        Downloads an archive file into temporary storage and
+        extracts the content to the file system.
+        """
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(download_from_url(self._EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
         tmp.close()
+
+
+a = EIGDDataset()
+data = a.get()
+print("hellopw")
