@@ -44,7 +44,7 @@ class EIGDDataset:
     # get one sample
     >>> teamA, teamB, ball = dataset.get(match="48dcd3", segment="00-06-00")
     # get the corresponding pitch
-    >>> pitch = dataset.pitch
+    >>> pitch = dataset.get_pitch
 
 
     References
