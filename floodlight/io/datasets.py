@@ -4,6 +4,7 @@ import tempfile
 import h5py
 
 from floodlight.io.utils import extract_zip, down_loader
+from floodlight import XY, Pitch
 from settings import EIGD_HOST_URL, DATA_DIR
 
 
@@ -48,6 +49,11 @@ class Eigd:
         with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
         return pos_dict
+
+    @property
+    def get_pitch(self) -> Pitch:
+        """Returns a Pitch object corresponding to the EIGD-data."""
+        return Pitch(xlim=(0, 40), ylim=(0, 20), unit="m", boundaries="fixed", length=40, width=20, sport="handball")
 
     def _download_and_extract(self):
         tmp = tempfile.NamedTemporaryFile()
