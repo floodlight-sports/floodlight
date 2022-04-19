@@ -22,6 +22,20 @@ class BaseModel:
     def __str__(self):
         return f"Floodlight {self.__class__.__name__}"
 
+    @property
+    def is_fitted(self) -> bool:
+        """Returns ``True`` if all model parameters (those with a trailing underscore)
+        are fitted (i.e. not None), and ``False`` otherwise."""
+        fitted = all(
+            [
+                vars(self)[v] is not None
+                for v in vars(self)
+                if (v.endswith("_") and not v.startswith("__"))
+            ]
+        )
+
+        return fitted
+
     @staticmethod
     def check_pitch(pitch: Pitch):
         """
