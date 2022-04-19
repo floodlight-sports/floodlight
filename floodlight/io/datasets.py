@@ -17,7 +17,7 @@ class Eigd_Iterator:
         pass
 
 
-class Eigd:
+class EIGDDataset:
     """
     Notes
     -----
