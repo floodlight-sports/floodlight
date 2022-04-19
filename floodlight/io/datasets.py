@@ -1,5 +1,6 @@
 import os
 import tempfile
+from typing import Tuple
 
 import h5py
 
@@ -31,6 +32,10 @@ class Eigd:
     """
 
     def __init__(self, dataset_path='eigd_dataset'):
+        """
+
+        :param dataset_path:
+        """
         self._data_dir = os.path.join(DATA_DIR, dataset_path)
 
         if not os.path.isdir(self._data_dir):
@@ -41,12 +46,19 @@ class Eigd:
     def __iter__(self):
         return Eigd_Iterator(self)
 
-    def get_dataset(self, match="48dcd3", segment="00-06-00"):
+    def get_dataset(self, match: str = "48dcd3", segment: str = "00-06-00") -> Tuple[XY, XY, XY]:
+        """
+
+        :param match:
+        :param segment:
+        :return:
+        """
         file_name = os.path.join(self._data_dir, f'{match}_{segment}.{EIGD_FILE_EXT}')
 
         if not os.path.isfile(file_name):
             raise FileNotFoundError(
-                f"Could not load file, check class description for valid match and segment values ({file_name}).")
+                f"Could not load file, check class description for valid match and segment values ({file_name})."
+            )
 
         with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
@@ -61,7 +73,11 @@ class Eigd:
         """Returns a Pitch object corresponding to the EIGD-data."""
         return Pitch(xlim=(0, 40), ylim=(0, 20), unit="m", boundaries="fixed", length=40, width=20, sport="handball")
 
-    def _download_and_extract(self):
+    def _download_and_extract(self) -> None:
+        """
+
+        :return:
+        """
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(down_loader(EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
