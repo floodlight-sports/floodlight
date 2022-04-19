@@ -5,7 +5,7 @@ import h5py
 
 from floodlight.io.utils import extract_zip, down_loader
 from floodlight import XY, Pitch
-from settings import EIGD_HOST_URL, DATA_DIR, EIGD_FILE_EXT
+from settings import EIGD_HOST_URL, DATA_DIR, EIGD_FILE_EXT, EIGD_FRAMERATE
 
 
 class Eigd_Iterator:
@@ -50,7 +50,11 @@ class Eigd:
 
         with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
-        return pos_dict
+        return (
+            XY(xy=pos_dict["team_a"], framerate=EIGD_FRAMERATE),
+            XY(xy=pos_dict["team_b"], framerate=EIGD_FRAMERATE),
+            XY(xy=pos_dict["balls"], framerate=EIGD_FRAMERATE)
+        )
 
     @property
     def get_pitch(self) -> Pitch:
