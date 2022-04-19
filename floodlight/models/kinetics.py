@@ -11,21 +11,52 @@ from floodlight.models.kinematics import VelocityModel, AccelerationModel
 
 
 class MetabolicPowerModel(BaseModel):
-    """Class for calculating Metabolic Power of players on the pitch. Metabolic Power
-    is defined as the energy expenditure over time necessary to move at a certain speed,
-    and is calculated as the product of energy cost of transport per unit body mass and
-    distance [:math:`\\frac{J}{kg \\cdot m}`] and velocity [:math:`\\frac{m}{s}`].
-    Metabolic Power and Energy cost of walking is calculated according to di Prampero &
-    Osgnach (2018). Energy cost of running is calculated with the updated formula of
-    Minetti & Parvei (2018).
+    """Class for calculating Metabolic Power of players on the pitch.
+
+    Notes
+    -----
+    Metabolic Power is defined as the energy expenditure over time necessary to move at
+    a certain speed, and is calculated as the product of energy cost of transport per
+    unit body mass and distance [:math:`\\frac{J}{kg \\cdot m}`] and velocity
+    [:math:`\\frac{m}{s}`]. Metabolic Power and Energy cost of walking is calculated
+    according to [1]_. Energy cost of running is calculated with the updated formula of
+    [2]_.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from floodlight import XY
+    >>> from floodlight.models.kinetics import MetabolicPowerModel
+
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))), framerate=20)
+
+    >>> metabolic_power_model = MetabolicPowerModel()
+    >>> metabolic_power_model.fit(xy)
+
+    >>> metabolic_power_model.metabolic_power()
+    PlayerProperty(property=array([[1164.59773017],
+           [ 185.59792131],
+           [9448.10007077],
+           [8593.05199423]]), name='metabolic_power', framerate=20)
+    >>> metabolic_power_model.cumulative_equivalent_distance()
+    PlayerProperty(property=array([[ 323.49936949],
+       [ 375.05434763],
+       [2999.52658952],
+       [5386.4854768 ]]), name='cumulative_equivalent_distance', framerate=20)
 
     References
-    __________
-    di Prampero PE, Osgnach C. Metabolic power in team sports - Part 1: An update. Int J
-    Sports Med. 2018;39(08):581-587. doi:10.1055/a-0592-7660
-    Minetti, AE, Parvei, G. Update and extension of the ‘Equivalent Slope’ of speed
-    changing level locomotion in humans: A computational model for shuttle running. J
-    Exp Biol. 2018;221:jeb.182303. doi: 10.1242/jeb.182303
+    ----------
+        .. [1] `di Prampero P.E., Osgnach C. (2018). Metabolic power in team sports -
+            Part 1: An update. International Journal of Sports Medicine, 39(08),
+            581-587.
+            <https://www.thieme-connect.de/products/ejournals/abstract/10.1055/
+            a-0592-7660>`_
+        .. [2] `Minetti, A.E., Parvei, G. (2018). Update and extension of the
+            ‘Equivalent Slope’ of speed changing level locomotion in humans: A
+            computational model for shuttle running. Journal Experimental Biology,
+            221:jeb.182303.
+            <https://journals.biologists.com/jeb/article/221/15/jeb182303/19414/Update-and-
+            extension-of-the-equivalent-slope-of>`_
     """
 
     def __init__(self):
@@ -35,7 +66,7 @@ class MetabolicPowerModel(BaseModel):
     @staticmethod
     def _calc_es(vel, acc):
         """Calculates equivalent slope based on the formula by di Prampero & Osgnach
-        (2018).
+        (2018)
 
         Parameters
         ----------
@@ -207,10 +238,6 @@ class MetabolicPowerModel(BaseModel):
         ECW: np.array
             Energy cost of walking
 
-        References
-        ----------
-        di Prampero PE, Osgnach C. Metabolic power in team sports - Part 1: An
-        update. Int J Sports Med. 2018;39(08):581-587. doi:10.1055/a-0592-7660
         """
         # Coefficients of polynomials to calculate energy cost of walking from di
         # Prampero (2018).
@@ -265,11 +292,6 @@ class MetabolicPowerModel(BaseModel):
         -------
         ecr: np.array
             Energy cost of running
-        References
-        ----------
-        Minetti, AE, Parvei, G. Update and extension of the ‘Equivalent Slope’ of
-        speed changing level locomotion in humans: A computational model for shuttle
-        running. J Exp Biol. 2018;221:jeb.182303. doi: 10.1242/jeb.182303
         """
         # Cost of negative gradient from Minetti (2018)
         def _cng(es: np.ndarray):
@@ -346,8 +368,12 @@ class MetabolicPowerModel(BaseModel):
         difference: str = "central",
         axis: str = None,
     ):
-        """Fits a model to calculate metabolic power from a XY-object. To give
-        appropriate results, unit of coordinates must be in meter.
+        """Fit the model to the given data and calculate metabolic power for every
+        player.
+
+        Notes
+        -----
+        To give appropriate results, unit of coordinates must be in meter.
 
         Parameters
         ----------
@@ -368,12 +394,10 @@ class MetabolicPowerModel(BaseModel):
 
                     y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
 
-        axis: str
-            One of {'x', 'y', None}.
-            Indicates the direction to calculate the distance in.
-            'x' will only calculate distance in the direction of the x-coordinate.
-            'y' will only calculate distance in the direction of the y-coordinate.
-            None will calculate distance in both directions.
+        axis: {None, 'x', 'y'}, optional
+                Optional argument that restricts distance calculation to either the x-
+                or y-dimension of the data. If set to None (default), distances are
+                calculated in both dimensions.
         """
 
         # Velocity
@@ -405,12 +429,28 @@ class MetabolicPowerModel(BaseModel):
         )
 
     def metabolic_power(self) -> PlayerProperty:
-        """"""
+        """Returns the frame-wise metabolic power as computed by the fit method.
+
+        Returns
+        -------
+        metabolic_power: PlayerProperty
+            An Player Property object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            metabolic power.
+        """
         metabolic_power = self._metabolic_power_
         return metabolic_power
 
     def cumulative_metabolic_power(self) -> PlayerProperty:
-        """"""
+        """Returns the cumulative metabolic power.
+
+        Returns
+        -------
+        metabolic_power: PlayerProperty
+            An Player Property object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            metabolic power calculated by numpy.nancumsum() over axis=0.
+        """
         cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
@@ -420,8 +460,8 @@ class MetabolicPowerModel(BaseModel):
         return cumulative_metabolic_power
 
     def equivalent_distance(self, eccr: int = 3.6) -> PlayerProperty:
-        """Instantaneous equivalent distance, defined as the distance a player could
-        have run if moving at a constant speed and calculated as the fraction of
+        """Returns frame-wise equivalent distance, defined as the distance a player
+        could have run if moving at a constant speed and calculated as the fraction of
         metabolic work and the cost of constant running.
 
         Parameters
@@ -446,10 +486,9 @@ class MetabolicPowerModel(BaseModel):
         return cumulative_metabolic_power
 
     def cumulative_equivalent_distance(self, eccr: int = 3.6) -> PlayerProperty:
-        """
-        Cumulative equivalent distance defined as the distance a player could have run
-        if moving at a constant speed and calculated as the fraction of metabolic work
-        and the cost of constant running.
+        """Returns cumulative equivalent distance defined as the distance a player
+        could have run if moving at a constant speed and calculated as the fraction
+        of metabolic work and the cost of constant running.
 
         Parameters
         ----------
@@ -461,7 +500,8 @@ class MetabolicPowerModel(BaseModel):
         Returns
         -------
         cumulative_equivalent_distance: PlayerProperty
-            PlayerProperty of the cumulative equivalent distance covered.
+            PlayerProperty of the cumulative equivalent distance covered calculated by
+            numpy.nancumsum() over axis=0.
         """
 
         cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
