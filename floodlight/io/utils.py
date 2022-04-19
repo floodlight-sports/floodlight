@@ -21,7 +21,7 @@ def extract_zip(filepath: str, target: str, format: str = "zip") -> None:
 
 def down_loader(path: str) -> ByteString:
     """
-    
+
     Parameters
     ----------
     path

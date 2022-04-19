@@ -41,7 +41,9 @@ class Eigd:
         self._EIGD_SCHEMA = "https"
         self._EIGD_BASE_URL = "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/resource/fd24e032-742d-4609-9052-cec310a2a563/download"
         self._EIGD_FILENAME = "eigd-h_pos.zip"
-        self._EIGD_HOST_URL = f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
+        self._EIGD_HOST_URL = (
+            f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
+        )
         self._EIGD_FILE_EXT = "h5"
         self._EIGD_FRAMERATE = 20
 
@@ -56,7 +58,7 @@ class Eigd:
         return Eigd_Iterator(self)
 
     def get_dataset(
-            self, match: str = "48dcd3", segment: str = "00-06-00"
+        self, match: str = "48dcd3", segment: str = "00-06-00"
     ) -> Tuple[XY, XY, XY]:
         """
 
@@ -69,7 +71,9 @@ class Eigd:
         -------
 
         """
-        file_name = os.path.join(self._data_dir, f"{match}_{segment}.{self._EIGD_FILE_EXT}")
+        file_name = os.path.join(
+            self._data_dir, f"{match}_{segment}.{self._EIGD_FILE_EXT}"
+        )
 
         if not os.path.isfile(file_name):
             raise FileNotFoundError(
