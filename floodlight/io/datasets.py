@@ -83,14 +83,17 @@ class EIGDDataset:
         Parameters
         ----------
         match : str, optional
-            Match identifier, check Notes section for valid arguments. Defaults to the first match ("48dcd3").
+            Match identifier, check Notes section for valid arguments.
+            Defaults to the first match ("48dcd3").
         segment : str, optional
-            Segment identifier, check Notes section for valid arguments. Defaults to the first segment ("00-06-00").
+            Segment identifier, check Notes section for valid arguments.
+            Defaults to the first segment ("00-06-00").
 
         Returns
         -------
         eigd_dataset: Tuple[XY, XY, XY]
-            Returns three XY objects of the form (teamA, teamB, ball) for the requested sample.
+            Returns three XY objects of the form (teamA, teamB, ball)
+            for the requested sample.
         """
         file_name = os.path.join(
             self._data_dir, f"{match}_{segment}.{self._EIGD_FILE_EXT}"
