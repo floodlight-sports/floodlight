@@ -78,17 +78,19 @@ class EIGDDataset:
     def get(
         self, match: str = "48dcd3", segment: str = "00-06-00"
     ) -> Tuple[XY, XY, XY]:
-        """Get eigd dataset.
+        """Get one sample from the EIGD dataset.
 
         Parameters
         ----------
-        match : str, "48dcd3"
-            Match identifier
-        segment : str, "00-06-00"
+        match : str, optional
+            Match identifier, check Notes section for valid arguments. Defaults to the first match ("48dcd3").
+        segment : str, optional
+            Segment identifier, check Notes section for valid arguments. Defaults to the first segment ("00-06-00").
 
         Returns
         -------
         eigd_dataset: Tuple[XY, XY, XY]
+            Returns three XY objects of the form (teamA, teamB, ball) for the requested sample.
         """
         file_name = os.path.join(
             self._data_dir, f"{match}_{segment}.{self._EIGD_FILE_EXT}"
