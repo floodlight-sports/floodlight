@@ -6,7 +6,7 @@ import h5py
 
 from floodlight.io.utils import extract_zip, down_loader
 from floodlight import XY, Pitch
-from settings import EIGD_HOST_URL, DATA_DIR, EIGD_FILE_EXT, EIGD_FRAMERATE
+from settings import DATA_DIR
 
 
 class Eigd_Iterator:
@@ -34,8 +34,17 @@ class Eigd:
     def __init__(self, dataset_path="eigd_dataset"):
         """
 
-        :param dataset_path:
+        Parameters
+        ----------
+        dataset_path
         """
+        self._EIGD_SCHEMA = "https"
+        self._EIGD_BASE_URL = "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/resource/fd24e032-742d-4609-9052-cec310a2a563/download"
+        self._EIGD_FILENAME = "eigd-h_pos.zip"
+        self._EIGD_HOST_URL = f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
+        self._EIGD_FILE_EXT = "h5"
+        self._EIGD_FRAMERATE = 20
+
         self._data_dir = os.path.join(DATA_DIR, dataset_path)
 
         if not os.path.isdir(self._data_dir):
@@ -47,15 +56,20 @@ class Eigd:
         return Eigd_Iterator(self)
 
     def get_dataset(
-        self, match: str = "48dcd3", segment: str = "00-06-00"
+            self, match: str = "48dcd3", segment: str = "00-06-00"
     ) -> Tuple[XY, XY, XY]:
         """
 
-        :param match:
-        :param segment:
-        :return:
+        Parameters
+        ----------
+        match
+        segment
+
+        Returns
+        -------
+
         """
-        file_name = os.path.join(self._data_dir, f"{match}_{segment}.{EIGD_FILE_EXT}")
+        file_name = os.path.join(self._data_dir, f"{match}_{segment}.{self._EIGD_FILE_EXT}")
 
         if not os.path.isfile(file_name):
             raise FileNotFoundError(
@@ -65,9 +79,9 @@ class Eigd:
         with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
         return (
-            XY(xy=pos_dict["team_a"], framerate=EIGD_FRAMERATE),
-            XY(xy=pos_dict["team_b"], framerate=EIGD_FRAMERATE),
-            XY(xy=pos_dict["balls"], framerate=EIGD_FRAMERATE),
+            XY(xy=pos_dict["team_a"], framerate=self._EIGD_FRAMERATE),
+            XY(xy=pos_dict["team_b"], framerate=self._EIGD_FRAMERATE),
+            XY(xy=pos_dict["balls"], framerate=self._EIGD_FRAMERATE),
         )
 
     @property
@@ -86,9 +100,11 @@ class Eigd:
     def _download_and_extract(self) -> None:
         """
 
-        :return:
+        Returns
+        -------
+
         """
         tmp = tempfile.NamedTemporaryFile()
-        tmp.write(down_loader(EIGD_HOST_URL))
+        tmp.write(down_loader(self._EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
         tmp.close()
