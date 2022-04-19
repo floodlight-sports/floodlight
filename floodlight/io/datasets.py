@@ -46,7 +46,8 @@ class Eigd:
         file_name = os.path.join(self._data_dir, f'{match}_{segment}.{file_ext}')
 
         if not os.path.isfile(file_name):
-            raise FileNotFoundError("couldn't load file")
+            raise FileNotFoundError(
+                f"Could not load file, check class description for valid match and segment values ({file_name}).")
 
         with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
