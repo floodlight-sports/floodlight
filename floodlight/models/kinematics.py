@@ -104,7 +104,7 @@ class DistanceModel(BaseModel):
             property=distance_euclidean, name="distance_covered", framerate=xy.framerate
         )
 
-    def distance_covered(self):
+    def distance_covered(self) -> PlayerProperty:
         """Returns the frame-wise distance covered as computed by the fit method.
 
         Returns
@@ -116,7 +116,7 @@ class DistanceModel(BaseModel):
         """
         return self._distance_euclidean_
 
-    def cumulative_distance_covered(self):
+    def cumulative_distance_covered(self) -> PlayerProperty:
         """Returns the cumulative distance covered.
 
         Returns
@@ -217,7 +217,7 @@ class VelocityModel(BaseModel):
             property=velocity, name="velocity", framerate=xy.framerate
         )
 
-    def velocity(self):
+    def velocity(self) -> PlayerProperty:
         """Returns the frame-wise velocity as computed by the fit method.
 
         Returns
@@ -317,7 +317,7 @@ class AccelerationModel(BaseModel):
             framerate=xy.framerate,
         )
 
-    def acceleration(self):
+    def acceleration(self) -> PlayerProperty:
         """Returns the frame-wise acceleration as computed by the fit method.
 
         Returns
