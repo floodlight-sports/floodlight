@@ -57,7 +57,7 @@ class EIGDDataset:
     def __iter__(self):
         return Eigd_Iterator(self)
 
-    def get_dataset(
+    def get(
         self, match: str = "48dcd3", segment: str = "00-06-00"
     ) -> Tuple[XY, XY, XY]:
         """
