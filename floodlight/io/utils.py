@@ -1,6 +1,6 @@
 import shutil
 import urllib.request
-from typing import ByteString
+from typing import AnyStr
 
 
 def extract_zip(filepath: str, target: str, archive_type: str = "zip") -> None:
@@ -15,7 +15,7 @@ def extract_zip(filepath: str, target: str, archive_type: str = "zip") -> None:
     shutil.unpack_archive(filepath, target, format=archive_type)
 
 
-def download_from_url(path: str) -> ByteString:
+def download_from_url(path: str) -> AnyStr:
     """Downloads file from URL.
 
     Parameters
@@ -24,7 +24,7 @@ def download_from_url(path: str) -> ByteString:
 
     Returns
     -------
-    data: ByteString
+    data: AnyStr
     """
     res = urllib.request.urlopen(path)
     return res.read()
