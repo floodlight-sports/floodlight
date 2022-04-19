@@ -6,21 +6,39 @@ from floodlight.models.base import BaseModel
 
 
 class DistanceModel(BaseModel):
-    """Computations for euclidean distances of all players.
+    """Computations for Euclidean distances of all players.
 
     Upon calling the :func:`~DistanceModel.fit`-method, this model calculates the
-    framewise euclidean distance for each player. The following calculations can
+    frame-wise Euclidean distance for each player. The following calculations can
     subsequently be queried by calling the corresponding methods:
 
         - Frame-wise Distance Covered --> :func:`~DistanceModel.distance_covered`
-        - Cumulative Distance Covered -->
-        :func:`~DistanceModel.cumulative_distance_covered`
+        - Cumulative Distance Covered --> :func:`~DistanceModel.cumulative_distance_\
+covered`
 
     Notes
     -----
-    The model calculates the distance in the unit of the corresponding position data.
-    This may lead to distortions when used in combination with models that use SI units
-    or when the unit is percent.
+    For input data with metrical units in metrical units, the output equals the input
+    unit.
+    Differences between frames can be calculated with two different methods:
+
+        *Central difference method* (recommended) allows for differenciation without
+        temporal shift:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
+
+        The first and last frame are padded with linear extrapolation.\n
+        *Backward difference method* calculates the difference between each consecutive
+        frame:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{0}-y_{-1}}{t_{0} - t_{-1}}
+
+        The first frame is padded prepending a '0' at the beginning of the array along
+        axis=1.
 
     Examples
     --------
@@ -37,12 +55,12 @@ class DistanceModel(BaseModel):
     PlayerProperty(property=array([[1.        ],
        [0.70710678],
        [1.11803399],
-       [1.41421356]]), name='distance_covered', framerate=20)
+       [1.41421356]]), name='distance_covered'0)
     >>> dm.cumulative_distance_covered()
     PlayerProperty(property=array([[1.        ],
        [0.70710678],
        [1.11803399],
-       [1.41421356]]), name='distance_covered', framerate=20)
+       [1.41421356]]), name='distance_covered')
     """
 
     def __init__(self):
@@ -50,39 +68,27 @@ class DistanceModel(BaseModel):
         self._distance_euclidean_ = None
 
     def fit(self, xy: XY, difference: str = "central", axis: str = None):
-        """Fits a model to calculate euclidean distances to an xy object.
+        """Fits a model calculating Euclidean distances of each player to an XY object.
 
         Parameters
         ----------
         xy: XY
             Floodlight XY Data object.
-        difference: str
-            The method of differentiation. One of {'central', 'forward'}.\n
-            'central' will differentiate using the central difference method:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
-
-            'forward' will differentiate using the forward difference method and append
-            a '0' at the end of the array along axis 1:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
-
-
-            axis: {None, 'x', 'y'}, optional
-                Optional argument that restricts distance calculation to either the x-
-                or y-dimension of the data. If set to None (default), distances are
-                calculated in both dimensions.
+        difference: {'central', 'backward'}, optional
+            The method of differentiation. 'central' will differentiate using the
+            central difference method, 'backward' will differentiate using the backward
+            difference method as described in the Notes.
+        axis: {None, 'x', 'y'}, optional
+            Optional argument that restricts distance calculation to either the x-
+            or y-dimension of the data. If set to None (default), distances are
+            calculated in both dimensions.
         """
 
         if axis is None:
             if difference == "central":
                 differences_xy = np.gradient(xy.xy, axis=0)
-            elif difference == "forward":
-                differences_xy = np.diff(xy.xy, axis=0, append=0)
+            elif difference == "backward":
+                differences_xy = np.diff(xy.xy, axis=0, prepend=0)
             else:
                 raise ValueError(
                     f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
@@ -109,10 +115,10 @@ class DistanceModel(BaseModel):
 
         Returns
         -------
-        distance_euclidean: XY
-            An XY object of shape (T, N), where T is the total number of frames and N is
-            the number of players. The columns contain the frame-wise euclidean distance
-            covered.
+        distance_euclidean: PlayerProperty
+            A PlayerProperty object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            Euclidean distance covered.
         """
         return self._distance_euclidean_
 
@@ -121,10 +127,10 @@ class DistanceModel(BaseModel):
 
         Returns
         -------
-        cumulative_distance_euclidean: XY
-            An XY object of shape (T, N), where T is the total number of frames and N is
-            the number of players. The columns contain the cumulative euclidean distance
-            covered calculated by numpy.nancumsum() over axis=0.
+        cumulative_distance_euclidean: PlayerProperty
+            A PlayerProperty object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the cumulative
+            Euclidean distance covered calculated by numpy.nancumsum() over axis=0.
         """
         dist = self._distance_euclidean_.property
         cum_dist = np.nancumsum(dist, axis=0)
@@ -140,16 +146,34 @@ class VelocityModel(BaseModel):
     """Computations for velocities of all players.
 
     Upon calling the :func:`~VelocityModel.fit`-method, this model calculates the
-    framewise velocity for each player. The calculation can subsequently be queried by
+    frame-wise velocity for each player. The calculation can subsequently be queried by
     calling the corresponding method:
 
         - Frame-wise velocity --> :func:`~VelocityModel.velocity`
 
     Notes
     -----
-    The model calculates the velocity in the unit of the corresponding position data per
-    second. This may lead to distortions when used in combination with models that use
-    SI units or when the unit is percent.
+    For input data with metrical units in metrical units, the output equals the input
+    unit.
+    Differences between frames can be calculated with two different methods:
+
+        *Central difference method* (recommended) allows for differenciation without
+        temporal shift:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
+
+        The first and last frame are padded with linear extrapolation.\n
+        *Backward difference method* calculates the difference between each consecutive
+        frame:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{0}-y_{-1}}{t_{0} - t_{-1}}
+
+        The first frame is padded prepending a '0' at the beginning of the array along
+        axis=1.
 
     Examples
     --------
@@ -179,32 +203,20 @@ class VelocityModel(BaseModel):
         difference: str = "central",
         axis: str = None,
     ):
-        """Fits a model to calculate velocities to an xy object.
+        """Fits a model calculating velocities of each player to an XY object.
 
         Parameters
         ----------
         xy: XY
             Floodlight XY Data object.
-        difference: str
-            The method of differentiation. One of {'central', 'forward'}.\n
-            'central' will differentiate using the central difference method:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
-
-            'forward' will differentiate using the forward difference method and append
-            a '0' at the end of the array along axis 1:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
-
-
-            axis: {None, 'x', 'y'}, optional
-                Optional argument that restricts distance calculation to either the x-
-                or y-dimension of the data. If set to None (default), distances are
-                calculated in both dimensions.
+        difference: {'central', 'backward'}, optional
+            The method of differentiation. 'central' will differentiate using the
+            central difference method, 'backward' will differentiate using the backward
+            difference method as described in the Notes.
+        axis: {None, 'x', 'y'}, optional
+            Optional argument that restricts distance calculation to either the x-
+            or y-dimension of the data. If set to None (default), distances are
+            calculated in both dimensions.
         """
 
         distance_model = DistanceModel()
@@ -222,9 +234,10 @@ class VelocityModel(BaseModel):
 
         Returns
         -------
-        velocity: XY
-            An XY object of shape (T, N), where T is the total number of frames and N is
-            the number of players. The columns contain the frame-wise velocity.
+        velocity: PlayerProperty
+            A PlayerProperty object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            velocity.
         """
         return self._velocity_
 
@@ -233,16 +246,34 @@ class AccelerationModel(BaseModel):
     """Computations for velocities of all players.
 
     Upon calling the :func:`~AccelerationModel.fit`-method, this model calculates the
-    framewise acceleration for each player. The calculation can subsequently be queried
+    frame-wise acceleration for each player. The calculation can subsequently be queried
     by calling the corresponding method:
 
         - Frame-wise acceleration --> :func:`~AccelerationModel.acceleration`
 
     Notes
     -----
-    The model calculates the velocity in the unit of the corresponding position data per
-    second. This may lead to distortions when used in combination with models that use
-    SI units or when the unit is percent.
+    For input data with metrical units in metrical units, the output equals the input
+    unit.
+    Differences between frames can be calculated with two different methods:
+
+        *Central difference method* (recommended) allows for differenciation without
+        temporal shift:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
+
+        The first and last frame are padded with linear extrapolation.\n
+        *Backward difference method* calculates the difference between each consecutive
+        frame:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{0}-y_{-1}}{t_{0} - t_{-1}}
+
+        The first frame is padded prepending a '0' at the beginning of the array along
+        axis=1.
 
     Examples
     --------
@@ -272,32 +303,20 @@ class AccelerationModel(BaseModel):
         difference: str = "central",
         axis: str = None,
     ):
-        """Fits a model to calculate acceleration to an xy object.
+        """Fits a model calculating accelerations of each player to an XY object.
 
         Parameters
         ----------
         xy: XY
             Floodlight XY Data object.
-        difference: str
-            The method of differentiation. One of {'central', 'forward'}.\n
-            'central' will differentiate using the central difference method:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
-
-            'forward' will differentiate using the forward difference method and append
-            a '0' at the end of the array along axis 1:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
-
-
-            axis: {None, 'x', 'y'}, optional
-                Optional argument that restricts distance calculation to either the x-
-                or y-dimension of the data. If set to None (default), distances are
-                calculated in both dimensions.
+        difference: {'central', 'backward'}, optional
+            The method of differentiation. 'central' will differentiate using the
+            central difference method, 'backward' will differentiate using the backward
+            difference method as described in the Notes.
+        axis: {None, 'x', 'y'}, optional
+            Optional argument that restricts distance calculation to either the x-
+            or y-dimension of the data. If set to None (default), distances are
+            calculated in both dimensions.
         """
 
         velocity_model = VelocityModel()
@@ -322,8 +341,9 @@ class AccelerationModel(BaseModel):
 
         Returns
         -------
-        acceleration: XY
-            An XY object of shape (T, N), where T is the total number of frames and N is
-            the number of players. The columns contain the frame-wise acceleration.
+        acceleration: PlayerProperty
+            A PlayerProperty object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            acceleration.
         """
         return self._acceleration_
