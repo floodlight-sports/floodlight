@@ -5,26 +5,14 @@ import numpy as np
 
 
 @dataclass
-class PlayerProperty:
-    """Fragment of one continuous property per player. Core class of floodlight.
-
-    Attributes
-    ----------
-    property: np.ndarray
-        A 2-dimensional array of properties of shape (T, N), where T is the number of
-        time steps and N is the number of players.
-    name: str
-        Name of the property (e.g. 'speed').
-    framerate: int, optional
-        Temporal resolution of data in frames per second/Hertz.
-    """
+class BaseProperty:
 
     property: np.ndarray
     name: str
     framerate: int = None
 
     def __str__(self):
-        return f"Floodlight PlayerProperty object encoding '{self.name}'"
+        return f"Floodlight {self.__class__.__name__} object encoding '{self.name}'"
 
     def __len__(self):
         return len(self.property)
@@ -34,6 +22,16 @@ class PlayerProperty:
 
     def __setitem__(self, key, value):
         self.property[key] = value
+
+    @classmethod
+    def _slice_new(cls, sliced_property, name, framerate):
+        sliced_copy = cls(
+            property=sliced_property,
+            name=name,
+            framerate=framerate,
+        )
+
+        return sliced_copy
 
     def slice(
         self, startframe: int = None, endframe: int = None, inplace: bool = False
@@ -52,18 +50,70 @@ class PlayerProperty:
 
         Returns
         -------
-        property_sliced: Union[PlayerProperty, None]
+        property_sliced: Union[cls, None]
         """
         sliced_data = self.property[startframe:endframe].copy()
-        property_sliced = None
+        sliced_object = None
 
         if inplace:
             self.property = sliced_data
         else:
-            property_sliced = PlayerProperty(
-                property=sliced_data,
+            sliced_object = self._slice_new(
+                sliced_property=sliced_data,
                 name=deepcopy(self.name),
                 framerate=deepcopy(self.framerate),
             )
 
-        return property_sliced
+        return sliced_object
+
+
+@dataclass
+class TeamProperty(BaseProperty):
+    """Fragment of one continuous team property. Core class of floodlight.
+
+    Attributes
+    ----------
+    property: np.ndarray
+        A 1-dimensional array of properties of shape (T), where T is the number of
+        total frames.
+    name: str
+        Name of the property (e.g. 'stretch_index').
+    framerate: int, optional
+        Temporal resolution of data in frames per second/Hertz.
+    """
+
+
+@dataclass
+class PlayerProperty(BaseProperty):
+    """Fragment of one continuous property per player. Core class of floodlight.
+
+    Attributes
+    ----------
+    property: np.ndarray
+        A 2-dimensional array of properties of shape (T, N), where T is the number of
+        total frames and N is the number of players.
+    name: str
+        Name of the property (e.g. 'speed').
+    framerate: int, optional
+        Temporal resolution of data in frames per second/Hertz.
+    """
+
+
+@dataclass
+class DyadicProperty(BaseProperty):
+    """Fragment of one continuous property per player dyad. Core class of floodlight.
+
+    Attributes
+    ----------
+    property: np.ndarray
+        A 3-dimensional array of properties of shape (T, N_1, N_2), where T is the
+        number of total frames and {N_1, N_2} are the number of players between dyads
+        are formed. For example, the item at (1, 2, 3) encodes the relation from player
+        with xID=2 to player with xID=3 at frame 1. Note that players could be in the
+        same team (intra-team relations, in this case N_1 = N_2) or opposing teams
+        (inter-team relations).
+    name: str
+        Name of the property (e.g. 'distance').
+    framerate: int, optional
+        Temporal resolution of data in frames per second/Hertz.
+    """
