@@ -10,24 +10,57 @@ from settings import DATA_DIR
 
 
 class EIGDDataset:
-    """
+    """This dataset loads the EIGD-H data from the *A Unified Taxonomy and Multimodal
+    Dataset for Events in Invasion Games* paper [1]_.
+
+    Upon instantiation, the class checks if the data already exists in the repository's
+    root ``.data``-folder, and will download the files (~120MB) to this folder if not.
+
+
     Notes
     -----
-    matches = ['48dcd3', 'ad969d', 'e0e547', 'e8a35a', 'ec7a6a']
-    segments = {
-        '48dcd3': ['00-06-00', '00-15-00', '00-25-00', '01-05-00', '01-10-00'],
-        'ad969d': ['00-00-30', '00-15-00', '00-43-00', '01-11-00', '01-35-00'],
-        'e0e547': ['00-00-00', '00-08-00', '00-15-00', '00-50-00', '01-00-00'],
-        'e8a35a': ['00-02-00', '00-07-00', '00-14-00', '01-05-00', '01-14-00'],
-        'ec7a6a': ['01-04-00', '01-30-00', '01-19-00', '00-53-00', '00-30-00'],
-        }
-    """
+    The dataset contains a total of 25 short samples of spatiotemporal data for both
+    teams and the ball from the German Men's Handball Bundesliga (HBL). For more
+    information, visit the
+    `official project repository <https://github.com/MM4SPA/eigd>;`_.
+    Data for one sample can be queried calling the :func:`~EIGDDataset.get`-method
+    specifying the match and segment. The following matches and segments are
+    available::
+
+        matches = ['48dcd3', 'ad969d', 'e0e547', 'e8a35a', 'ec7a6a']
+        segments = {
+            '48dcd3': ['00-06-00', '00-15-00', '00-25-00', '01-05-00', '01-10-00'],
+            'ad969d': ['00-00-30', '00-15-00', '00-43-00', '01-11-00', '01-35-00'],
+            'e0e547': ['00-00-00', '00-08-00', '00-15-00', '00-50-00', '01-00-00'],
+            'e8a35a': ['00-02-00', '00-07-00', '00-14-00', '01-05-00', '01-14-00'],
+            'ec7a6a': ['01-04-00', '01-30-00', '01-19-00', '00-53-00', '00-30-00'],
+            }
+
+    Examples
+    --------
+    >>> from floodlight.io.datasets import EIGDataset
+
+    >>> dataset = EIGDDataset
+    # get one sample
+    >>> teamA, teamB, ball = dataset.get(match="48dcd3", segment"00-06-00")
+    # get the corresponding pitch
+    >>> pitch = dataset.pitch
+
+
+    References
+    ----------
+        .. [1] `Biermann, H., Theiner, J., Bassek, M., Raabe, D., Memmert, D., & Ewerth,
+            R. (2021, October). A Unified Taxonomy and Multimodal Dataset for Events in
+            Invasion Games. In Proceedings of the 4th International Workshop on
+            Multimedia Content Analysis in Sports (pp. 1-10).
+            <https://dl.acm.org/doi/abs/10.1145/3475722.3482792>;`_"""
 
     def __init__(self, dataset_path="eigd_dataset"):
         self._EIGD_SCHEMA = "https"
-        self._EIGD_BASE_URL = \
-            "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/" \
+        self._EIGD_BASE_URL = (
+            "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/"
             "resource/fd24e032-742d-4609-9052-cec310a2a563/download"
+        )
         self._EIGD_FILENAME = "eigd-h_pos.zip"
         self._EIGD_HOST_URL = (
             f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
@@ -43,18 +76,19 @@ class EIGDDataset:
             self._download_and_extract()
 
     def get(
-            self, match: str = "48dcd3", segment: str = "00-06-00"
+        self, match: str = "48dcd3", segment: str = "00-06-00"
     ) -> Tuple[XY, XY, XY]:
-        """
+        """Get eigd dataset.
 
         Parameters
         ----------
-        match
-        segment
+        match : str, "48dcd3"
+            Match identifier
+        segment : str, "00-06-00"
 
         Returns
         -------
-
+        eigd_dataset: Tuple[XY, XY, XY]
         """
         file_name = os.path.join(
             self._data_dir, f"{match}_{segment}.{self._EIGD_FILE_EXT}"
