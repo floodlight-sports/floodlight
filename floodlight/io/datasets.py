@@ -9,14 +9,6 @@ from floodlight import XY, Pitch
 from settings import DATA_DIR
 
 
-class Eigd_Iterator:
-    def __init__(self):
-        self._index = 0
-
-    def __next__(self):
-        pass
-
-
 class EIGDDataset:
     """
     Notes
@@ -53,9 +45,6 @@ class EIGDDataset:
             os.makedirs(self._data_dir, exist_ok=True)
         if not bool(os.listdir(self._data_dir)):
             self._download_and_extract()
-
-    def __iter__(self):
-        return Eigd_Iterator(self)
 
     def get(
         self, match: str = "48dcd3", segment: str = "00-06-00"
