@@ -24,12 +24,6 @@ class EIGDDataset:
     """
 
     def __init__(self, dataset_path="eigd_dataset"):
-        """
-
-        Parameters
-        ----------
-        dataset_path
-        """
         self._EIGD_SCHEMA = "https"
         self._EIGD_BASE_URL = "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/resource/fd24e032-742d-4609-9052-cec310a2a563/download"
         self._EIGD_FILENAME = "eigd-h_pos.zip"
