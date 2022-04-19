@@ -157,7 +157,7 @@ class VelocityModel(BaseModel):
     >>> from floodlight import XY
     >>> from floodlight.models.kinematics import VelocityModel
 
-    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))))
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))), framerate=20)
 
     >>> vm = VelocityModel()
     >>> vm.fit(xy)
@@ -250,7 +250,7 @@ class AccelerationModel(BaseModel):
     >>> from floodlight import XY
     >>> from floodlight.models.kinematics import AccelerationModel
 
-    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))))
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))), framerate=20)
 
     >>> am = AccelerationModel()
     >>> am.fit(xy)
