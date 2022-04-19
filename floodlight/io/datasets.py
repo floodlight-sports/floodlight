@@ -49,9 +49,8 @@ class Eigd:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
         return pos_dict
 
-    @staticmethod
-    def _download_and_extract():
+    def _download_and_extract(self):
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(down_loader(EIGD_HOST_URL))
-        extract_zip(tmp.name, DATA_DIR)
+        extract_zip(tmp.name, self._data_dir)
         tmp.close()
