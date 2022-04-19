@@ -163,11 +163,10 @@ def test_calc_metabolic_power(
 @pytest.mark.unit
 def test_metabolic_power(example_pitch_dfl, example_xy_object_kinexon) -> None:
     # Arrange
-    pitch = example_pitch_dfl
     xy = example_xy_object_kinexon
 
     # Act
-    metp_model = MetabolicPowerModel(pitch)
+    metp_model = MetabolicPowerModel()
     metp_model.fit(xy)
     metabolic_power = metp_model.metabolic_power()
 
@@ -183,11 +182,10 @@ def test_cumulative_metabolic_power(
     example_pitch_dfl, example_xy_object_kinexon
 ) -> None:
     # Arrange
-    pitch = example_pitch_dfl
     xy = example_xy_object_kinexon
 
     # Act
-    metp_model = MetabolicPowerModel(pitch)
+    metp_model = MetabolicPowerModel()
     metp_model.fit(xy)
     cumulative_metabolic_power = metp_model.cumulative_metabolic_power()
 
@@ -201,11 +199,10 @@ def test_cumulative_metabolic_power(
 @pytest.mark.unit
 def test_equivalent_distance(example_pitch_dfl, example_xy_object_kinexon) -> None:
     # Arrange
-    pitch = example_pitch_dfl
     xy = example_xy_object_kinexon
 
     # Act
-    metp_model = MetabolicPowerModel(pitch)
+    metp_model = MetabolicPowerModel()
     metp_model.fit(xy)
     equivalent_distance = metp_model.equivalent_distance()
 
@@ -221,11 +218,10 @@ def test_cumulative_equivalent_distance(
     example_pitch_dfl, example_xy_object_kinexon
 ) -> None:
     # Arrange
-    pitch = example_pitch_dfl
     xy = example_xy_object_kinexon
 
     # Act
-    metp_model = MetabolicPowerModel(pitch)
+    metp_model = MetabolicPowerModel()
     metp_model.fit(xy)
     cumulative_equivalent_distance = metp_model.cumulative_equivalent_distance()
 
