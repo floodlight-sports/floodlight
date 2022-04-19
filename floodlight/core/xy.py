@@ -127,42 +127,42 @@ class XY:
         self.x += shift[0]
         self.y += shift[1]
 
-    def scale(self, factor: float, axis: int = None):
+    def scale(self, factor: float, axis: str = None):
         """Scales data by a given factor and optionally selected axis.
 
         Parameters
         ----------
         factor : float
             Scaling factor.
-        axis : int, optional
-            Index of scaling axis. If set to 0, data is scaled on x-axis, if set to 1,
-            data is scaled on y-axis. If none is provided, data is scaled in both
-            directions (default).
+        axis : {None, 'x', 'y'}, optional
+            Name of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
+            data is scaled on y-axis. If None, data is scaled in both directions
+            (default).
         """
         if axis is None:
             self.xy *= factor
-        elif axis == 0:
+        elif axis == "x":
             self.x *= factor
-        elif axis == 1:
+        elif axis == "y":
             self.y *= factor
         else:
-            raise ValueError(f"Expected axis to be one of {0, 1, None}, got {axis}")
+            raise ValueError(f"Expected axis to be one of ('x', 'y', None), got {axis}")
 
-    def reflect(self, axis: int):
+    def reflect(self, axis: str):
         """Reflects data on given `axis`.
 
         Parameters
         ----------
-        axis : int
-            Index of reflection axis. If set to 0, data is reflected on x-axis,
-            if set to 1, data is reflected on y-axis.
+        axis : {'x', 'y'}
+            Name of reflection axis. If set to "x", data is reflected on x-axis,
+            if set to "y", data is reflected on y-axis.
         """
-        if axis == 0:
-            self.scale(factor=-1, axis=1)
-        elif axis == 1:
-            self.scale(factor=-1, axis=0)
+        if axis == "x":
+            self.scale(factor=-1, axis="y")
+        elif axis == "y":
+            self.scale(factor=-1, axis="x")
         else:
-            raise ValueError(f"Expected axis to be one of {0, 1}, got {axis}")
+            raise ValueError(f"Expected axis to be one of ('x', 'y'), got {axis}")
 
     def rotate(self, alpha: float):
         """Rotates data on given angle 'alpha' around the origin.

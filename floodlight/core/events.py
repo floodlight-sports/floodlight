@@ -295,14 +295,14 @@ class Events:
         ----------
         factor : float
             Scaling factor.
-        axis : str, optional
-            Index of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
-            data is scaled on y-axis. If none is provided, data is scaled in both
-            directions (default).
+        axis : {None, 'x', 'y'}, optional
+            Name of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
+            data is scaled on y-axis. If None, data is scaled in both directions
+            (default).
         """
 
         if axis not in ["x", "y", None]:
-            raise ValueError(f"Expected axis to be one of {'x', 'y', None}, got {axis}")
+            raise ValueError(f"Expected axis to be one of ('x', 'y', None), got {axis}")
 
         if axis is None or axis == "x":
             if "at_x" in self.protected and self.events["at_x"].dtype in [
@@ -333,8 +333,8 @@ class Events:
 
         Parameters
         ----------
-        axis : str
-            Index of reflection axis. If set to "x", data is reflected on x-axis,
+        axis : {'x', 'y'}
+            Name of reflection axis. If set to "x", data is reflected on x-axis,
             if set to "y", data is reflected on y-axis.
         """
         if axis == "x":
@@ -342,7 +342,7 @@ class Events:
         elif axis == "y":
             self.scale(factor=-1, axis="x")
         else:
-            raise ValueError(f"Expected axis to be one of {'x', 'y'}, got {axis}")
+            raise ValueError(f"Expected axis to be one of ('x', 'y'), got {axis}")
 
     def rotate(self, alpha: float):
         """Rotates data on given angle 'alpha' around the origin.
