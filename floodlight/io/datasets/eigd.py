@@ -1,12 +1,12 @@
 import os
 import tempfile
-from typing import List, Text
+from typing import Text
 
 import h5py
 
-from floodlight.utils.extract import extract_zip
-from floodlight.utils.loader import down_loader
-from settings import EIGD_HOST_URL, ROOT_DIR, DATA_DIR
+from floodlight.io.utils.extract import extract_zip
+from floodlight.io.utils.loader import down_loader
+from settings import EIGD_HOST_URL, DATA_DIR
 
 
 class Eigd_Iterator:
