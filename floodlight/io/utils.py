@@ -1,5 +1,5 @@
 import shutil
-import urllib
+import urllib.request
 
 
 def extract_zip(filepath, target, format='zip'):
