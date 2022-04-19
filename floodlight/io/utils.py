@@ -23,7 +23,8 @@ def download_from_url(path: str) -> AnyStr:
 
     Parameters
     ----------
-    path : URL path to download data from
+    path : str
+        URL path to download data from
 
     Returns
     -------
