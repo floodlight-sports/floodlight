@@ -1,6 +1,5 @@
 import os
 import tempfile
-from typing import Text
 
 import h5py
 
@@ -18,7 +17,7 @@ class Eigd_Iterator:
 
 class Eigd:
     def __init__(self, dataset_path='eigd_dataset'):
-        self._data_dir: Text = os.path.join(DATA_DIR, dataset_path)
+        self._data_dir = os.path.join(DATA_DIR, dataset_path)
 
         if not os.path.isdir(self._data_dir) or bool(os.listdir(self._data_dir)):
             self._download_and_extract()
