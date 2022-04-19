@@ -4,8 +4,7 @@ from typing import Text
 
 import h5py
 
-from floodlight.io.utils.extract import extract_zip
-from floodlight.io.utils.loader import down_loader
+from floodlight.io.utils import extract_zip, down_loader
 from settings import EIGD_HOST_URL, DATA_DIR
 
 

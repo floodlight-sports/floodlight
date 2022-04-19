@@ -2,7 +2,7 @@ import urllib.request
 
 import pytest
 
-from floodlight.io.datasets.eigd import load_eigd
+from floodlight.io.datasets import load_eigd
 
 
 @pytest.mark.unit
