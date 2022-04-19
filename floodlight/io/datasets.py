@@ -26,13 +26,14 @@ class Eigd:
     def __iter__(self):
         return Eigd_Iterator(self)
 
-    def get_dataset(self, file_pos_h5):
-        file_path = os.path.join(self._data_dir, file_pos_h5)
+    def get_dataset(self, match="48dcd3", segment="00-06-00"):
+        file_ext = "h5"
+        file_name = os.path.join(self._data_dir, f'{match}_{segment}.{file_ext}')
 
-        if not os.path.isfile(file_path):
+        if not os.path.isfile(file_name):
             raise FileNotFoundError("couldn't load file")
 
-        with h5py.File(file_path) as h5f:
+        with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
         return pos_dict
 
