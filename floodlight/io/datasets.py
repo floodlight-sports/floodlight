@@ -124,8 +124,7 @@ class EIGDDataset:
         )
 
     def _download_and_extract(self) -> None:
-        """
-        Downloads an archive file into temporary storage and
+        """Downloads an archive file into temporary storage and
         extracts the content to the file system.
         """
         tmp = tempfile.NamedTemporaryFile()
