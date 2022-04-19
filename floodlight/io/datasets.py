@@ -53,7 +53,8 @@ class EIGDDataset:
             R. (2021, October). A Unified Taxonomy and Multimodal Dataset for Events in
             Invasion Games. In Proceedings of the 4th International Workshop on
             Multimedia Content Analysis in Sports (pp. 1-10).
-            <https://dl.acm.org/doi/abs/10.1145/3475722.3482792>;`_"""
+            <https://dl.acm.org/doi/abs/10.1145/3475722.3482792>;`_
+    """
 
     def __init__(self, dataset_path="eigd_dataset"):
         self._EIGD_SCHEMA = "https"
