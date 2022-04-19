@@ -30,6 +30,9 @@ class Eigd:
     def get_dataset(self, file_pos_h5):
         file_path = os.path.join(self._data_dir, file_pos_h5)
 
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError("couldn't load file")
+
         with h5py.File(file_path) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
         return pos_dict
