@@ -3,9 +3,11 @@ import tempfile
 from typing import Tuple
 
 import h5py
+import numpy as np
+import pandas as pd
 
 from floodlight.io.utils import extract_zip, download_from_url
-from floodlight import XY, Pitch
+from floodlight import XY, Pitch, Events, Code
 from settings import DATA_DIR
 
 
@@ -135,3 +137,122 @@ class EIGDDataset:
         tmp.write(download_from_url(self._EIGD_HOST_URL))
         extract_zip(tmp.name, self._data_dir)
         tmp.close()
+
+
+class ToyDataset:
+    """This dataset contains toy data for a football match provided in the project
+    repository's root ``.data``-folder.
+
+    Examples
+    --------
+    >>> from floodlight.io.datasets import ToyDataset
+
+    >>> dataset = ToyDataset()
+    # get one sample
+    >>> (
+    >>>     xy_home,
+    >>>     xy_away,
+    >>>     xy_ball,
+    >>>     events_home,
+    >>>     events_away,
+    >>>     possession,
+    >>>     ballstatus,
+    >>> ) = dataset.get(segment="HT1")
+    # get the corresponding pitch
+    >>> pitch = dataset.get_pitch
+
+    """
+
+    def __init__(self, dataset_path="eigd_dataset"):
+        self._TOY_FRAMERATE = 5
+        self._TOY_DIRECTIONS = {
+            "HT1": {"Home": "rl", "Away": "lr"},
+            "HT2": {"Home": "lr", "Away": "rl"},
+        }
+        self._data_dir = os.path.join(DATA_DIR, dataset_path)
+
+    def get(
+        self, segment: str = "HT1"
+    ) -> Tuple[XY, XY, XY, Events, Events, Code, Code]:
+        """Get data objects for one segment from the toy dataset.
+
+        Parameters
+        ----------
+        segment : str, optional
+            Segment identifier for the first ("HT1") or the second ("HT2") half.
+            Defaults to the first segment ("HT1").
+
+        Returns
+        -------
+        toy_dataset:  Tuple[XY, XY, XY, Events, Events, Code, Code]
+            Returns seven XY objects of the form (xy_home, xy_away, xy_ball,
+            events_home, events_away, possession, ballstatus) for the requested segment.
+        """
+
+        xy_home = XY(
+            xy=np.load(os.path.join(DATA_DIR, f"xy_home_{segment.lower()}.npy")),
+            framerate=self._TOY_FRAMERATE,
+            direction=self._TOY_DIRECTIONS[segment]["Home"],
+        )
+
+        xy_away = XY(
+            xy=np.load(os.path.join(DATA_DIR, f"xy_away_{segment.lower()}.npy")),
+            framerate=self._TOY_FRAMERATE,
+            direction=self._TOY_DIRECTIONS[segment]["Away"],
+        )
+
+        xy_ball = XY(
+            xy=np.load(os.path.join(DATA_DIR, f"xy_ball_{segment.lower()}.npy")),
+            framerate=self._TOY_FRAMERATE,
+        )
+
+        events_home = Events(
+            events=pd.read_csv(
+                os.path.join(DATA_DIR, f"events_home_{segment.lower()}.csv")
+            )
+        )
+
+        events_away = Events(
+            events=pd.read_csv(
+                os.path.join(DATA_DIR, f"events_away_{segment.lower()}.csv")
+            )
+        )
+
+        possession = Code(
+            code=np.load(os.path.join(DATA_DIR, f"possession_{segment.lower()}.npy")),
+            name="possession",
+            definitions={1: "Home", 2: "Away"},
+            framerate=5,
+        )
+
+        ballstatus = Code(
+            code=np.load(os.path.join(DATA_DIR, f"ballstatus_{segment.lower()}.npy")),
+            name="ballstatus",
+            definitions={0: "Dead", 1: "Alive"},
+            framerate=self._TOY_FRAMERATE,
+        )
+
+        data_objects = (
+            xy_home,
+            xy_away,
+            xy_ball,
+            events_home,
+            events_away,
+            possession,
+            ballstatus,
+        )
+
+        return data_objects
+
+    @property
+    def get_pitch(self) -> Pitch:
+        """Returns a Pitch object corresponding to the Toy Dataset."""
+        return Pitch(
+            xlim=(-52.5, 52.5),
+            ylim=(-34, 34),
+            unit="m",
+            boundaries="flexible",
+            length=105,
+            width=68,
+            sport="football",
+        )
