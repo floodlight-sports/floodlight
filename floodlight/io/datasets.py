@@ -140,8 +140,8 @@ class EIGDDataset:
 
 
 class ToyDataset:
-    """This dataset contains toy data for a football match provided in the project
-    repository's root ``.data``-folder.
+    """This dataset loads the provided toy data for sample football match stored in the
+    project repository's root ``.data``-folder.
 
     Examples
     --------
@@ -180,7 +180,7 @@ class ToyDataset:
         ----------
         segment : str, optional
             Segment identifier for the first ("HT1") or the second ("HT2") half.
-            Defaults to the first segment ("HT1").
+            Defaults to the first half ("HT1").
 
         Returns
         -------
@@ -190,43 +190,47 @@ class ToyDataset:
         """
 
         xy_home = XY(
-            xy=np.load(os.path.join(DATA_DIR, f"xy_home_{segment.lower()}.npy")),
+            xy=np.load(os.path.join(self._data_dir, f"xy_home_{segment.lower()}.npy")),
             framerate=self._TOY_FRAMERATE,
             direction=self._TOY_DIRECTIONS[segment]["Home"],
         )
 
         xy_away = XY(
-            xy=np.load(os.path.join(DATA_DIR, f"xy_away_{segment.lower()}.npy")),
+            xy=np.load(os.path.join(self._data_dir, f"xy_away_{segment.lower()}.npy")),
             framerate=self._TOY_FRAMERATE,
             direction=self._TOY_DIRECTIONS[segment]["Away"],
         )
 
         xy_ball = XY(
-            xy=np.load(os.path.join(DATA_DIR, f"xy_ball_{segment.lower()}.npy")),
+            xy=np.load(os.path.join(self._data_dir, f"xy_ball_{segment.lower()}.npy")),
             framerate=self._TOY_FRAMERATE,
         )
 
         events_home = Events(
             events=pd.read_csv(
-                os.path.join(DATA_DIR, f"events_home_{segment.lower()}.csv")
+                os.path.join(self._data_dir, f"events_home_{segment.lower()}.csv")
             )
         )
 
         events_away = Events(
             events=pd.read_csv(
-                os.path.join(DATA_DIR, f"events_away_{segment.lower()}.csv")
+                os.path.join(self._data_dir, f"events_away_{segment.lower()}.csv")
             )
         )
 
         possession = Code(
-            code=np.load(os.path.join(DATA_DIR, f"possession_{segment.lower()}.npy")),
+            code=np.load(
+                os.path.join(self._data_dir, f"possession_{segment.lower()}.npy")
+            ),
             name="possession",
             definitions={1: "Home", 2: "Away"},
-            framerate=5,
+            framerate=self._TOY_FRAMERATE,
         )
 
         ballstatus = Code(
-            code=np.load(os.path.join(DATA_DIR, f"ballstatus_{segment.lower()}.npy")),
+            code=np.load(
+                os.path.join(self._data_dir, f"ballstatus_{segment.lower()}.npy")
+            ),
             name="ballstatus",
             definitions={0: "Dead", 1: "Alive"},
             framerate=self._TOY_FRAMERATE,
