@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 
 from floodlight.core.events import Events
+from floodlight.core.definitions import essential_events_columns, protected_columns
 
 
 @pytest.mark.unit
@@ -110,6 +111,26 @@ def test_protected_invalid(
 
     # Assert
     assert invalid_protected_columns == ["jID"]
+
+
+@pytest.mark.unit
+def test_column_values_in_range(
+    example_events_data_invalid_protected: pd.DataFrame,
+) -> None:
+    # Arrange
+    data = Events(example_events_data_invalid_protected)
+
+    # Act
+    eID_in_range = data.column_values_in_range("eID", essential_events_columns)
+    gameclock_in_range = data.column_values_in_range(
+        "gameclock", essential_events_columns
+    )
+    jID_in_range = data.column_values_in_range("jID", protected_columns)
+
+    # Assert
+    assert eID_in_range
+    assert gameclock_in_range
+    assert not jID_in_range
 
 
 @pytest.mark.unit
