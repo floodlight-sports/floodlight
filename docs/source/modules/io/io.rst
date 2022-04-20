@@ -12,7 +12,6 @@ datasets.
    dfl
    kinexon
    opta
-   sample_data
    statsperform
    tracab
 
