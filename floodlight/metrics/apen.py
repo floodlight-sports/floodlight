@@ -5,7 +5,8 @@ import numpy.typing as npt
 def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
     """Calculates the Approximate Entropy ApEn(m,r) of sig according to Pincus (1991).
 
-    Constraints:
+    Notes
+    -----
         Time-series must be taken at equally spaced time points.
         Lower bound according to Pincus, Gladstone, Ehrenkranz (1991) is 50 time points.
         The filtering level r should be at least three times larger in magnitude
@@ -34,7 +35,7 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
         no_parts = N - m_ + 1
         x_i_s = np.zeros((no_parts, m_))
         for i in range(no_parts):
-            x_i_s[i, :] = sig[i:(i + m_)]
+            x_i_s[i, :] = sig[i : (i + m_)]
         c_i_m_r_s = np.zeros(no_parts)
         for i in range(no_parts):
             d_i_j = np.max(np.abs(x_i_s - x_i_s[i, :]), axis=1)
@@ -42,6 +43,6 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
         return np.sum(np.log(c_i_m_r_s)) / no_parts - np.log(no_parts)
 
     ap = phi_m(m) - phi_m(m + 1)
-    if ap < np.finfo('float64').eps:
+    if ap < np.finfo("float64").eps:
         ap = 0.0
     return ap
