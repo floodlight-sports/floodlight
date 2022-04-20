@@ -9,11 +9,11 @@ def extract_zip(filepath: str, target: str, archive_type: str = "zip") -> None:
     Parameters
     ----------
     filepath : str
-        path to file
+        Path to file.
     target : str
-        target to extract files to
+        Target to extract files to.
     archive_type: "zip", optional
-        type of archive, like zip, rar, gzip, etc.
+        Type of archive, like zip, rar, gzip, etc.
     """
     shutil.unpack_archive(filepath, target, format=archive_type)
 

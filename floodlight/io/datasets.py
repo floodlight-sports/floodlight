@@ -22,7 +22,7 @@ class EIGDDataset:
     The dataset contains a total of 25 short samples of spatiotemporal data for both
     teams and the ball from the German Men's Handball Bundesliga (HBL). For more
     information, visit the
-    `official project repository <https://github.com/MM4SPA/eigd>;`_.
+    `official project repository <https://github.com/MM4SPA/eigd>`_.
     Data for one sample can be queried calling the :func:`~EIGDDataset.get`-method
     specifying the match and segment. The following matches and segments are
     available::
@@ -53,7 +53,7 @@ class EIGDDataset:
             R. (2021, October). A Unified Taxonomy and Multimodal Dataset for Events in
             Invasion Games. In Proceedings of the 4th International Workshop on
             Multimedia Content Analysis in Sports (pp. 1-10).
-            <https://dl.acm.org/doi/abs/10.1145/3475722.3482792>;`_
+            <https://dl.acm.org/doi/abs/10.1145/3475722.3482792>`_
     """
 
     def __init__(self, dataset_path="eigd_dataset"):
