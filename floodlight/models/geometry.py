@@ -49,7 +49,7 @@ class CentroidModel(BaseModel):
 
     Attributes
     ----------
-    centroid_: XY
+    _centroid_: XY
         Calculated centroids with shape (T, 2), where T is the total number of frames.
 
     References
