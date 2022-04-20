@@ -163,7 +163,7 @@ class ToyDataset:
 
     """
 
-    def __init__(self, dataset_path="eigd_dataset"):
+    def __init__(self, dataset_path="toy_dataset"):
         self._TOY_FRAMERATE = 5
         self._TOY_DIRECTIONS = {
             "HT1": {"Home": "rl", "Away": "lr"},
