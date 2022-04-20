@@ -189,6 +189,12 @@ class ToyDataset:
             events_home, events_away, possession, ballstatus) for the requested segment.
         """
 
+        if segment not in ["HT1", "HT2"]:
+            raise FileNotFoundError(
+                f"Could not load Toy Dataset for segment '{segment}', please specify "
+                f"segment as either 'HT1' or 'HT2'!"
+            )
+
         xy_home = XY(
             xy=np.load(os.path.join(self._data_dir, f"xy_home_{segment.lower()}.npy")),
             framerate=self._TOY_FRAMERATE,
