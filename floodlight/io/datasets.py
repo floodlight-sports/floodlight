@@ -140,8 +140,8 @@ class EIGDDataset:
 
 
 class ToyDataset:
-    """This dataset loads the provided toy data for sample football match stored in the
-    project repository's root ``.data``-folder.
+    """This dataset loads a small set of artifical data for a sample football match
+    which are stored in the project repository's root ``.data``-folder.
 
     Examples
     --------
@@ -191,8 +191,7 @@ class ToyDataset:
 
         if segment not in ["HT1", "HT2"]:
             raise FileNotFoundError(
-                f"Could not load Toy Dataset for segment '{segment}', please specify "
-                f"segment as either 'HT1' or 'HT2'!"
+                f"Expected segment to be of 'HT1' or 'HT2', got {segment}"
             )
 
         xy_home = XY(
