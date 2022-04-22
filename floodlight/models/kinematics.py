@@ -18,8 +18,7 @@ covered`
 
     Notes
     -----
-    For input data with metrical units in metrical units, the output equals the input
-    unit.
+    For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
         *Central difference method* (recommended) allows for differenciation without
@@ -153,8 +152,7 @@ class VelocityModel(BaseModel):
 
     Notes
     -----
-    For input data with metrical units in metrical units, the output equals the input
-    unit.
+    For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
         *Central difference method* (recommended) allows for differenciation without
@@ -253,8 +251,7 @@ class AccelerationModel(BaseModel):
 
     Notes
     -----
-    For input data with metrical units in metrical units, the output equals the input
-    unit.
+    For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
         *Central difference method* (recommended) allows for differenciation without
