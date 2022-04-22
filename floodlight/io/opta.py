@@ -145,6 +145,7 @@ def read_f24(
     }
     directions = {team: {} for team in teams}
     dir_link = {"Left to Right": "lr", "Right to Left": "rl"}
+    segment_offsets = {1: 0, 2: 45, 3: 90, 4: 105}
     kickoffs = {}
 
     # read kickoff events for times and playing direction
@@ -198,10 +199,14 @@ def read_f24(
         # absolute and relative time
         event_timestring = get_and_convert(event.attrib, "timestamp", str)
         minute = get_and_convert(event.attrib, "min", int)
+        # transform minute to be relative to current segment
+        minute -= segment_offsets[period]
         second = get_and_convert(event.attrib, "sec", int)
         timestamp = iso8601.parse_date(event_timestring, default_timezone=pytz.utc)
         delta = timestamp - kickoffs[segment]
         gameclock = delta.total_seconds()
+        # re-adjust pre-kick-off events (e.g. substitutions) to 00:00
+        gameclock = max(gameclock, 0.0)
         event_lists[team][segment]["timestamp"].append(timestamp)
         event_lists[team][segment]["minute"].append(minute)
         event_lists[team][segment]["second"].append(second)

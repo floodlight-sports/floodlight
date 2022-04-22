@@ -1,22 +1,28 @@
-[version-image]: https://img.shields.io/badge/status-beta-006666
-[version-url]: https://img.shields.io/badge/status-beta-006666
+[version-image]: https://img.shields.io/pypi/v/floodlight?color=006666
+[version-url]: https://pypi.org/project/floodlight/
+[python-image]: https://img.shields.io/pypi/pyversions/floodlight?color=006666
+[python-url]: https://pypi.org/project/floodlight/
 [docs-image]: https://readthedocs.org/projects/floodlight/badge/?version=latest
 [docs-url]: https://floodlight.readthedocs.io/en/latest/?badge=latest
 [build-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml/badge.svg
 [build-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml
 [lint-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml/badge.svg
 [lint-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml
+[status-image]: https://img.shields.io/badge/status-beta-006666
+[status-url]: https://img.shields.io/badge/status-beta-006666
 [black-image]: https://img.shields.io/badge/code%20style-black-000000.svg
 [black-url]: https://github.com/psf/black
 [contrib-image]: https://img.shields.io/badge/contributions-welcome-006666
 [contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
-
+[institute-link]:
 
 # floodlight
-[![PyPI][version-image]][version-url]
+[![Latest Version][version-image]][version-url]
+[![Python Version][python-image]][python-url]
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
+[![PyPI][status-image]][status-url]
 [![Code style: black][black-image]][black-url]
 
 
@@ -105,6 +111,13 @@ We felt that as long as there is no underlying, high-level framework, each and e
 own implementation. At last, we found ourselves refactoring the same code - and there are certain processing or
 plotting routines that are required in *almost every* project - over and over again, just to fit the particular data
 structures we were dealing with at that time.
+
+
+### About
+
+This project has been kindly supported by the [Institute of Exercise Training and Sport
+Informatics](https://www.dshs-koeln.de/en/institut-fuer-trainingswissenschaft-und-sportinformatik/) at the German Sport
+University Cologne under supervision of Prof. Daniel Memmert.
 
 
 ### Related Projects

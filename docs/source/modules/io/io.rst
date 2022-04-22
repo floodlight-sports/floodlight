@@ -2,14 +2,22 @@
 floodlight.io
 =============
 
-Collection of parsing modules for different provider data.
+Collection of parsing modules for different provider data and loaders for public
+datasets.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Spatiotemporal Data
+   :caption: Local Data Parser
 
    dfl
    kinexon
    opta
    statsperform
    tracab
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Public Datasets
+
+   datasets
+   utils
