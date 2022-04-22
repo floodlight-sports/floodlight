@@ -1,5 +1,4 @@
 import os
-import tempfile
 from typing import Tuple
 
 import h5py
@@ -133,10 +132,11 @@ class EIGDDataset:
         """Downloads an archive file into temporary storage and
         extracts the content to the file system.
         """
-        tmp = tempfile.NamedTemporaryFile()
-        tmp.write(download_from_url(self._EIGD_HOST_URL))
-        extract_zip(tmp.name, self._data_dir)
-        tmp.close()
+        file = f"{DATA_DIR}/eigd.zip"
+        with open(file, "wb") as binary_file:
+            binary_file.write(download_from_url(self._EIGD_HOST_URL))
+        extract_zip(file, self._data_dir)
+        os.remove(file)
 
 
 class ToyDataset:
