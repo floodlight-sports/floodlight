@@ -82,7 +82,7 @@ def _create_links_from_open_csv_df(
     links = {}
     for team in team_ids:
         links[team] = {
-            jID: xID + 1
+            jID: xID
             for xID, jID in enumerate(
                 csv_df[csv_df["team_id"] == team_ids[team]]["jersey_no"].unique()
             )
@@ -826,8 +826,8 @@ def create_links_from_internal_tracking_data_txt(
     awayjrsy.sort()
 
     links = {
-        "Home": {jID: xID + 1 for xID, jID in enumerate(homejrsy)},
-        "Away": {jID: xID + 1 for xID, jID in enumerate(awayjrsy)},
+        "Home": {jID: xID for xID, jID in enumerate(homejrsy)},
+        "Away": {jID: xID for xID, jID in enumerate(awayjrsy)},
     }
 
     return links
