@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Tuple, Union, List
 from pathlib import Path
 
 import re
@@ -434,7 +434,7 @@ def read_open_statsperform_tracking_data_csv(
     return data_objects
 
 
-# ----------------------------- StatsPerform Closed Format -----------------------------
+# ----------------------------- StatsPerform Internal Format ---------------------------
 
 
 def _is_url(file: str):
@@ -495,7 +495,7 @@ def _get_and_convert(dic: dict, key: Any, value_type: type, default: Any = None)
     return value
 
 
-def _read_internal_tracking_data_txt_single_line(
+def _read_full_internal_tracking_data_txt_single_line(
     package: str,
 ) -> Tuple[
     int,
@@ -581,7 +581,89 @@ def _read_internal_tracking_data_txt_single_line(
     return gameclock, segment, positions, ball
 
 
-def _read_metainformation_from_internal_tracking_data_txt(
+def _read_gameclock_and_segment_from_internal_tracking_data_txt_single_line(
+    package: str,
+) -> Tuple[int, int]:
+    """Extracts gameclock and segment of a single line of StatsPerform's .txt file (i.e.
+    one frame of data).
+
+    Parameters
+    ----------
+    package: str
+        One full line from StatsPerform's .txt-file, equals one "package" according
+        to the file-format documentation.
+
+    Returns
+    -------
+    gameclock: int
+        The gameclock of the current segment in milliseconds.
+    segment: int
+        The segment ID.
+    """
+
+    # read chunks
+    chunks = package.split(":")
+    time_chunk = chunks[0]
+
+    # time chunk
+    # systemclock = time_chunk.split(";")[0]
+    # possible check or synchronization step
+    timeinfo = time_chunk.split(";")[1].split(",")
+    gameclock = int(timeinfo[0])
+    segment = int(timeinfo[1])
+
+    return gameclock, segment
+
+
+def _read_jerseys_from_internal_tracking_data_txt_single_line(
+    package: str,
+) -> Dict[str, List[int]]:
+    """Extracts lists of all jersey numbers in a single line of StatsPerform's .txt file
+    (i.e. one frame of data).
+
+    Parameters
+    ----------
+    package: str
+        One full line from StatsPerform's .txt-file, equals one "package" according
+        to the file-format documentation.
+
+    Returns
+    -------
+    jerseys: Dict[str]
+    """
+    # bins
+    jerseys = {"Home": [], "Away": [], "Other": []}
+
+    # read chunks
+    chunks = package.split(":")
+    player_chunks = chunks[1].split(";")
+
+    # player chunks
+    for player_chunk in player_chunks:
+
+        # skip final entry of chunk
+        if not player_chunk or player_chunk == "\n":
+            continue
+
+        # read team
+        chunk_data = player_chunk.split(",")
+        if chunk_data[0] in ["0", "3"]:
+            team = "Home"
+        elif chunk_data[0] in ["1", "4"]:
+            team = "Away"
+        else:
+            team = "Other"
+
+        # read jersey number
+        jID = chunk_data[2]
+
+        # assign
+        jerseys[team].append(jID)
+
+    return jerseys
+
+
+def _read_time_information_from_internal_tracking_data_txt(
     file_location_txt: Union[str, Path],
     estimate_framerate: bool = None,
 ) -> Tuple[Dict, int]:
@@ -626,7 +708,9 @@ def _read_metainformation_from_internal_tracking_data_txt(
             package = str(package.decode("utf-8"))
 
         # read gameclock and segment
-        gameclock, segment, _, _ = _read_internal_tracking_data_txt_single_line(package)
+        gameclock, segment, _, _ = _read_full_internal_tracking_data_txt_single_line(
+            package
+        )
 
         # update periods
         if segment not in startframes:
@@ -703,11 +787,11 @@ def _read_jersey_numbers_from_internal_tracking_data_txt(
             package = str(package.decode("utf-8"))
 
         # read line
-        _, _, positions, _ = _read_internal_tracking_data_txt_single_line(package)
+        jerseys = _read_jerseys_from_internal_tracking_data_txt_single_line(package)
 
         # extract jersey numbers
-        home_jIDs |= positions["Home"].keys()
-        away_jIDs |= positions["Away"].keys()
+        home_jIDs |= set(jerseys["Home"])
+        away_jIDs |= set(jerseys["Away"])
 
     # close file
     file_txt.close()
@@ -940,7 +1024,7 @@ def read_internal_statsperform_tracking_data_txt(
             framerate = int(file_description.split("FPS")[0])
 
     # parse txt file for periods and estimate framerate if not contained in description
-    periods, framerate_est = _read_metainformation_from_internal_tracking_data_txt(
+    periods, framerate_est = _read_time_information_from_internal_tracking_data_txt(
         filepath_txt, framerate is None
     )
     segments = list(periods.keys())
@@ -1001,7 +1085,7 @@ def read_internal_statsperform_tracking_data_txt(
             segment,
             positions,
             ball,
-        ) = _read_internal_tracking_data_txt_single_line(package)
+        ) = _read_full_internal_tracking_data_txt_single_line(package)
 
         # check if frame is in any segment
         if segment is None:
