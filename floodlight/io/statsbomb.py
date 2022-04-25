@@ -6,7 +6,6 @@ import json
 import pandas as pd
 
 from floodlight.core.events import Events
-from floodlight.core.pitch import Pitch
 
 
 def _read_competition_file(filepath: Union[str, Path]):
@@ -19,7 +18,7 @@ def _read_competition_file(filepath: Union[str, Path]):
 def read_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
-) -> Tuple[Events, Events, Events, Events, Pitch]:
+) -> Tuple[Events, Events, Events, Events]:
     """Parses a StatsPerform Match Event CSV file and extracts the event data.
 
     This function provides a high-level access to the openly published StatsBomb Match
@@ -36,7 +35,7 @@ def read_open_statsbomb_event_data_json(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Pitch]
+    data_objects: Tuple[Events, Events, Events, Events]
         Events- and Pitch-objects for both teams and both halves. The order is
         (home_ht1, home_ht2, away_ht1, away_ht2, pitch).
 
@@ -155,8 +154,7 @@ def read_open_statsbomb_event_data_json(
     away_ht2 = Events(
         events=pd.DataFrame(data=team_event_lists["Away"]["HT2"]),
     )
-    pitch = Pitch.from_template("statsbomb", sport="football")
 
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2)
 
     return data_objects

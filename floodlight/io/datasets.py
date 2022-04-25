@@ -5,8 +5,10 @@ from typing import Tuple
 import h5py
 import numpy as np
 import pandas as pd
+import requests
 
 from floodlight.io.utils import extract_zip, download_from_url
+from floodlight.io.statsbomb import read_open_statsbomb_event_data_json
 from floodlight import XY, Pitch, Events, Code
 from settings import DATA_DIR
 
@@ -417,37 +419,60 @@ class StatsBombOpenDataset:
         Returns
         -------
         eigd_dataset: Tuple[XY, XY, XY]
-            Returns four Events objects of the form (home_events_ht1, home_events_ht2,
-            away_events_ht1, away_events_ht2)
-            for the requested sample.
+            Returns four Events objects of the form (events_home_ht1, events_home_ht2,
+            events_away_ht1, events_away_ht2) for the requested sample.
         """
+        # read IDs
+        cID = self.links_competition_to_cID[competition]
+        sID = self.links_season_to_sID[competition][season]
+        mID = list(self.links_match_to_mID[competition][season].values())[match_num]
 
-        # download events
-        # events_filepath = os.path.join(
-        #     self._events_data_dir,
-        #     f"{list(self.links_match_to_mID[competition][season].values())[match_num]}"
-        #     f"{self._STATSBOMB_FILE_EXT}",
-        # )
-        #
-        # events_host_url = (
-        #     f"{self._STATSBOMB_SCHEMA}://"
-        #     f"{self._STATSBOMB_BASE_URL}/"
-        #     f"{self._STATSBOMB_EVENTS_FOLDERNAME}/"
-        #     # f"{self.links_competition_to_cID[competition]}/"
-        #     # f"{self.links_season_to_sID[competition][season]}/"
-        #     f"{list(self.links_match_to_mID[competition][season].values())[match_num]}"
-        #     f"{self._STATSBOMB_FILE_EXT}"
-        # )
-        # threesixty_host_url = (
-        #     f"{self._STATSBOMB_SCHEMA}://"
-        #     f"{self._STATSBOMB_BASE_URL}/"
-        #     f"{self._STATSBOMB_THREESIXTY_FOLDERNAME}/"
-        #     f"{list(self.links_match_to_mID[competition][season].values())[match_num]}"
-        #     f"{self._STATSBOMB_FILE_EXT}"
-        # )
+        # create paths
+        matches_filepath = os.path.join(
+            os.path.join(self._matches_data_dir, cID), sID + self._STATSBOMB_FILE_EXT
+        )
+        events_filepath = os.path.join(
+            self._events_data_dir,
+            mID + self._STATSBOMB_FILE_EXT,
+        )
+        threesixty_filepath = os.path.join(
+            self._threesixty_data_dir,
+            mID + self._STATSBOMB_FILE_EXT,
+        )
 
-        events = None
-        return events
+        # check if events need to be downloaded
+        if not os.path.exists(events_filepath):
+            events_host_url = (
+                f"{self._STATSBOMB_SCHEMA}://"
+                f"{self._STATSBOMB_BASE_URL}/"
+                f"{self._STATSBOMB_EVENTS_FOLDERNAME}/"
+                f"{mID}"
+                f"{self._STATSBOMB_FILE_EXT}"
+            )
+            with open(events_filepath, "wb") as binary_file:
+                binary_file.write(download_from_url(events_host_url))
+
+        # check if StatsBomb360 data needs to be downloaded
+        if not os.path.exists(threesixty_filepath):
+            threesixty_host_url = (
+                f"{self._STATSBOMB_SCHEMA}://"
+                f"{self._STATSBOMB_BASE_URL}/"
+                f"{self._STATSBOMB_THREESIXTY_FOLDERNAME}/"
+                f"{mID}"
+                f"{self._STATSBOMB_FILE_EXT}"
+            )
+            if requests.get(threesixty_host_url) == 200:
+                with open(events_filepath, "wb") as binary_file:
+                    binary_file.write(download_from_url(threesixty_host_url))
+
+        # read events
+        event_objects = read_open_statsbomb_event_data_json(
+            events_filepath, matches_filepath, threesixty_filepath
+        )
+
+        # TODO: read StatsBomb360 data
+
+        return event_objects
 
     @property
     def pitch(self) -> Pitch:
@@ -469,7 +494,7 @@ class StatsBombOpenDataset:
         cIDs = competition_info["competition_id"].unique()
         competitions = competition_info["competition_name"].unique()
         self.links_competition_to_cID.update(
-            {competition: cIDs[i] for i, competition in enumerate(competitions)}
+            {competition: str(cIDs[i]) for i, competition in enumerate(competitions)}
         )
         self.links_season_to_sID.update(
             {competition: {} for competition in competitions}
@@ -502,7 +527,7 @@ class StatsBombOpenDataset:
             self.links_match_to_mID[competition][season] = {
                 f"{info['home_team']['home_team_name']} "
                 f"vs. "
-                f"{info['away_team']['away_team_name']}": info["match_id"]
+                f"{info['away_team']['away_team_name']}": str(info["match_id"])
                 for info in matches_info
             }
             self.competition_and_season_matches[competition][season] = [
