@@ -137,6 +137,16 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
+        elif template_name == "statsbomb":
+            return cls(
+                xlim=(0.0, 120.0),
+                ylim=(0.0, 80.0),
+                unit="relativepercent",
+                boundaries="fixed",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
+            )
         else:
             raise ValueError(f"Unsupported template name '{template_name}'")
 
