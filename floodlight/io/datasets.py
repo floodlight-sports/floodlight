@@ -307,7 +307,7 @@ class StatsBombOpenDataset:
             'Women's World Cup': ['2019'],
             }
 
-        matches = {
+        number_of_matches = {
             Champions League: {
                 1999/2000 : 0, 2003/2004 : 1, 2004/2005 : 1, 2006/2007 : 1,
                 2008/2009 : 1, 2009/2010 : 1, 2010/2011 : 1,2011/2012 : 1,
@@ -369,12 +369,12 @@ class StatsBombOpenDataset:
             self._download_competition_info()
 
         # create matches directory and check if match info needs to be downloaded
-        self._match_data_dir = os.path.join(
+        self._matches_data_dir = os.path.join(
             self._data_dir, self._STATSBOMB_MATCHES_FOLDERNAME
         )
-        if not os.path.isdir(self._match_data_dir):
-            os.makedirs(self._match_data_dir, exist_ok=True)
-        if not bool(os.listdir(self._match_data_dir)):
+        if not os.path.isdir(self._matches_data_dir):
+            os.makedirs(self._matches_data_dir, exist_ok=True)
+        if not bool(os.listdir(self._matches_data_dir)):
             self._download_matches_info()
 
         # create events location
@@ -385,14 +385,18 @@ class StatsBombOpenDataset:
             os.makedirs(self._events_data_dir, exist_ok=True)
 
         # create StatsBomb360 location
-        self._events_data_dir = os.path.join(
-            self._data_dir, self._STATSBOMB_EVENTS_FOLDERNAME
+        self._threesixty_data_dir = os.path.join(
+            self._data_dir, self._STATSBOMB_THREESIXTY_FOLDERNAME
         )
-        if not os.path.isdir(self._events_data_dir):
-            os.makedirs(self._events_data_dir, exist_ok=True)
+        if not os.path.isdir(self._threesixty_data_dir):
+            os.makedirs(self._threesixty_data_dir, exist_ok=True)
 
-        # create metainfo dict used for retrieving event file locations
-        self.links_competition_season_to_mID = self.create_match_ids_from_files()
+        # create and update links
+        self.competition_and_season_matches = {}
+        self.links_competition_to_cID = {}
+        self.links_season_to_sID = {}
+        self.links_match_to_mID = {}
+        self.update_data_links_from_files()
 
     def get(
         self, competition: str = "La Liga", season: str = "2018/2019", match_num=0
@@ -414,9 +418,34 @@ class StatsBombOpenDataset:
         -------
         eigd_dataset: Tuple[XY, XY, XY]
             Returns four Events objects of the form (home_events_ht1, home_events_ht2,
-            away_events_ht2, away_events_ht2)
+            away_events_ht1, away_events_ht2)
             for the requested sample.
         """
+
+        # download events
+        # events_filepath = os.path.join(
+        #     self._events_data_dir,
+        #     f"{list(self.links_match_to_mID[competition][season].values())[match_num]}"
+        #     f"{self._STATSBOMB_FILE_EXT}",
+        # )
+        #
+        # events_host_url = (
+        #     f"{self._STATSBOMB_SCHEMA}://"
+        #     f"{self._STATSBOMB_BASE_URL}/"
+        #     f"{self._STATSBOMB_EVENTS_FOLDERNAME}/"
+        #     # f"{self.links_competition_to_cID[competition]}/"
+        #     # f"{self.links_season_to_sID[competition][season]}/"
+        #     f"{list(self.links_match_to_mID[competition][season].values())[match_num]}"
+        #     f"{self._STATSBOMB_FILE_EXT}"
+        # )
+        # threesixty_host_url = (
+        #     f"{self._STATSBOMB_SCHEMA}://"
+        #     f"{self._STATSBOMB_BASE_URL}/"
+        #     f"{self._STATSBOMB_THREESIXTY_FOLDERNAME}/"
+        #     f"{list(self.links_match_to_mID[competition][season].values())[match_num]}"
+        #     f"{self._STATSBOMB_FILE_EXT}"
+        # )
+
         events = None
         return events
 
@@ -425,46 +454,63 @@ class StatsBombOpenDataset:
         """Returns a Pitch object corresponding to the Toy Dataset."""
         return Pitch.from_template("statsbomb")
 
-    def create_match_ids_from_files(self):
-        """Creates a dictionary that contains all available matches for every
-        competition and season in the StatsBomb dataset.
-
-        Returns
-        -------
-        links_cID_sID_to_mID: Tuple[XY, XY, XY]
-            Returns four Events objects of the form (home_events_ht1, home_events_ht2,
-            away_events_ht2, away_events_ht2)
-            for the requested sample.
+    def update_data_links_from_files(self):
+        """Creates the dictionaries containing data links between competition, season,
+        and matches to the respective cIDs, sIDs, and mIDs for all available matches and
+        every competition and season in the StatsBomb dataset.
         """
+        # updates on competition level
         competition_info = pd.read_json(
             os.path.join(
                 self._data_dir,
                 self._STATSBOMB_COMPETITIONS_FILENAME + self._STATSBOMB_FILE_EXT,
             ),
         )
-        links_to_mID = {
-            competition_name: {}
-            for competition_name in competition_info["competition_name"].unique()
-        }
+        cIDs = competition_info["competition_id"].unique()
+        competitions = competition_info["competition_name"].unique()
+        self.links_competition_to_cID.update(
+            {competition: cIDs[i] for i, competition in enumerate(competitions)}
+        )
+        self.links_season_to_sID.update(
+            {competition: {} for competition in competitions}
+        )
+        self.links_match_to_mID.update(
+            {competition: {} for competition in competitions}
+        )
+        self.competition_and_season_matches.update(
+            {competition: {} for competition in competitions}
+        )
+
+        # loop
         for _, single_season in competition_info.iterrows():
+            # update on season level
             cID = str(single_season["competition_id"])
+            competition = single_season["competition_name"]
             sID = str(single_season["season_id"])
-            competition_name = single_season["competition_name"]
-            season_name = single_season["season_name"]
+            season = single_season["season_name"]
+            self.links_season_to_sID[competition].update({season: sID})
+
+            # update on match level
             with open(
                 os.path.join(
-                    os.path.join(self._match_data_dir, cID),
+                    os.path.join(self._matches_data_dir, cID),
                     sID + self._STATSBOMB_FILE_EXT,
                 ),
                 "rb",
             ) as matches_file:
                 matches_info = json.load(matches_file)
-
-            links_to_mID[competition_name][season_name] = [
-                str(info["match_id"]) + self._STATSBOMB_FILE_EXT
+            self.links_match_to_mID[competition][season] = {
+                f"{info['home_team']['home_team_name']} "
+                f"vs. "
+                f"{info['away_team']['away_team_name']}": info["match_id"]
+                for info in matches_info
+            }
+            self.competition_and_season_matches[competition][season] = [
+                f"{info['home_team']['home_team_name']} "
+                f"vs. "
+                f"{info['away_team']['away_team_name']}"
                 for info in matches_info
             ]
-        return links_to_mID
 
     def _download_competition_info(self) -> None:
         """Downloads the json file containing competition information into the file
@@ -500,7 +546,7 @@ class StatsBombOpenDataset:
             sID = str(single_season["season_id"])
             if not os.path.exists(
                 os.path.join(
-                    os.path.join(self._match_data_dir, cID),
+                    os.path.join(self._matches_data_dir, cID),
                     sID + self._STATSBOMB_FILE_EXT,
                 )
             ):
@@ -512,7 +558,7 @@ class StatsBombOpenDataset:
                     f"{sID}"
                     f"{self._STATSBOMB_FILE_EXT}"
                 )
-                competition_data_dir = os.path.join(self._match_data_dir, cID)
+                competition_data_dir = os.path.join(self._matches_data_dir, cID)
                 if not os.path.isdir(competition_data_dir):
                     os.makedirs(competition_data_dir, exist_ok=True)
                 season_file = os.path.join(
