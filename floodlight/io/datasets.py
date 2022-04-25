@@ -46,7 +46,7 @@ class EIGDDataset:
     # get one sample
     >>> teamA, teamB, ball = dataset.get(match="48dcd3", segment="00-06-00")
     # get the corresponding pitch
-    >>> pitch = dataset.get_pitch
+    >>> pitch = dataset.pitch
 
 
     References
@@ -117,7 +117,7 @@ class EIGDDataset:
         )
 
     @property
-    def get_pitch(self) -> Pitch:
+    def pitch(self) -> Pitch:
         """Returns a Pitch object corresponding to the EIGD-data."""
         return Pitch(
             xlim=(0, 40),
@@ -160,7 +160,7 @@ class ToyDataset:
     >>>     ballstatus,
     >>> ) = dataset.get(segment="HT1")
     # get the corresponding pitch
-    >>> pitch = dataset.get_pitch
+    >>> pitch = dataset.pitch
 
     """
 
@@ -255,7 +255,7 @@ class ToyDataset:
         return data_objects
 
     @property
-    def get_pitch(self) -> Pitch:
+    def pitch(self) -> Pitch:
         """Returns a Pitch object corresponding to the Toy Dataset."""
         return Pitch(
             xlim=(-52.5, 52.5),
@@ -346,7 +346,7 @@ class StatsBombOpenDataset:
     # get one sample
     >>> events = dataset.get(competition="La Liga", season="2020/2021", match_num=35)
     # get the corresponding pitch
-    >>> pitch = dataset.get_pitch
+    >>> pitch = dataset.pitch
     """
 
     def __init__(self, dataset_path="statsbomb_dataset"):
@@ -419,6 +419,11 @@ class StatsBombOpenDataset:
         """
         events = None
         return events
+
+    @property
+    def pitch(self) -> Pitch:
+        """Returns a Pitch object corresponding to the Toy Dataset."""
+        return Pitch.from_template("statsbomb")
 
     def create_match_ids_from_files(self):
         """Creates a dictionary that contains all available matches for every
