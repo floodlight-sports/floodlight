@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -8,36 +9,37 @@ import pandas as pd
 from floodlight.core.events import Events
 
 
-def _read_competition_file(filepath: Union[str, Path]):
-    with open(filepath, "r") as f:
-        competitions = json.load(f)
-
-    return competitions
-
-
 def read_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
+    filepath_threesixty: Union[str, Path] = None,
 ) -> Tuple[Events, Events, Events, Events]:
     """Parses a StatsPerform Match Event CSV file and extracts the event data.
 
-    This function provides a high-level access to the openly published StatsBomb Match
-    Events json file and returns Event objects for both teams.
+    This function provides a high-level access to an events json file from the openly
+    published StatsBomb open data and returns Event objects for both teams for the first
+    two periods. A StatsBomb360 json file can be passed to the function to include
+    information about the tracked position of (some) players at certain events to the
+    ``qualifier`` column.
 
     Parameters
     ----------
     filepath_events: str or pathlib.Path
-        Full path to json File where the Event data in StatsPerform CSV format is
-        saved
+        Full path to json file where the Event data is saved.
     filepath_match: str or pathlib.Path
         Full path to json file where information about all matches of a competition are
          stored.
+    filepath_threesixty: str or pathlib.Path, optional
+        Full path to json file where the StatsBomb360 data in is saved if available. The
+        information about the area of the field where player positions are tracked
+        (``visible_area``) and player positions at single events (``freeze frame``) are
+        stored as a string in the ``qualifier`` column.
 
     Returns
     -------
     data_objects: Tuple[Events, Events, Events, Events]
         Events- and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, pitch).
+        (home_ht1, home_ht2, away_ht1, away_ht2).
 
     Notes
     -----
@@ -48,12 +50,17 @@ def read_open_statsbomb_event_data_json(
     """
 
     # load json files into memory
-    with open(filepath_match, "r") as f:
+    with open(filepath_match, "r", encoding="utf8") as f:
         matchinfo_list = json.load(f)
-    with open(filepath_events, "r") as f:
+    with open(filepath_events, "r", encoding="utf8") as f:
         file_event_list = json.load(f)
+    if filepath_threesixty is not None:
+        with open(filepath_threesixty, "r", encoding="utf8") as f:
+            file_threesixty_list = json.load(f)
+    else:
+        file_threesixty_list = None
 
-    # 1. retrieve match info from competition list
+    # 1. retrieve match info from file
     match_id = int(filepath_events.split(os.path.sep)[-1][:-5])  # from filepath
     matchinfo = None
     for info in matchinfo_list:
@@ -71,7 +78,7 @@ def read_open_statsbomb_event_data_json(
     segments = [f"HT{period}" for period in periods]
 
     # 3. parse events
-    # bins
+    # bins TODO: to_x/y, tID, pID name or ID, outcome, type
     columns = [
         "eID",
         "gameclock",
@@ -139,6 +146,18 @@ def read_open_statsbomb_event_data_json(
 
             qual_value = event[qualifier]
             qual_dict[qualifier] = qual_value
+        if file_threesixty_list is not None:
+            threesixty_event = [
+                event for event in file_threesixty_list if event["event_uuid"] == eID
+            ]
+            if len(threesixty_event) == 1:
+                qual_dict["360_freeze_frame"] = threesixty_event[0]["freeze_frame"]
+                qual_dict["360_visible_area"] = threesixty_event[0]["visible_area"]
+            elif len(threesixty_event) >= 1:
+                warnings.warn(
+                    f"Found ambiguous StatsBomb event ID {eID} matching to more than "
+                    f"one StatsBomb360 event."
+                )
         team_event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
     # assembly

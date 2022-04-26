@@ -281,12 +281,13 @@ class StatsBombOpenDataset:
     Notes
     -----
     The dataset contains result, lineup, and event data for a variety of matches from a
-    total of eight different competitions (for example every league match ever played by
-    Lionel Messi for FC Barcelona). In addition, for some selected matches, StatsBomb360
-    data is available which contains the tracked positions of (some) players at the
-    respective times of the captured events. As the data is constantly updated, we
-    provide an overview over the stats here but refer to the official repository for
-    up-to-date information (last modified 25.04.2022).
+    total of eight different competitions (Women's World Cup, FIFA World Cup, UEFA Euro,
+    Champions League, FA Women's Super League, NWSL, Premier League, and La Liga). In
+    addition, for 51 matches from the UEFA Euro 2020 additional StatsBomb360 data is
+    available. This data contains the tracked positions of (some) players at the
+    captured events of these matches. As the data is constantly updated, we provide an
+    overview over the stats here but refer to the official repository for up-to-date
+    information (last modified 26.04.2022).
 
         competitions = ['Champions League', 'FA Women's Super League', 'FIFA World Cup',
                         'La Liga', 'NWSL' 'Premier League' 'UEFA Euro'
@@ -346,9 +347,12 @@ class StatsBombOpenDataset:
 
     >>> dataset = StatsBombOpenDataset()
     # get one sample
-    >>> events = dataset.get(competition="La Liga", season="2020/2021", match_num=35)
+    >>> events = dataset.get("UEFA Euro", "2020", 10)
     # get the corresponding pitch
     >>> pitch = dataset.pitch
+
+    # Every one of the 520 La Liga matches played by Lionel Messi for FC Barcelona
+
     """
 
     def __init__(self, dataset_path="statsbomb_dataset"):
@@ -394,7 +398,6 @@ class StatsBombOpenDataset:
             os.makedirs(self._threesixty_data_dir, exist_ok=True)
 
         # create and update links
-        self.competition_and_season_matches = {}
         self.links_competition_to_cID = {}
         self.links_season_to_sID = {}
         self.links_match_to_mID = {}
@@ -403,7 +406,8 @@ class StatsBombOpenDataset:
     def get(
         self, competition: str = "La Liga", season: str = "2018/2019", match_num=0
     ) -> Tuple[Events, Events, Events, Events]:
-        """Get event data from one match of the StatsBomb dataset.
+        """Get event and (if available) Statsbomb360 data from one match of the
+        StatsBomb dataset.
 
         Parameters
         ----------
@@ -411,18 +415,22 @@ class StatsBombOpenDataset:
             Competition name for which the match is played, check Notes section for
             possible competitions. Defaults to "La Liga".
         season : str, optional
-            Season during which the match is played in the format YYYY/YYYY, check Notes
-            section for possible competitions. Defaults to "2020/2021".
+            Season during which the match is played. For league matches use the format
+            YYYY/YYYY and for international cup matches the format YYYY. Check Notes
+            section for available seasons of every competition. Defaults to "2020/2021".
         match_num
-            Match number relating to the available matches in a season. Defaults to the
-            first match at index 0.
+            Match index relating to the available matches in a season in the order that
+            they are stored in the respective matches json file. Defaults to the first
+            match at index 0.
         Returns
         -------
-        eigd_dataset: Tuple[XY, XY, XY]
+        data_objects: Tuple[Events, Events, Events, Events]
             Returns four Events objects of the form (events_home_ht1, events_home_ht2,
-            events_away_ht1, events_away_ht2) for the requested sample.
+            events_away_ht1, events_away_ht2) for the requested sample. If available
+            StatsBomb360 data and "classical" event data are fused in the ``qualifier``
+            column.
         """
-        # read IDs
+        # get identifiers from links
         cID = self.links_competition_to_cID[competition]
         sID = self.links_season_to_sID[competition][season]
         mID = list(self.links_match_to_mID[competition][season].values())[match_num]
@@ -452,7 +460,7 @@ class StatsBombOpenDataset:
             with open(events_filepath, "wb") as binary_file:
                 binary_file.write(download_from_url(events_host_url))
 
-        # check if StatsBomb360 data needs to be downloaded
+        # check if StatsBomb360 data is available and needs to be downloaded
         if not os.path.exists(threesixty_filepath):
             threesixty_host_url = (
                 f"{self._STATSBOMB_SCHEMA}://"
@@ -461,22 +469,23 @@ class StatsBombOpenDataset:
                 f"{mID}"
                 f"{self._STATSBOMB_FILE_EXT}"
             )
-            if requests.get(threesixty_host_url) == 200:
-                with open(events_filepath, "wb") as binary_file:
+            if requests.get(threesixty_host_url).status_code == 200:  # is available
+                with open(threesixty_filepath, "wb") as binary_file:
                     binary_file.write(download_from_url(threesixty_host_url))
+            else:
+                threesixty_filepath = None
 
-        # read events
-        event_objects = read_open_statsbomb_event_data_json(
+        # read events from file
+        (home_ht1, home_ht2, away_ht1, away_ht2,) = read_open_statsbomb_event_data_json(
             events_filepath, matches_filepath, threesixty_filepath
         )
+        data_objects = (home_ht1, home_ht2, away_ht1, away_ht2)
 
-        # TODO: read StatsBomb360 data
-
-        return event_objects
+        return data_objects
 
     @property
     def pitch(self) -> Pitch:
-        """Returns a Pitch object corresponding to the Toy Dataset."""
+        """Returns a Pitch object corresponding to the StatsBomb Dataset."""
         return Pitch.from_template("statsbomb")
 
     def update_data_links_from_files(self):
@@ -500,9 +509,6 @@ class StatsBombOpenDataset:
             {competition: {} for competition in competitions}
         )
         self.links_match_to_mID.update(
-            {competition: {} for competition in competitions}
-        )
-        self.competition_and_season_matches.update(
             {competition: {} for competition in competitions}
         )
 
@@ -530,12 +536,6 @@ class StatsBombOpenDataset:
                 f"{info['away_team']['away_team_name']}": str(info["match_id"])
                 for info in matches_info
             }
-            self.competition_and_season_matches[competition][season] = [
-                f"{info['home_team']['home_team_name']} "
-                f"vs. "
-                f"{info['away_team']['away_team_name']}"
-                for info in matches_info
-            ]
 
     def _download_competition_info(self) -> None:
         """Downloads the json file containing competition information into the file
@@ -564,7 +564,7 @@ class StatsBombOpenDataset:
             os.path.join(
                 self._data_dir,
                 self._STATSBOMB_COMPETITIONS_FILENAME + self._STATSBOMB_FILE_EXT,
-            ),
+            )
         )
         for _, single_season in competition_info.iterrows():
             cID = str(single_season["competition_id"])
