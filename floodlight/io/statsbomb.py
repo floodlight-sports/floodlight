@@ -152,11 +152,10 @@ def read_open_statsbomb_event_data_json(
         eID = event["type"]["id"]
         tID = event["team"]["id"]
         pID = event["player"]["id"] if "player" in event else None
-        if "type" in event:
+        if "type" in event and event["type"]["name"].lower() in event:
             outcome = (
                 event[event["type"]["name"].lower()]["outcome"]["name"]
-                if event["type"]["name"].lower() in event
-                and "outcome" in event[event["type"]["name"].lower()]
+                if "outcome" in event[event["type"]["name"].lower()]
                 else None
             )
         else:
@@ -180,18 +179,20 @@ def read_open_statsbomb_event_data_json(
         # location
         at_x = event["location"][0] if "location" in event else None
         at_y = event["location"][1] if "location" in event else None
-        to_x = (
-            event[event["type"]["name"].lower()]["end_location"][0]
-            if event["type"]["name"].lower() in event
-            and "end_location" in event[event["type"]["name"].lower()]
-            else None
-        )
-        to_y = (
-            event[event["type"]["name"].lower()]["end_location"][1]
-            if event["type"]["name"].lower() in event
-            and "end_location" in event[event["type"]["name"].lower()]
-            else None
-        )
+        if "type" in event and event["type"]["name"].lower() in event:
+            to_x = (
+                event[event["type"]["name"].lower()]["end_location"][0]
+                if "end_location" in event[event["type"]["name"].lower()]
+                else None
+            )
+            to_y = (
+                event[event["type"]["name"].lower()]["end_location"][1]
+                if "end_location" in event[event["type"]["name"].lower()]
+                else None
+            )
+        else:
+            to_x = None
+            to_y = None
         team_event_lists[team][segment]["at_x"].append(at_x)
         team_event_lists[team][segment]["at_y"].append(at_y)
         team_event_lists[team][segment]["to_x"].append(to_x)
