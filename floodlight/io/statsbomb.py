@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 
 import os
 import json
@@ -9,12 +9,52 @@ import pandas as pd
 from floodlight.core.events import Events
 
 
+def create_links_from_open_statsbomb_event_data_json(
+    filepath_events: Union[str, Path]
+) -> Tuple[Dict[int, str], Dict[int, str], Dict[int, str]]:
+    """Parses a StatsPerform Match Event json file for the links between ID and name
+    for eID and event, tID and team, and  pID and player.
+
+    Parameters
+    ----------
+    filepath_events: str or pathlib.Path
+        Full path to json file where the Event data is saved.
+
+    Returns
+    -------
+    links: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]]:
+        Returns three link dictionary objects of the form (links_eID_to_event,
+        links_tID_to_team, links_pID_to_player) respectively mapping the eIDs to the
+        event names, the tIDs to the team names and the pIDs to the player names.
+    """
+    # bins
+    links_eID_to_event = {}
+    links_tID_to_team = {}
+    links_pID_to_player = {}
+
+    # load json files into memory
+    with open(filepath_events, "r", encoding="utf8") as f:
+        file_event_list = json.load(f)
+
+    # loop
+    for event in file_event_list:
+        links_eID_to_event.update({event["type"]["id"]: event["type"]["name"]})
+        links_tID_to_team.update(
+            {event["possession_team"]["id"]: event["possession_team"]["name"]}
+        )
+        if "player" in event:
+            links_pID_to_player.update({event["player"]["id"]: event["player"]["name"]})
+
+    links = (links_eID_to_event, links_tID_to_team, links_pID_to_player)
+    return links
+
+
 def read_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
 ) -> Tuple[Events, Events, Events, Events]:
-    """Parses a StatsPerform Match Event CSV file and extracts the event data.
+    """Parses a StatsPerform Match Event json file and extracts the event data.
 
     This function provides a high-level access to an events json file from the openly
     published StatsBomb open data and returns Event objects for both teams for the first
@@ -61,10 +101,10 @@ def read_open_statsbomb_event_data_json(
         file_threesixty_list = None
 
     # 1. retrieve match info from file
-    match_id = int(filepath_events.split(os.path.sep)[-1][:-5])  # from filepath
+    mID = int(filepath_events.split(os.path.sep)[-1][:-5])  # from filepath
     matchinfo = None
     for info in matchinfo_list:
-        if info["match_id"] == match_id:
+        if info["match_id"] == mID:
             matchinfo = info
             break
 
@@ -78,17 +118,21 @@ def read_open_statsbomb_event_data_json(
     segments = [f"HT{period}" for period in periods]
 
     # 3. parse events
-    # bins TODO: to_x/y, tID, pID name or ID, outcome, type
+    # bins
     columns = [
         "eID",
         "gameclock",
         "pID",
+        "tID",
+        "mID",
         "outcome",
         "timestamp",
         "minute",
         "second",
         "at_x",
         "at_y",
+        "to_x",
+        "to_y",
         "qualifier",
     ]
 
@@ -105,13 +149,21 @@ def read_open_statsbomb_event_data_json(
         team = tID_link[event["possession_team"]["id"]]
 
         # identifier and outcome:
-        eID = event["id"]
-        pID = event["player"] if "player" in event else None
+        eID = event["type"]["id"]
+        tID = event["team"]["id"]
+        pID = event["player"]["id"] if "player" in event else None
         if "type" in event:
-            outcome = event["type"]["outcome"] if "outcome" in event["type"] else None
+            outcome = (
+                event[event["type"]["name"].lower()]["outcome"]["name"]
+                if event["type"]["name"].lower() in event
+                and "outcome" in event[event["type"]["name"].lower()]
+                else None
+            )
         else:
             outcome = None
+        team_event_lists[team][segment]["mID"].append(mID)
         team_event_lists[team][segment]["eID"].append(eID)
+        team_event_lists[team][segment]["tID"].append(tID)
         team_event_lists[team][segment]["pID"].append(pID)
         team_event_lists[team][segment]["outcome"].append(outcome)
 
@@ -128,35 +180,53 @@ def read_open_statsbomb_event_data_json(
         # location
         at_x = event["location"][0] if "location" in event else None
         at_y = event["location"][1] if "location" in event else None
+        to_x = (
+            event[event["type"]["name"].lower()]["end_location"][0]
+            if event["type"]["name"].lower() in event
+            and "end_location" in event[event["type"]["name"].lower()]
+            else None
+        )
+        to_y = (
+            event[event["type"]["name"].lower()]["end_location"][1]
+            if event["type"]["name"].lower() in event
+            and "end_location" in event[event["type"]["name"].lower()]
+            else None
+        )
         team_event_lists[team][segment]["at_x"].append(at_x)
         team_event_lists[team][segment]["at_y"].append(at_y)
+        team_event_lists[team][segment]["to_x"].append(to_x)
+        team_event_lists[team][segment]["to_y"].append(to_y)
 
         # qualifier
         qual_dict = {}
+        qual_dict["unique_identifier"] = event["id"]
         for qualifier in event:
             if qualifier in [
-                "id",
+                "type",
                 "period",
                 "timestamp",
                 "minute",
                 "second",
                 "location",
+                "id",
             ]:
                 continue
-
             qual_value = event[qualifier]
             qual_dict[qualifier] = qual_value
         if file_threesixty_list is not None:
             threesixty_event = [
-                event for event in file_threesixty_list if event["event_uuid"] == eID
+                event
+                for event in file_threesixty_list
+                if event["event_uuid"] == qual_dict["unique_identifier"]
             ]
             if len(threesixty_event) == 1:
                 qual_dict["360_freeze_frame"] = threesixty_event[0]["freeze_frame"]
                 qual_dict["360_visible_area"] = threesixty_event[0]["visible_area"]
             elif len(threesixty_event) >= 1:
                 warnings.warn(
-                    f"Found ambiguous StatsBomb event ID {eID} matching to more than "
-                    f"one StatsBomb360 event."
+                    f"Found ambiguous StatsBomb event ID "
+                    f"{qual_dict['unique_identifier']} matching to more than one "
+                    f"StatsBomb360 event."
                 )
         team_event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
