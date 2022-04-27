@@ -287,65 +287,44 @@ class StatsBombOpenDataset:
     total of eight different competitions (Women's World Cup, FIFA World Cup, UEFA Euro,
     Champions League, FA Women's Super League, NWSL, Premier League, and La Liga). The
     competition with the most matches is La Liga where StatsBomb provides data for every
-    one of the 520 matches where Lionel Messi played for FC Barcelona. In addition, for
-    51 matches from the UEFA Euro 2020 additional StatsBomb360 data is available. This
-    data contains the tracked positions of (some) players at the captured events of
+    one of the 520 matches ever played by Lionel Messi for FC Barcelona. In addition,
+    for 51 matches from the UEFA Euro 2020 additional StatsBomb360 data is available.
+    This data contains the tracked positions of (some) players at the captured events of
     these matches. As the data is constantly updated, we provide an overview over the
     stats here but refer to the official repository for up-to-date information (last
-    modified 26.04.2022).
-
-        competitions = ['Champions League', 'FA Women's Super League', 'FIFA World Cup',
-                        'La Liga', 'NWSL' 'Premier League' 'UEFA Euro'
-                        'Women's World Cup']
-
-        seasons = {
-            'Champions League' : ['1999/2000', '2003/2004', '2004/2005', '2006/2007',
-                                  '2008/2009', '2009/2010', '2010/2011', '2011/2012',
-                                  '2012/2013', '2013/2014', '2014/2015', '2015/2016',
-                                  '2016/2017', '2017/2018', '2018/2019'],
-            'FA Women's Super League' : ['2018/2019', '2019/2020', '2020/2021'],
-            'FIFA World Cup': ['2018'],
-            'La Liga': ['2004/2005', '2005/2006', '2006/2007', '2007/2008', '2008/2009',
-                        '2009/2010', '2010/2011', '2011/2012', '2012/2013', '2013/2014',
-                        '2014/2015', '2015/2016', '2016/2017', '2017/2018', '2018/2019',
-                        '2019/2020', '2020/2021'],
-            'NWSL': ['2018'],
-            'Premier League': ['2003/2004'],
-            'UEFA Euro': ['2020'],
-            'Women's World Cup': ['2019'],
-            }
+    modified 27.04.2022)::
 
         number_of_matches = {
-            'Champions League': {
-                1999/2000 : 0, 2003/2004 : 1, 2004/2005 : 1, 2006/2007 : 1,
-                2008/2009 : 1, 2009/2010 : 1, 2010/2011 : 1,2011/2012 : 1,
-                2012/2013 : 1, 2013/2014 : 1,2014/2015 : 1, 2015/2016 : 1,
-                2016/2017 : 1, 2017/2018 : 1, 2018/2019 : 1,
+            "Champions League": {
+                '1999/2000' : 0, '2003/2004' : 1, '2004/2005' : 1, '2006/2007' : 1,
+                '2008/2009' : 1, '2009/2010' : 1, '2010/2011' : 1, '2011/2012' : 1,
+                '2012/2013' : 1, '2013/2014' : 1, '2014/2015' : 1, '2015/2016' : 1,
+                '2016/2017' : 1, '2017/2018' : 1, '2018/2019' : 1,
                 },
-            'FA Women's Super League': {
-                2018/2019 : 108, 2019/2020 : 87, 2020/2021 : 131,
+            "FA Women's Super League": {
+                '2018/2019' : 108, '2019/2020' : 87, '2020/2021' : 131,
                 },
-            'FIFA World Cup': {
-                2018 : 64,
+            "FIFA World Cup": {
+                '2018' : 64,
                 },
-            'La Liga': {
-                2004/2005: 7, 2005/2006 : 17, 2006/2007 : 26, 2007/2008 : 28,
-                2008/2009 : 31, 2009/2010 : 35, 2010/2011 : 33, 2011/2012 : 37,
-                2012/2013 : 32, 2013/2014 : 31, 2014/2015 : 38, 2015/2016 : 33,
-                2016/2017 : 34, 2017/2018 : 36, 2018/2019 : 34, 2019/2020 : 33,
-                2020/2021 : 35,
+            "La Liga": {
+                '2004/2005': 7, '2005/2006' : 17, '2006/2007' : 26, '2007/2008' : 28,
+                '2008/2009' : 31, '2009/2010' : 35, '2010/2011' : 33, '2011/2012' : 37,
+                '2012/2013' : 32, '2013/2014' : 31, '2014/2015' : 38, '2015/2016' : 33,
+                '2016/2017' : 34, '2017/2018' : 36, '2018/2019' : 34, '2019/2020' : 33,
+                '2020/2021' : 35,
                 },
-            'NWSL': {
-                2018 : 36,
+            "NWSL": {
+                '2018' : 36,
                 },
-            'Premier League': {
-                2003/2004 : 33,
+            "Premier League": {
+                '2003/2004' : 33,
                 },
-            'UEFA Euro' : {
-                2020 : 51,
+            "UEFA Euro" : {
+                '2020' : 51,
                 },
-            'Women's World Cup': {
-                2019 : 52,
+            "Women's World Cup": {
+                '2019' : 52,
                 },
         }
 
@@ -360,7 +339,6 @@ class StatsBombOpenDataset:
     >>> links = dataset.get_links("UEFA Euro", "2020", 10)
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
-
     # get events for every El Clásico ever played by Lionel Messi in Camp Nou
     >>> clasico_events = []
     >>> for season in dataset.links_match_to_mID["La Liga"]:
