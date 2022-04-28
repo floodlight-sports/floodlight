@@ -1,13 +1,12 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Tuple
-from typing import Union
+from typing import Tuple, Union
 
 import matplotlib
 import numpy as np
 
 from floodlight.utils.types import Numeric
-from floodlight.vis import xy_positions
+from floodlight.vis.positions import plot_positions, plot_trajectories
 
 
 @dataclass
@@ -223,39 +222,49 @@ class XY:
 
     def plot(
         self,
-        type: str,
         t: Union[int, Tuple[int, int]],
+        plot_type: str = "positions",
         ball: bool = False,
         ax: matplotlib.axes = None,
         **kwargs,
     ) -> matplotlib.axes:
-        """Wrapper function that calls the actual plotting methods based on the type.
+        """
+        Wrapper function that calls the actual plotting functions based on the selected
+        plot type.
 
         Parameters
         ----------
-        type: str
-            One of {positions, trajectories}. Determines which plotting function is
-            called.
         t: Union[int, Tuple [int, int]]
-            Frame for which postions should be plotted if type == 'positions', or a
-            range of frames if type == 'trajectories'.
+            Frame for which postions should be plotted if plot_type == 'positions', or a
+            Tuple that has the form (start_frame, end_frame) if
+            plot_type == 'trajectories'.
+        plot_type: str, optional
+            One of {'positions', 'trajectories'}. Determines which plotting function is
+            called. Defaults to 'positions'.
         ball: bool, optional
-            If ball == True the positions and lines are modified.
+            If ball == True the points and lines are adjusted accordingly.
+            Defaults to False.
         ax: matplotlib.axes, optional
-            Axes from matplotlib library to plot on. If ax is None, a default-sized
-            matplotlib.axes object is created.
+            Axes from matplotlib library to plot on. Defaults to None.
         kwargs:
-            Optional keyworded arguments {'color', 'zorder', 'marker', 'linestyle',
+            Optional keyworded arguments e.g. {'color', 'zorder', 'marker', 'linestyle',
             'alpha'} which can be used for the plot functions from matplotlib.
-            The kwargs are only passed to all the plot functions of matplotlib.
+            The kwargs are only passed to all the plot functions of matplotlib. If not
+            given default values are used (see floodlight.vis.positions).
         Returns
         -------
         matplotlib.axes
-            An axes with the specified plot type.
+            Specified plot function which returns a matplotlib.axes object.
         """
 
-        # Get function for the given type
-        plot_function = getattr(xy_positions, f"plot_{type}")
+        plot_types = ["positions", "trajectories"]
 
-        # Call function for given type and return it
-        return plot_function(self.xy, t, ball, ax=ax, **kwargs)
+        # call visualization function based on plot type
+        if plot_type == "positions":
+            return plot_positions(self, t, ball, ax=ax, **kwargs)
+        elif plot_type == "trajectories":
+            return plot_trajectories(self, t[0], t[1], ball, ax=ax, **kwargs)
+        else:
+            raise ValueError(
+                f"Unknown plot type: {plot_type}, choose one of " f"{plot_types}"
+            )
