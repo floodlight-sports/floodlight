@@ -1,5 +1,6 @@
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Union
 import warnings
 
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 
 from floodlight.utils.types import Numeric
 from floodlight.core.definitions import essential_events_columns, protected_columns
+from floodlight.core.pitch import Pitch
 
 
 @dataclass
@@ -389,3 +391,125 @@ class Events:
                 self.events[["to_x", "to_y"]] = pd.DataFrame(
                     np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
                 )
+
+    def slice(
+        self,
+        start: float = None,
+        end: float = None,
+        use_frameclock=False,
+        inplace: bool = False,
+    ):
+        """Return copy of object with events sliced in a time interval using either the
+        gameclock (total seconds) or the frameclock. All entries without a valid time
+        entry (e.g. None) are excluded.
+
+        Parameters
+        ----------
+        start : float, optional
+            Start of slice. Defaults to beginning of segment.
+        end : float, optional
+            End of slice (endframe is excluded). Defaults to end of segment.
+        use_frameclock: bool, optional
+            Whether the ``frameclock`` column should be used instead of the
+            ``gameclock``. Defaults to False.
+        inplace: bool, optional
+            If set to ``False`` (default), a new object is returned, otherwise the
+            operation is performed in place on the called object.
+
+        Returns
+        -------
+        events_sliced: Union[Event, None]
+        """
+        col = "frameclock" if use_frameclock else "gameclock"
+        if start is None:
+            start = 0
+        if end is None:
+            end = np.nanmax(self.events[col].values) + 1
+
+        sliced_data = self.events[self.events[col] >= start].copy()
+        sliced_data = sliced_data[sliced_data[col] < end]
+
+        events_sliced = None
+        if inplace:
+            self.events = sliced_data
+        else:
+            events_sliced = Events(
+                events=sliced_data,
+                direction=deepcopy(self.direction),
+            )
+
+        return events_sliced
+
+    def estimate_playing_direction(
+        self, pitch: Pitch, links_eID_to_event_names: Dict[Union[str, int], str] = None
+    ):
+        """Estimates one of two possible directions 'lr' (left-to-right) or 'rl'
+        (right-to-left) from the location of "shot" and "goalkeeper" events (of the team
+        assigned to the events, must contain at least one shot and one goalkeeper event)
+        . To ensure functionality, a mapping between eID to event name for those events
+        should be provided but is not mandatory. Returns None if no clear direction can
+        be estimated.
+
+        Parameters
+        ----------
+        pitch: floodlight.core.pitch.Pitch()
+        links_eID_to_event_names: Dict[Union[str, int], str], optional
+            Dictionary mapping eID of "shot" and "goalkeeper" events to names containing
+            these strings.
+
+        Returns
+        -------
+        est_direction: {None, 'lr', 'rl'}
+            Estimated playing direction of players in data fragment.
+        """
+        if links_eID_to_event_names is not None:
+            event_names = [links_eID_to_event_names[eID] for eID in self.events["eID"]]
+        else:
+            event_names = [eID for eID in self.events["eID"]]
+
+        goalkeeper_events = ["goalkeeper" in name.lower() for name in event_names]
+        shot_events = ["shot" in name.lower() for name in event_names]
+        goalkeeper_at_x = self.events[goalkeeper_events]["at_x"]
+        shot_at_x = self.events[shot_events]["at_x"]
+
+        est_direction = None
+        pitch_half = pitch.xlim[0] + pitch.width / 2
+
+        if not bool(len(goalkeeper_events)) or not bool(len(shot_events)):
+            warnings.warn(
+                f"Need at least one Goalkeeper and one Shot event to "
+                f"estimate playing direction, found {len(goalkeeper_events)} "
+                f"Goalkeeper events and {len(shot_events)} Shot events."
+            )
+            return est_direction
+
+        if np.mean(goalkeeper_at_x) < pitch_half < np.mean(shot_at_x):
+            est_direction = "lr"
+            num_goalkeeper_outliers = np.sum(goalkeeper_at_x >= pitch_half)
+            num_shot_outliers = np.sum(shot_at_x <= pitch_half)
+            if bool(num_goalkeeper_outliers) or bool(num_shot_outliers):
+                warnings.warn(
+                    f"Estimated playing direction is from left to right, "
+                    f"however, found {num_goalkeeper_outliers} Goalkeeper "
+                    f"events in the right half and {num_shot_outliers} Shot "
+                    f"events in the left half of the pitch."
+                )
+        elif np.mean(goalkeeper_at_x) > pitch_half > np.mean(shot_at_x):
+            est_direction = "rl"
+            num_goalkeeper_outliers = np.sum(goalkeeper_at_x <= pitch_half)
+            num_shot_outliers = np.sum(shot_at_x >= pitch_half)
+            if bool(num_goalkeeper_outliers) or bool(num_shot_outliers):
+                warnings.warn(
+                    f"Estimated playing direction is from right to left, "
+                    f"however, found {num_goalkeeper_outliers} Goalkeeper "
+                    f"events in the left half and {num_shot_outliers} Shot "
+                    f"events in the right half of the pitch."
+                )
+        else:
+            warnings.warn(
+                f"Cannot estimate playing direction from the given "
+                f"{len(goalkeeper_events)} Goalkeeper events at mean lateral "
+                f"location {np.mean(goalkeeper_at_x)} and {len(shot_events)} "
+                f"Shot events at mean lateral location {np.mean(shot_at_x)}."
+            )
+        return est_direction
