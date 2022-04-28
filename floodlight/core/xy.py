@@ -253,8 +253,55 @@ class XY:
             given default values are used (see floodlight.vis.positions).
         Returns
         -------
-        matplotlib.axes
+        axes: matplotlib.axes:
             Specified plot function which returns a matplotlib.axes object.
+
+        Notes
+        -----
+        The kwargs are only passed to the plot functions of matplotlib. To customize the
+        plots have a look at
+        `matplotlib
+        <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+        For example in order to modify the color of the points and lines pass a color
+        name or rgb-value (`matplotlib colors
+        <https://matplotlib.org/3.5.0/tutorials/colors/colors.html>`_) to the keyworded
+        argument 'color'. The same principle applies to other kwargs like 'zorder',
+        'marker' and 'linestyle'.
+
+        Examples
+        --------
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from floodlight.core.pitch import Pitch
+        >>> from floodlight.core.xy import XY
+
+        >>> pos = np.array([[35,5,35,63,25,25,25,50], # positions
+        >>>     [45,10,45,55,35,20,35,45],
+        >>>     [55,10,55,55,45,20,45,45],
+        >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
+
+        >>> xy_pos = XY(pos) # create XY object
+
+        >>> # create Pitch object
+        >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m",
+        >>> boundaries="fixed", sport="football")
+
+        >>> ax = plt.subplots()[1] # create axes
+
+        >>> football_pitch.plot(color_scheme="standard", ax=ax) # plot pitch on ax
+
+        >>> # plot positions on ax
+        >>> xy_pos.plot(plot_type="positions", t= 0, ax=ax)
+        >>> plt.show()
+
+        .. image:: ../../_img/positions_example.png
+
+        >>> # plot trajectories on ax
+        >>> xy_pos.plot(plot_type="trajectories", t=(0,4), ball= False, ax=ax)
+        >>> plt.show()
+
+        .. image:: ../../_img/trajectories_example.png
+
         """
 
         plot_types = ["positions", "trajectories"]
