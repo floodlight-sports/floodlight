@@ -161,10 +161,10 @@ def test_add_frameclock_with_values(example_events_data_minimal: pd.DataFrame) -
 
 @pytest.mark.unit
 def test_add_frameclock_with_none(
-    example_events_data_minimal_with_none: pd.DataFrame,
+    example_events_data_minimal_none,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_minimal_with_none)
+    data = Events(example_events_data_minimal_none)
     framerate = 25
 
     # Act
@@ -353,3 +353,43 @@ def test_rotate(
 
     data_minimal_rotated.rotate(0)
     assert data_minimal.events.equals(data_minimal_rotated.events)
+
+
+@pytest.mark.unit
+def test_slice(
+    example_events_data_minimal,
+    example_events_data_minimal_none,
+    example_events_data_frameclock,
+) -> None:
+
+    # Arrange
+    data_minimal = Events(example_events_data_minimal)
+    data_none = Events(example_events_data_minimal_none)
+    data_frameclock = Events(example_events_data_frameclock)
+
+    # Act
+    # new object
+    data_minimal_full = data_minimal.slice(inplace=False)
+    data_minimal_full_arguments = data_minimal.slice(start=1.1, end=2.3, inplace=False)
+    data_minimal_end_sliced = data_minimal.slice(end=2.2, inplace=False)
+    data_minimal_start_sliced = data_minimal.slice(start=1.2, inplace=False)
+    data_none_sliced = data_none.slice(inplace=False)
+    data_frameclock_sliced = data_frameclock.slice(
+        end=15, use_frameclock=True, inplace=False
+    )
+
+    # inplace
+    data_minimal.slice(start=10, inplace=True)
+    data_none.slice(inplace=True)
+    data_frameclock.slice(start=15, use_frameclock=True, inplace=True)
+
+    # Assert
+    assert data_minimal_full.events.shape == (2, 2)
+    assert data_minimal_full_arguments.events.shape == (2, 2)
+    assert data_minimal_end_sliced.events.shape == (1, 2)
+    assert data_minimal_start_sliced.events.shape == (1, 2)
+    assert data_none_sliced.events.shape == (1, 2)
+    assert data_frameclock_sliced.events.shape == (1, 3)
+    assert data_minimal.events.shape == (0, 2)
+    assert data_none.events.shape == (1, 2)
+    assert data_frameclock.events.shape == (1, 3)

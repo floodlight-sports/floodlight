@@ -85,7 +85,7 @@ def example_events_data_minimal() -> pd.DataFrame:
 
 
 @pytest.fixture()
-def example_events_data_minimal_with_none() -> pd.DataFrame:
+def example_events_data_minimal_none() -> pd.DataFrame:
     data = {
         "eID": [None, 2],
         "gameclock": [1.1, None],
@@ -149,5 +149,15 @@ def example_events_data_xy_none() -> pd.DataFrame:
         "gameclock": [0.1, 0.2],
         "at_x": [np.NAN, np.NAN],
         "at_y": [np.NAN, np.NAN],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock() -> pd.DataFrame:
+    data = {
+        "eID": [0, 0],
+        "gameclock": [0.1, 0.2],
+        "frameclock": [12.4, 16.7],
     }
     return pd.DataFrame(data)
