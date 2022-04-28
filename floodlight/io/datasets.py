@@ -533,7 +533,7 @@ class StatsBombOpenDataset:
     @staticmethod
     def get_pitch() -> Pitch:
         """Returns a Pitch object corresponding to the StatsBomb Dataset."""
-        return Pitch.from_template("statsbomb")
+        return Pitch.from_template("statsbomb", sport="football")
 
     def _update_data_links_from_files(self):
         """Creates the dictionaries containing data links between competition, season,

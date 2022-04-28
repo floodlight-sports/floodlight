@@ -142,9 +142,9 @@ class Pitch:
                 xlim=(0.0, 120.0),
                 ylim=(0.0, 80.0),
                 unit="relativepercent",
-                boundaries="fixed",
-                length=kwargs.get("length"),
-                width=kwargs.get("width"),
+                boundaries="flexible",
+                length=120,
+                width=80,
                 sport=kwargs.get("sport"),
             )
         else:
