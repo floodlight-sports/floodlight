@@ -14,7 +14,7 @@ def plot_positions(
     ----------
     xy: floodlight.core.xy.XY
         Spatio-temporal data fragment object that contains the positions
-        (XY.xy: np.ndarray) and functions for manipulation.
+        (XY.xy: np.ndarray) and functgiions for manipulation.
     frame: int
         Frame in the postions-array (XY.xy) for which the positions are plotted.
     ball: bool
