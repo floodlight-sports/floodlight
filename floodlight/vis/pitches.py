@@ -31,11 +31,9 @@ def plot_handball_pitch(
         The unit in which data is measured along axes. Possible types are
         {'m', 'cm', 'percent'}.
     color_scheme: str
-        Color scheme of the plot. One of {'standard', 'bw'}. If not given'standard' is
-        the default color scheme.
+        Color scheme of the plot. One of {'standard', 'bw'}.
     show_axis_ticks: bool
-        If set to True, the axis ticks are visible. If not specified as an argument, the
-        axis ticks are not visible.
+        If set to True, the axis ticks are visible.
     ax: matplotlib.axes
         Axes from matplotlib library on which the handball field is plotted.
     kwargs:
@@ -44,9 +42,9 @@ def plot_handball_pitch(
         only passed to all the plot functions of matplotlib.
 
     Returns
-    ----------
+    -------
     ax : matplotlib.axes
-        An axes to which all elements of the handball pitch are added.
+        A matplotlib.axes to which all elements of the handball pitch are added.
     """
 
     # kwargs which are used to configure the plot with default values 1 and 0.
@@ -579,11 +577,9 @@ def plot_football_pitch(
         The unit in which data is measured along axes. Possible types are
         {'m', 'cm', 'percent'}.
     color_scheme: str
-        Color scheme of the plot. One of {'standard', 'bw'}. If not given'standard' is
-        the default color scheme.
+        Color scheme of the plot. One of {'standard', 'bw'}.
     show_axis_ticks: bool
-        If set to True, the axis ticks are visible. If not specified as an argument, the
-        axis ticks are not visible.
+        If set to True, the axis ticks are visible.
     ax: matplotlib.axes
         Axes from matplotlib library on which the football field is plotted.
     kwargs:
@@ -592,9 +588,9 @@ def plot_football_pitch(
         only passed to all the plot functions of matplotlib.
 
     Returns
-    ----------
+    -------
     ax : matplotlib.axes
-        An axes to which all elements of the football pitch are added.
+        A matplotlib.axes to which all elements of the football pitch are added.
     """
     # kwargs which are used to configure the plot with default values 1 and 0.
     # all the other kwargs will be just passed to all the plot functions.
