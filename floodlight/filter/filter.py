@@ -7,32 +7,30 @@ import scipy.signal
 from floodlight import XY
 
 
-def _get_sequences_without_nans(data_column: np.ndarray) -> np.ndarray:
-    """Gets indices of sequences without NaNs from a sequence of data.
+def _get_sequences_without_nans(data: np.ndarray) -> np.ndarray:
+    """Returns start and end indices of continuous non-NaN sequences.
 
     Parameters
     ----------
-    data_column: np.ndarray
-        One-dimensional array of data with alternating sequences of Numbers and NaNs
+    data: np.ndarray
+        Array of shape (T x 1) potentially containing NaNs.
 
     Returns
     -------
     sequences: np.ndarray
-        Two-dimensional array with nx2 entrys of n sequences without NaNs and n[0] being
-        the first frame of the sequences and n[1] being the last frame (excluded) of the
-        sequence.
+        Two-dimensional array with (n x 2) entries of n sequences without NaNs of the
+        form ``[[sequence_start_idx, sequence_end_idx]]`` ordered by the respective
+        sequence start indices.
     """
 
     # check if even or odd sequences contain NaNs
-    if np.isnan(data_column[0]):
+    if np.isnan(data[0]):
         first_sequence = 1
     else:
         first_sequence = 0
 
     # indices where nans and numbers are next to each other
-    change_points = np.where(
-        np.diff(np.isnan(data_column), prepend=np.nan, append=np.nan)
-    )[0]
+    change_points = np.where(np.diff(np.isnan(data), prepend=np.nan, append=np.nan))[0]
     # sequences without nans
     sequences = np.array(
         [
@@ -59,11 +57,12 @@ def _filter_sequence_butterworth_lowpass(
         The critical frequency. If ``framerate`` is not specified, the cutoff is
         normalized from 0 to 1, where 1 is the Nyquist frequency.
     framerate: Numeric, optional
-        The sampling frequency of the data.
+        The sampling frequency of the data. If not specified, the ``cutoff`` is
+        normalized from 0 to 1, where 1 is the Nyquist frequency.
 
     Returns
     -------
-    filt_signal: np.array
+    singal_filtered: np.array
         Signal filtered by the Butterworth filter
     """
 
@@ -75,11 +74,11 @@ def _filter_sequence_butterworth_lowpass(
         fs=framerate,
     )
 
-    filt_signal = scipy.signal.filtfilt(
+    signal_filtered = scipy.signal.filtfilt(
         coeffs[0], coeffs[1], signal, method="pad", axis=0
     )
 
-    return filt_signal
+    return signal_filtered
 
 
 def filter_xy_butterworth_lowpass(
@@ -99,13 +98,14 @@ def filter_xy_butterworth_lowpass(
     team_links: Dict[str, int]
         Link-dictionary of the form ``links[identifier-ID] = xID``.
     order: int
-        The order of the filter.
+        The order of the filter. Higher order will cut off the signal harder. Default is
+        3.
     cutoff: Numeric
         The critical frequency. If ``framerate`` is not specified, the cutoff is
-        normalized from 0 to 1, where 1 is the Nyquist frequency.
+        normalized from 0 to 1, where 1 is the Nyquist frequency. Default is 1.
     remove_short_seqs: bool
         If True, sequences that are to short for the Filter with the specified settings
-        are removed from the data. If False, they are kept unfiltered
+        are removed from the data. If False, they are kept unfiltered. Default is True
 
 
     Returns
@@ -170,13 +170,13 @@ def filter_xy_savgol_lowpass(
     team_links: Dict[str, int]
         Link-dictionary of the form ``links[identifier-ID] = xID``.
     window_length: int
-        The length of the filter window.
+        The length of the filter window. Default is 5.
     poly_order: Numeric
         The order of the polynomial used to fit the samples. ``poly_order`` must be less
-        than ``window_length``
+        than ``window_length``. Default is 3
     remove_short_seqs: bool
         If True, sequences that are to short for the Filter with the specified settings
-        are removed from the data. If False, they are kept unfiltered
+        are removed from the data. If False, they are kept unfiltered. Default is True.
 
 
     Returns
