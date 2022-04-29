@@ -584,16 +584,15 @@ class Events:
             placeholder = np.nan
         if links_eID_to_code is None:
             event_codes_and_times = [
-                (round(event["frameclock"]), event["eID"])
-                for _, event in sorted_events.iterrows()
-                if not pd.isna(event["frameclock"])
+                (round(evnt["frameclock"]), evnt["eID"])
+                for _, evnt in sorted_events.iterrows()
+                if not pd.isna(evnt["frameclock"])
             ]
         else:
             event_codes_and_times = [
-                (round(event["frameclock"]), links_eID_to_code[event["eID"]])
-                for _, event in sorted_events.iterrows()
-                if event["eID"] in links_eID_to_code
-                and not pd.isna(event["frameclock"])
+                (round(evnt["frameclock"]), links_eID_to_code[evnt["eID"]])
+                for _, evnt in sorted_events.iterrows()
+                if evnt["eID"] in links_eID_to_code and not pd.isna(evnt["frameclock"])
             ]
 
         code = np.full((end - start,), placeholder, dtype=object)
