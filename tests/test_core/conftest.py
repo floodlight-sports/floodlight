@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from floodlight.core.code import Code
+from floodlight.core.pitch import Pitch
 
 
 # Sample data for easy creation of core objects
@@ -156,8 +157,74 @@ def example_events_data_xy_none() -> pd.DataFrame:
 @pytest.fixture()
 def example_events_data_frameclock() -> pd.DataFrame:
     data = {
-        "eID": [0, 0],
+        "eID": [1, 2],
         "gameclock": [0.1, 0.2],
         "frameclock": [12.4, 16.7],
     }
     return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_none() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [0.1, 0.2],
+        "frameclock": [None, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_unsorted() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2, 3],
+        "gameclock": [1.3, 0.1, 0.2],
+        "frameclock": [25.6, 12.4, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_long() -> pd.DataFrame:
+    data = {
+        "eID": [0, 1, 2, 12, 125, 12, 17, 6, 8, 3],
+        "gameclock": [0, 1, 2, 6, 12, 15, 17, 18, 20, 23],
+        "frameclock": [0, 25, 50, 150, 300, 375, 425, 450, 500, 575],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_xy_long() -> pd.DataFrame:
+    data = {
+        "eID": [0, 1, 2, 12, 125, 12, 17, 6, 8, 3],
+        "gameclock": [0, 1, 2, 6, 12, 15, 17, 18, 20, 23],
+        "at_x": [0, 12, 21, 100, 90, 99, 67, 33, 73, 53],
+        "at_y": [12, 21, 72, 52, 54, 33, 53, 2, 8, 3],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_xy_none_long() -> pd.DataFrame:
+    data = {
+        "eID": [0, 1, 2, 12, 125, 12, 17, 6, 8, 3],
+        "gameclock": [0, 1, 2, 12, 125, 12, 17, 6, 8, 3],
+        "at_x": [0, None, 21, 100, None, 99, 67, 33, None, 53],
+        "at_y": [12, 21, 72, 52, None, 33, None, 2, None, 3],
+    }
+    return pd.DataFrame(data)
+
+
+# Pitch
+@pytest.fixture()
+def example_football_pitch() -> Pitch:
+    return Pitch(
+        xlim=(0, 105),
+        ylim=(0, 68),
+        unit="meter",
+        boundaries="flexible",
+        length=105,
+        width=68,
+        sport="football",
+    )
