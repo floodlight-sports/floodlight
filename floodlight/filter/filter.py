@@ -1,4 +1,4 @@
-from typing import Dict
+import warnings
 from floodlight.utils.types import Numeric
 
 import numpy as np
@@ -23,11 +23,17 @@ def _get_sequences_without_nans(data: np.ndarray) -> np.ndarray:
         sequence start indices.
     """
 
-    # check if even or odd sequences contain NaNs
-    if np.isnan(data[0]):
-        first_sequence = 1
-    else:
-        first_sequence = 0
+    if data.ndim != 1:
+        raise ValueError(
+            f"Input data must be one-dimensional. Data has {data.ndim} dimension."
+        )
+
+    if None in data:
+        data = np.array(data, dtype=float)
+        warnings.warn(
+            "Values in data of Type 'NoneType' were found. 'NoneType' values are "
+            "treated as 'np.NaN'."
+        )
 
     # indices where nans and numbers are next to each other
     change_points = np.where(np.diff(np.isnan(data), prepend=np.nan, append=np.nan))[0]
@@ -37,9 +43,12 @@ def _get_sequences_without_nans(data: np.ndarray) -> np.ndarray:
             (change_points[i], change_points[i + 1])
             for i in range(len(change_points) - 1)
         ]
-    )[first_sequence::2]
+    )
 
-    return sequences
+    is_nan = np.where(np.isnan(data[sequences[:, 0]]), False, True).reshape((-1, 1))
+    labeled_sequences = np.hstack((sequences, is_nan))
+
+    return labeled_sequences
 
 
 def _filter_sequence_butterworth_lowpass(
@@ -83,7 +92,6 @@ def _filter_sequence_butterworth_lowpass(
 
 def filter_xy_butterworth_lowpass(
     xy: XY,
-    team_links: Dict[str, int],
     order: int = 3,
     cutoff: Numeric = 1,
     remove_short_seqs: bool = True,
@@ -95,8 +103,6 @@ def filter_xy_butterworth_lowpass(
     ----------
     xy: XY
         List of XY-objects from any floodlight parser.
-    team_links: Dict[str, int]
-        Link-dictionary of the form ``links[identifier-ID] = xID``.
     order: int
         The order of the filter. Higher order will cut off the signal harder. Default is
         3.
@@ -118,35 +124,23 @@ def filter_xy_butterworth_lowpass(
     framerate = xy.framerate
 
     xy_filt = np.empty(xy.xy.shape)
-    for player in team_links:
-        # players x-index in xy-Object
-        pos_idx = team_links[player] * 2
-        pos_idy = team_links[player] * 2 + 1
+    for i, column in enumerate(xy.xy.T):
+        sequences = _get_sequences_without_nans(column)
 
-        data_col_x = xy[:, pos_idx]
-        data_col_y = xy[:, pos_idy]
+        col_filt = np.full(column.shape, np.nan)
 
-        sequences = _get_sequences_without_nans(data_col_x)
-
-        col_filt_x = np.full(data_col_x.shape, np.nan)
-        col_filt_y = np.full(data_col_y.shape, np.nan)
-
-        for seq in sequences:
-            if np.diff(seq) > min_signal_len:
-                col_filt_x[seq[0] : seq[1]] = _filter_sequence_butterworth_lowpass(
-                    data_col_x[seq[0] : seq[1]], order, cutoff, framerate
+        for seq in sequences[sequences[:, 2] == 1]:
+            if np.diff(seq[0:2]) > min_signal_len:
+                col_filt[seq[0] : seq[1]] = _filter_sequence_butterworth_lowpass(
+                    column[seq[0] : seq[1]], order, cutoff, framerate
                 )
-                col_filt_y[seq[0] : seq[1]] = _filter_sequence_butterworth_lowpass(
-                    data_col_y[seq[0] : seq[1]], order, cutoff, framerate
-                )
+
             elif remove_short_seqs is False:
-                col_filt_x[seq[0] : seq[1]] = data_col_x[seq[0], seq[1]]
-                col_filt_y[seq[0] : seq[1]] = data_col_y[seq[0], seq[1]]
+                col_filt[seq[0] : seq[1]] = column[seq[0] : seq[1]]
             else:
                 pass
 
-        xy_filt[:, pos_idx] = col_filt_x
-        xy_filt[:, pos_idy] = col_filt_y
+        xy_filt[:, i] = col_filt
 
     xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
 
@@ -155,7 +149,6 @@ def filter_xy_butterworth_lowpass(
 
 def filter_xy_savgol_lowpass(
     xy: XY,
-    team_links: Dict[str, int],
     window_length: int = 5,
     poly_order: Numeric = 3,
     remove_short_seqs: bool = True,
@@ -167,8 +160,6 @@ def filter_xy_savgol_lowpass(
     ----------
     xy: XY
         List of XY-objects from any floodlight parser.
-    team_links: Dict[str, int]
-        Link-dictionary of the form ``links[identifier-ID] = xID``.
     window_length: int
         The length of the filter window. Default is 5.
     poly_order: Numeric
@@ -188,35 +179,22 @@ def filter_xy_savgol_lowpass(
     min_signal_len = window_length
 
     xy_filt = np.empty(xy.xy.shape)
-    for player in team_links:
-        # players x-index in xy-Object
-        pos_idx = team_links[player] * 2
-        pos_idy = team_links[player] * 2 + 1
+    for i, column in enumerate(xy.xy.T):
+        sequences = _get_sequences_without_nans(column)
 
-        data_col_x = xy[:, pos_idx]
-        data_col_y = xy[:, pos_idy]
+        col_filt = np.full(column.shape, np.nan)
 
-        sequences = _get_sequences_without_nans(data_col_x)
-
-        col_filt_x = np.full(data_col_x.shape, np.nan)
-        col_filt_y = np.full(data_col_y.shape, np.nan)
-
-        for seq in sequences:
-            if np.diff(seq) > min_signal_len:
-                col_filt_x[seq[0] : seq[1]] = scipy.signal.savgol_filter(
-                    data_col_x[seq[0] : seq[1]], window_length, poly_order
-                )
-                col_filt_y[seq[0] : seq[1]] = scipy.signal.savgol_filter(
-                    data_col_y[seq[0] : seq[1]], window_length, poly_order
+        for seq in sequences[sequences[:, 2] == 1]:
+            if np.diff(seq[0:2]) > min_signal_len:
+                col_filt[seq[0] : seq[1]] = scipy.signal.savgol_filter(
+                    column[seq[0] : seq[1]], window_length, poly_order
                 )
             elif remove_short_seqs is False:
-                col_filt_x[seq[0] : seq[1]] = data_col_x[seq[0], seq[1]]
-                col_filt_y[seq[0] : seq[1]] = data_col_y[seq[0], seq[1]]
+                col_filt[seq[0] : seq[1]] = column[seq[0] : seq[1]]
             else:
                 pass
 
-        xy_filt[:, pos_idx] = col_filt_x
-        xy_filt[:, pos_idy] = col_filt_y
+        xy_filt[:, i] = col_filt
 
     xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
 
