@@ -2,7 +2,7 @@ import numpy as np
 
 from floodlight import XY
 from floodlight.core.property import PlayerProperty
-from floodlight.models.base import BaseModel
+from floodlight.models.base import BaseModel, requires_fit
 
 
 class DistanceModel(BaseModel):
@@ -18,8 +18,7 @@ covered`
 
     Notes
     -----
-    For input data with metrical units in metrical units, the output equals the input
-    unit.
+    For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
         *Central difference method* (recommended) allows for differenciation without
@@ -110,6 +109,7 @@ covered`
             property=distance_euclidean, name="distance_covered", framerate=xy.framerate
         )
 
+    @requires_fit
     def distance_covered(self) -> PlayerProperty:
         """Returns the frame-wise distance covered as computed by the fit method.
 
@@ -122,6 +122,7 @@ covered`
         """
         return self._distance_euclidean_
 
+    @requires_fit
     def cumulative_distance_covered(self) -> PlayerProperty:
         """Returns the cumulative distance covered.
 
@@ -153,8 +154,7 @@ class VelocityModel(BaseModel):
 
     Notes
     -----
-    For input data with metrical units in metrical units, the output equals the input
-    unit.
+    For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
         *Central difference method* (recommended) allows for differenciation without
@@ -229,6 +229,7 @@ class VelocityModel(BaseModel):
             property=velocity, name="velocity", framerate=xy.framerate
         )
 
+    @requires_fit
     def velocity(self) -> PlayerProperty:
         """Returns the frame-wise velocity as computed by the fit method.
 
@@ -253,8 +254,7 @@ class AccelerationModel(BaseModel):
 
     Notes
     -----
-    For input data with metrical units in metrical units, the output equals the input
-    unit.
+    For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
         *Central difference method* (recommended) allows for differenciation without
@@ -336,6 +336,7 @@ class AccelerationModel(BaseModel):
             framerate=xy.framerate,
         )
 
+    @requires_fit
     def acceleration(self) -> PlayerProperty:
         """Returns the frame-wise acceleration as computed by the fit method.
 

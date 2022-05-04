@@ -30,9 +30,9 @@ class Pitch:
         coordinate systems do not explicitly specify a limit. Instead, the limit is
         implicitly set by the actual pitch length and width.
     length: Numeric, optional
-        Length of the actual pitch in `unit`.
+        Actual pitch length in *m*.
     width: Numeric, optional
-        Width of the actual pitch in `unit`.
+        Actual pitch width in *m*.
     sport: str, optional
         Sport for which the pitch is used. This is used to automatically generate lines
         and markings.
@@ -66,7 +66,7 @@ class Pitch:
             You may pass optional arguments (`length`, `width`, `sport`} used for class
             instantiation. For some data providers, additional kwargs are needed to
             represent their format correctly. For example, pass the `length` and `width`
-            argument to create a Pitch object in the 'chyronhego_international' format.
+            argument to create a Pitch object in the 'tracab' format.
 
         Returns
         -------

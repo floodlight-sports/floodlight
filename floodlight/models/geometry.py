@@ -5,7 +5,7 @@ from scipy.spatial.distance import cdist
 
 from floodlight import XY
 from floodlight.core.property import TeamProperty, PlayerProperty
-from floodlight.models.base import BaseModel
+from floodlight.models.base import BaseModel, requires_fit
 
 
 class CentroidModel(BaseModel):
@@ -49,7 +49,7 @@ class CentroidModel(BaseModel):
 
     Attributes
     ----------
-    centroid_: XY
+    _centroid_: XY
         Calculated centroids with shape (T, 2), where T is the total number of frames.
 
     References
@@ -67,7 +67,7 @@ class CentroidModel(BaseModel):
     def __init__(self):
         super().__init__()
         # model parameter
-        self.centroid_ = None
+        self._centroid_ = None
 
     def fit(self, xy: XY, exclude_xIDs: list = None):
         """Fit the model to the given data and calculate team centroids.
@@ -103,10 +103,11 @@ class CentroidModel(BaseModel):
             centroids = np.nanmean(xy.xy[:, include].reshape((len(xy), -1, 2)), axis=1)
 
         # wrap as XY object
-        self.centroid_ = XY(
+        self._centroid_ = XY(
             xy=centroids, framerate=xy.framerate, direction=xy.direction
         )
 
+    @requires_fit
     def centroid(self) -> XY:
         """Returns the team centroid positions as computed by the fit method.
 
@@ -116,8 +117,9 @@ class CentroidModel(BaseModel):
             An XY object of shape (T, 2), where T is the total number of frames. The two
             columns contain the centroids' x- and y-coordinates, respectively.
         """
-        return self.centroid_
+        return self._centroid_
 
+    @requires_fit
     def centroid_distance(self, xy: XY, axis: str = None) -> PlayerProperty:
         """Calculates the Euclidean distance of each player to the fitted centroids.
 
@@ -139,7 +141,7 @@ class CentroidModel(BaseModel):
             player with corresponding xID.
         """
         # check matching lengths
-        T = len(self.centroid_)
+        T = len(self._centroid_)
         if len(xy) != T:
             raise ValueError(
                 f"Length of xy ({len(xy)}) does not match length of fitted centroids "
@@ -151,17 +153,17 @@ class CentroidModel(BaseModel):
         if axis is None:
             for t in range(T):
                 distances[t] = cdist(
-                    self.centroid_[t].reshape(-1, 2), xy[t].reshape(-1, 2)
+                    self._centroid_[t].reshape(-1, 2), xy[t].reshape(-1, 2)
                 )
         elif axis == "x":
             for t in range(T):
                 distances[t] = cdist(
-                    self.centroid_.x[t].reshape(-1, 1), xy.x[t].reshape(-1, 1)
+                    self._centroid_.x[t].reshape(-1, 1), xy.x[t].reshape(-1, 1)
                 )
         elif axis == "y":
             for t in range(T):
                 distances[t] = cdist(
-                    self.centroid_.y[t].reshape(-1, 1), xy.y[t].reshape(-1, 1)
+                    self._centroid_.y[t].reshape(-1, 1), xy.y[t].reshape(-1, 1)
                 )
         else:
             raise ValueError(
@@ -177,6 +179,7 @@ class CentroidModel(BaseModel):
 
         return centroid_distance
 
+    @requires_fit
     def stretch_index(self, xy: XY, axis: str = None) -> TeamProperty:
         """Calculates the *Stretch Index*, i.e., the mean distance of all players to the
         team centroid.
