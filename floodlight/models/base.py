@@ -9,7 +9,7 @@ class BaseModel:
     Attributes
     ----------
     pitch: Pitch, optional
-        Some models are require pitch information, so the corresponding Pitch object is
+        Some models require pitch information, so the corresponding Pitch object is
         handled during initialization.
     """
 
@@ -54,3 +54,20 @@ class BaseModel:
                 "use at your own risk.",
                 category=RuntimeWarning,
             )
+
+
+def requires_fit(func):
+    """Decorator function for Model-based class-methods that require a previous call to
+    that model's fit()-method. Raises a ValueError if fit() has not been called yet."""
+
+    def wrapper(*args, **kwargs):
+        model = args[0]
+        if not model.is_fitted:
+            raise ValueError(
+                f"Not all model parameters have been calculated yet. Try "
+                f"running {model.__class__.__name__}.fit() before calling "
+                f"this method"
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
