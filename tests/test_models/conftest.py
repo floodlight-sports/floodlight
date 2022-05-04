@@ -4,7 +4,7 @@ from floodlight import Pitch, XY
 
 
 @pytest.fixture()
-def example_xy_object_kinexon() -> XY:
+def example_xy_object_kinetics() -> XY:
     xy = XY(
         xy=np.array(
             (
