@@ -18,6 +18,13 @@ def example_xy_object_kinexon() -> XY:
     return xy
 
 
+# sample data for testing geometry models
+@pytest.fixture()
+def example_xy_object_geometry():
+    xy = XY(np.array(((1, 1, 2, -2, np.nan, -2), (1.5, np.nan, np.nan, -0, 1, 1))))
+    return xy
+
+
 # sample data for testing kinematic models
 @pytest.fixture()
 def example_xy_object_kinematics():
