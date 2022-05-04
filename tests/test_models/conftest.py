@@ -18,6 +18,16 @@ def example_xy_object_kinexon() -> XY:
     return xy
 
 
+# sample data for testing kinematic models
+@pytest.fixture()
+def example_xy_object_kinematics():
+    xy = XY(
+        xy=np.array(((0, 0, -1, 1), (0, 1, np.NAN, np.NAN), (1, 2, 1, -1))),
+        framerate=20,
+    )
+    return xy
+
+
 @pytest.fixture()
 def example_equivalent_slope() -> np.ndarray:
     equivalent_slope = np.array(((0, 0.15), (-0.11, 0.2), (0.5, -0.5)))
