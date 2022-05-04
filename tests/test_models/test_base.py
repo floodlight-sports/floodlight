@@ -3,7 +3,7 @@ import warnings
 import pytest
 
 from floodlight import Pitch
-from floodlight.models.base import BaseModel
+from floodlight.models.base import BaseModel, requires_fit
 
 
 # Test BaseModel dunder-methods
@@ -65,3 +65,31 @@ def test_check_pitch_staticmethod() -> None:
     # raise warning
     with pytest.warns(RuntimeWarning):
         BaseModel.check_pitch(pitch2)
+
+
+# Test requires_fit decorator
+@pytest.mark.unit
+def test_requires_fit_decorator_function() -> None:
+    # Arrange
+    class MockModel(BaseModel):
+        def __init__(self):
+            super().__init__()
+            self._fitted_parameter_ = None
+
+        def fit(self, arg):
+            self._fitted_parameter_ = arg
+
+        @requires_fit
+        def get_fitted_parameter(self):
+            return self._fitted_parameter_
+
+    # Act
+    model1 = MockModel()
+    model2 = MockModel()
+    arg = 1
+    model2.fit(arg)
+
+    # Assert
+    with pytest.raises(ValueError):
+        model1.get_fitted_parameter()
+    assert model2.get_fitted_parameter() == arg
