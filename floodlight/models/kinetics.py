@@ -277,7 +277,7 @@ class MetabolicPowerModel(BaseModel):
         return ECW
 
     @staticmethod
-    def _calc_ecr(es: np.ndarray, em: np.ndarray) -> np.ndarray:
+    def _calc_ecr(es: np.ndarray, em: np.ndarray, eccr: Numeric = 3.6) -> np.ndarray:
         """Calculates Energy cost of running based on formula (3) and (4) from
         Minetti & Parvei (2018).
 
@@ -287,6 +287,10 @@ class MetabolicPowerModel(BaseModel):
             Equivalent slope
         em: np.array
             Equivalent mass
+        eccr: Numeric
+            Energy cost of constant running. Standard is set to 3.6
+            :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
+            for different turfs.
 
         Returns
         -------
@@ -295,11 +299,11 @@ class MetabolicPowerModel(BaseModel):
         """
         # Cost of negative gradient from Minetti (2018)
         def _cng(es: np.ndarray):
-            return -8.34 * es + 3.6 * np.exp(13 * es)
+            return -8.34 * es + eccr * np.exp(13 * es)
 
         # Cost of positive gradient
         def _cpg(es: np.ndarray):
-            return 39.5 * es + 3.6 * np.exp(-4 * es)
+            return 39.5 * es + eccr * np.exp(-4 * es)
 
         # Energy cost of running. Where es < 0 calculate cost of negative gradient.
         # Where es >= 0 calculate cost of positive gradient.
@@ -308,7 +312,9 @@ class MetabolicPowerModel(BaseModel):
         return ecr
 
     @staticmethod
-    def _calc_ecl(es: np.ndarray, vel: np.ndarray, em: np.ndarray) -> np.ndarray:
+    def _calc_ecl(
+        es: np.ndarray, vel: np.ndarray, em: np.ndarray, eccr: Numeric = 3.6
+    ) -> np.ndarray:
         """Calculate Energy cost of locomotion.
 
         Parameters
@@ -319,6 +325,10 @@ class MetabolicPowerModel(BaseModel):
             Velocity
         em: np.array
             Equivalent mass
+        eccr: Numeric
+            Energy cost of constant running. Standard is set to 3.6
+            :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
+            for different turfs.
 
         Returns
         -------
@@ -330,13 +340,17 @@ class MetabolicPowerModel(BaseModel):
         # Calculate energy cost of walking for entire array
         ecl = MetabolicPowerModel._calc_ecw(es, vel, em)
         # Substitute ecw with energy cost of running where locomotion is running
-        ecl[running] = MetabolicPowerModel._calc_ecr(es[running], em[running])
+        ecl[running] = MetabolicPowerModel._calc_ecr(es[running], em[running], eccr)
 
         return ecl
 
     @staticmethod
     def _calc_metabolic_power(
-        es: np.ndarray, vel: np.ndarray, em: np.ndarray, framerate: Numeric
+        es: np.ndarray,
+        vel: np.ndarray,
+        em: np.ndarray,
+        framerate: Numeric,
+        eccr: Numeric = 3.6,
     ) -> np.ndarray:
         """Calculates metabolic power as the product of energy cost of locomotion
         and velocity.
@@ -356,17 +370,14 @@ class MetabolicPowerModel(BaseModel):
             Metabolic power
         """
         # Calculate energy cost of locomotion
-        ecl = MetabolicPowerModel._calc_ecl(es, vel, em)
+        ecl = MetabolicPowerModel._calc_ecl(es, vel, em, eccr)
         # Calculate metabolic power as product of ecl and velocity (m/s)
         metp = ecl * vel / framerate
 
         return metp
 
     def fit(
-        self,
-        xy: XY,
-        difference: str = "central",
-        axis: str = None,
+        self, xy: XY, difference: str = "central", axis: str = None, eccr: Numeric = 3.6
     ):
         """Fit the model to the given data and calculate metabolic power for every
         player.
@@ -398,6 +409,10 @@ class MetabolicPowerModel(BaseModel):
                 Optional argument that restricts distance calculation to either the x-
                 or y-dimension of the data. If set to None (default), distances are
                 calculated in both dimensions.
+        eccr: Numeric
+            Energy cost of constant running. Standard is set to 3.6
+            :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
+            for different turfs.
         """
 
         # Velocity
@@ -419,7 +434,7 @@ class MetabolicPowerModel(BaseModel):
 
         # Metabolic power
         metabolic_power = MetabolicPowerModel._calc_metabolic_power(
-            equivalent_slope, velocity.property, equivalent_mass, xy.framerate
+            equivalent_slope, velocity.property, equivalent_mass, xy.framerate, eccr
         )
 
         self._metabolic_power_ = PlayerProperty(
@@ -459,14 +474,14 @@ class MetabolicPowerModel(BaseModel):
         )
         return cumulative_metabolic_power
 
-    def equivalent_distance(self, eccr: int = 3.6) -> PlayerProperty:
+    def equivalent_distance(self, eccr: Numeric = 3.6) -> PlayerProperty:
         """Returns frame-wise equivalent distance, defined as the distance a player
         could have run if moving at a constant speed and calculated as the fraction of
         metabolic work and the cost of constant running.
 
         Parameters
         ----------
-        eccr: int
+        eccr: Numeric
             Energy cost of constant running. Standard is set to 3.6
             :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
