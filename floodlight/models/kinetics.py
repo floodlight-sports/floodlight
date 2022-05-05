@@ -6,12 +6,25 @@ from floodlight.utils.types import Numeric
 
 from floodlight.core.xy import XY
 from floodlight.core.property import PlayerProperty
-from floodlight.models.base import BaseModel
+from floodlight.models.base import BaseModel, requires_fit
 from floodlight.models.kinematics import VelocityModel, AccelerationModel
 
 
 class MetabolicPowerModel(BaseModel):
-    """Class for calculating Metabolic Power of players on the pitch.
+    """Class for calculating Metabolic Power and derived metrics from spatiotemporal
+    data.
+
+    Upon calling the :func:`~MetbolicPowerModel.fit`-method, this model calculates the
+    frame-wise Metabolic Power for each player. The following calculations can
+    subsequently be queried by calling the corresponding methods:
+
+        - Frame-wise Metabolic Power --> :func:`~MetabolicPowerModel.metabolic_power`
+        - Cumulative Metabolic Power --> :func:`~MetabolicPowerModel.cumulative_\
+metabolic_power`
+        - Frame-wise Equivalent Distance --> :func:`~MetabolicPowerModel.equivalent_\
+distance`
+        - Cumulative Equivalent Distance --> :func:`~MetabolicPowerModel.cumulative_\
+equivalent_distance`
 
     Notes
     -----
@@ -19,8 +32,8 @@ class MetabolicPowerModel(BaseModel):
     a certain speed, and is calculated as the product of energy cost of transport per
     unit body mass and distance [:math:`\\frac{J}{kg \\cdot m}`] and velocity
     [:math:`\\frac{m}{s}`]. Metabolic Power and Energy cost of walking is calculated
-    according to [1]_. Energy cost of running is calculated with the updated formula of
-    [2]_.
+    according to di Prampero & Osgnach [1]_. Energy cost of running is calculated with
+    the updated formula of Minetti & Parvei [2]_.
 
     Examples
     --------
@@ -55,9 +68,35 @@ class MetabolicPowerModel(BaseModel):
             ‘Equivalent Slope’ of speed changing level locomotion in humans: A
             computational model for shuttle running. Journal Experimental Biology,
             221:jeb.182303.
-            <https://journals.biologists.com/jeb/article/221/15/jeb182303/19414/Update-and-
-            extension-of-the-equivalent-slope-of>`_
+            <https://journals.biologists.com/jeb/article/221/15/jeb182303/19414/Update-
+            and-extension-of-the-equivalent-slope-of>`_
     """
+
+    # Coefficient of air resistance from di Prampero (2018).
+    K = 0.0037
+
+    # Coefficients of polynomial to calculate the walk-run-transition
+    # velocity based on the equivalent slope from di Prampero (2018).
+    RUNNING_TRANSITION_COEFF = np.array((-107.05, 113.13, -1.13, -15.84, -1.7, 2.27))
+
+    # Cutoffs of equivalent slope for using the corresponding polynomial to calculate
+    # energy cost of walking at a certain velocity from di Prampero (2018).
+    ECW_ES_CUTOFFS = np.array([-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4])
+
+    # Coefficients of polynomials to calculate energy cost of walking from di
+    # Prampero (2018).
+    ECW_POLY_COEFF = np.array(
+        [
+            [0.28, -1.66, 3.81, -3.96, 4.01],
+            [0.03, -0.15, 0.98, -2.25, 3.14],
+            [0.69, -3.21, 5.94, -5.07, 2.79],
+            [1.25, -6.57, 13.14, -11.15, 5.35],
+            [0.68, -4.17, 10.17, -10.31, 8.66],
+            [3.80, -14.91, 22.94, -14.53, 11.24],
+            [44.95, -122.88, 126.94, -57.46, 21.39],
+            [94.62, -213.94, 184.43, -68.49, 25.04],
+        ]
+    )
 
     def __init__(self):
         super().__init__()
@@ -80,9 +119,7 @@ class MetabolicPowerModel(BaseModel):
         es: np.array
             equivalent slope
         """
-        # Coefficient of air resistance from di Prampero (2018).
-        k = 0.0037
-        es = (acc / g) + ((k * np.square(vel)) / g)
+        es = (acc / g) + ((MetabolicPowerModel.K * np.square(vel)) / g)
         return es
 
     @staticmethod
@@ -100,14 +137,13 @@ class MetabolicPowerModel(BaseModel):
         em: np.array
             equivalent mass
         """
-
         em = np.sqrt(np.square(es) + 1)
         return em
 
     @staticmethod
     def _calc_v_trans(es: np.ndarray) -> np.ndarray:
         """Calculate the walking to running transition velocity at a certain equivalent
-        slope based on the formular of di Prampero (2018).
+        slope based on the formula of di Prampero (2018).
 
         Parameters
         ----------
@@ -120,9 +156,6 @@ class MetabolicPowerModel(BaseModel):
             Array with the respective transition velocity
 
         """
-        # Coefficients of polynomial to calculate the walk-run-transition
-        # velocity based on the equivalent slope from di Prampero (2018).
-        coeff = np.array((-107.05, 113.13, -1.13, -15.84, -1.7, 2.27))
         es_power = np.stack(
             (
                 np.power(es, 5),
@@ -135,7 +168,7 @@ class MetabolicPowerModel(BaseModel):
             axis=-1,
         )
 
-        v_trans = np.matmul(es_power, coeff)
+        v_trans = np.matmul(es_power, MetabolicPowerModel.RUNNING_TRANSITION_COEFF)
 
         return v_trans
 
@@ -144,12 +177,14 @@ class MetabolicPowerModel(BaseModel):
         """
         Checks if athlete is walking or running based on the model of di Prampero
         (2018).
+
         Parameters
         ----------
         vel: np.array
             Velocity
         es: np.array
             Equivalent slope
+
         Returns
         -------
         is_running: bool
@@ -165,7 +200,9 @@ class MetabolicPowerModel(BaseModel):
 
     @staticmethod
     def _get_interpolation_weight_matrix(es: np.ndarray) -> np.ndarray:
-        """Calculates interpolation weight matrix.
+        """Calculates interpolation weight matrix. This matrix is designed for a
+        calculation of ECW in a single sweep by determining the interpolation weights
+        of all 8 ECW_ES_CUTOFFS for given ES values.
 
         Parameters
         ----------
@@ -175,28 +212,24 @@ class MetabolicPowerModel(BaseModel):
         Returns
         -------
         W: np.array
-            Interpolation weight matrix with 3 dimensions (T frames, N players,
-            len(EDGES)=8 polynomials. Values range between 0 and 1 and indicate
-            how much the polynomial of energy cost of walking is weighted for that
-            time and player
+            Interpolation weight matrix of shape (T frames, N players,
+            len(ECW_ES_CUTOFFS)=8) containing interpolation coefficients from range
+            [0, 1].
         """
-        # Edges of equivalent slope for using the corresponding polynomial to calculate
-        # energy cost of walking at a certain velocity from di Prampero (2018).
-        EDGES = np.array([-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4])
         # Number of frames
         T = es.shape[0]
         # Number of players
         N = es.shape[1]
         # Pre-allocated interpolation weight matrix with 3 dimensions (T frames, N
-        # players, len(EDGES)=8 polynomials)
-        W = np.zeros((T, N, len(EDGES)))
+        # players, len(CUTOFFS)=8 polynomials)
+        W = np.zeros((T, N, len(MetabolicPowerModel.ECW_ES_CUTOFFS)))
 
-        # Index of each ES regarding its position in EDGES.
-        # E.g. ES = 0.25 -> ES will be sorted between EDGES[5] and EDGES[6],
+        # Index of each ES regarding its position in CUTOFFS.
+        # E.g. es = 0.25 -> es will be sorted between CUTOFFS[5] and CUTOFFS[6],
         # idxs = 6
-        idxs = EDGES.searchsorted(es)
+        idxs = MetabolicPowerModel.ECW_ES_CUTOFFS.searchsorted(es)
 
-        # mask for non-edge cases (ES outside of EDGES)
+        # Mask for non-edge cases (es outside of CUTOFFS)
         mask = (idxs > 0) & (idxs < 8)
 
         # Initialize grids for appropriate indexing of W along axis=0 (time) and
@@ -206,14 +239,14 @@ class MetabolicPowerModel(BaseModel):
         # Fill W with the right interpolation weights for each time t (axis=0),
         # player n (axis=1) and polynomial (axis=2)
         W[grid_t[mask], grid_n[mask], idxs[mask] - 1] = (
-            EDGES[idxs[mask]] - es[mask]
+            MetabolicPowerModel.ECW_ES_CUTOFFS[idxs[mask]] - es[mask]
         ) * 10
         W[grid_t[mask], grid_n[mask], idxs[mask]] = (
-            es[mask] - EDGES[idxs[mask] - 1]
+            es[mask] - MetabolicPowerModel.ECW_ES_CUTOFFS[idxs[mask] - 1]
         ) * 10
 
-        # Fill edge cases (ES outside of EDGES) with 1 because they are not
-        # interpolated
+        # Fill edge cases (es not in range of CUTOFFS) with 1 because they are
+        # calculated with the corresponding min/max CUTOFFS
         W[idxs == 0, 0] = 1
         W[idxs == 8, 7] = 1
 
@@ -239,27 +272,13 @@ class MetabolicPowerModel(BaseModel):
             Energy cost of walking
 
         """
-        # Coefficients of polynomials to calculate energy cost of walking from di
-        # Prampero (2018).
-        COEFF = np.array(
-            [
-                [0.28, -1.66, 3.81, -3.96, 4.01],
-                [0.03, -0.15, 0.98, -2.25, 3.14],
-                [0.69, -3.21, 5.94, -5.07, 2.79],
-                [1.25, -6.57, 13.14, -11.15, 5.35],
-                [0.68, -4.17, 10.17, -10.31, 8.66],
-                [3.80, -14.91, 22.94, -14.53, 11.24],
-                [44.95, -122.88, 126.94, -57.46, 21.39],
-                [94.62, -213.94, 184.43, -68.49, 25.04],
-            ]
-        )
         # Interpolation weight matrix
         W = MetabolicPowerModel._get_interpolation_weight_matrix(es)
 
-        # Matrix product of EDGES and W, ie. weighted factors in polynomials
-        WC = np.matmul(W, COEFF)
+        # Matrix product of ECW_ES_CUTOFFS and W, ie. weighted factors in polynomials
+        WC = np.matmul(W, MetabolicPowerModel.ECW_POLY_COEFF)
 
-        # Calcualte vel^4 + vel^3 + vel^2 + vel + 1 for every frame and player
+        # Calculate vel^4 + vel^3 + vel^2 + vel + 1 for every frame and player
         V = np.stack(
             (
                 np.power(vel, 4),
@@ -288,7 +307,7 @@ class MetabolicPowerModel(BaseModel):
         em: np.array
             Equivalent mass
         eccr: Numeric
-            Energy cost of constant running. Standard is set to 3.6
+            Energy cost of constant running. Default is set to 3.6
             :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
 
@@ -363,6 +382,10 @@ class MetabolicPowerModel(BaseModel):
             Velocity
         em: np.array
             Equivalent mass
+        eccr: Numeric
+            Energy cost of constant running. Default is set to 3.6
+            :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
+            for different turfs.
 
         Returns
         -------
@@ -391,30 +414,18 @@ class MetabolicPowerModel(BaseModel):
         xy: XY
             Floodlight XY Data object.
         difference: str
-            The method of differentiation. One of {'central', 'forward'}.\n
-            'central' will differentiate using the central difference method:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
-
-            'forward' will differentiate using the forward difference method and append
-            a '0' at the end of the array along axis 1:
-
-                .. math::
-
-                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{0}}{t_{1} - t_{0}}
+            The method of differentiation to calculate velocity and acceleration.
+            See :func:`~floodlight.models.kinematics.VelocityModel` for further details.
 
         axis: {None, 'x', 'y'}, optional
                 Optional argument that restricts distance calculation to either the x-
                 or y-dimension of the data. If set to None (default), distances are
                 calculated in both dimensions.
         eccr: Numeric
-            Energy cost of constant running. Standard is set to 3.6
+            Energy cost of constant running. Default is set to 3.6
             :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
         """
-
         # Velocity
         velocity_model = VelocityModel()
         velocity_model.fit(xy, difference=difference, axis=axis)
@@ -443,8 +454,9 @@ class MetabolicPowerModel(BaseModel):
             framerate=xy.framerate,
         )
 
+    @requires_fit
     def metabolic_power(self) -> PlayerProperty:
-        """Returns the frame-wise metabolic power as computed by the fit method.
+        """Returns the frame-wise metabolic power as computed by the ``fit()``-method.
 
         Returns
         -------
@@ -456,6 +468,7 @@ class MetabolicPowerModel(BaseModel):
         metabolic_power = self._metabolic_power_
         return metabolic_power
 
+    @requires_fit
     def cumulative_metabolic_power(self) -> PlayerProperty:
         """Returns the cumulative metabolic power.
 
@@ -474,6 +487,7 @@ class MetabolicPowerModel(BaseModel):
         )
         return cumulative_metabolic_power
 
+    @requires_fit
     def equivalent_distance(self, eccr: Numeric = 3.6) -> PlayerProperty:
         """Returns frame-wise equivalent distance, defined as the distance a player
         could have run if moving at a constant speed and calculated as the fraction of
@@ -482,7 +496,7 @@ class MetabolicPowerModel(BaseModel):
         Parameters
         ----------
         eccr: Numeric
-            Energy cost of constant running. Standard is set to 3.6
+            Energy cost of constant running. Default is set to 3.6
             :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
 
@@ -491,7 +505,6 @@ class MetabolicPowerModel(BaseModel):
         equivalent_distance: PlayerProperty
             PlayerProperty of the instantaneous equivalent distance covered.
         """
-
         eq_dist = self._metabolic_power_.property / eccr
         cumulative_metabolic_power = PlayerProperty(
             property=eq_dist,
@@ -500,15 +513,16 @@ class MetabolicPowerModel(BaseModel):
         )
         return cumulative_metabolic_power
 
-    def cumulative_equivalent_distance(self, eccr: int = 3.6) -> PlayerProperty:
+    @requires_fit
+    def cumulative_equivalent_distance(self, eccr: Numeric = 3.6) -> PlayerProperty:
         """Returns cumulative equivalent distance defined as the distance a player
         could have run if moving at a constant speed and calculated as the fraction
         of metabolic work and the cost of constant running.
 
         Parameters
         ----------
-        eccr: int
-            Energy cost of constant running. Standard is set to 3.6
+        eccr: Numeric
+            Energy cost of constant running. Default is set to 3.6
             :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
 
@@ -518,7 +532,6 @@ class MetabolicPowerModel(BaseModel):
             PlayerProperty of the cumulative equivalent distance covered calculated by
             numpy.nancumsum() over axis=0.
         """
-
         cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
         cum_eqdist = cum_metp / eccr
 
