@@ -43,7 +43,7 @@ def plot_handball_pitch(
 
     Returns
     -------
-    ax : matplotlib.axes
+    axes : matplotlib.axes
         A matplotlib.axes to which all elements of the handball pitch are added.
     """
 
@@ -589,7 +589,7 @@ def plot_football_pitch(
 
     Returns
     -------
-    ax : matplotlib.axes
+    axes : matplotlib.axes
         A matplotlib.axes to which all elements of the football pitch are added.
     """
     # kwargs which are used to configure the plot with default values 1 and 0.

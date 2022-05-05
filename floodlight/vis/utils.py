@@ -2,9 +2,8 @@ import matplotlib.pyplot as plt
 
 
 def check_axes_given(func):
-    """
-    Decorator function that checks if a matplotlib.axes is given as an argument. Creates
-    one if not.
+    """Decorator function that checks if a matplotlib.axes is given as an argument.
+    Creates one if not.
 
     Parameters
     ----------

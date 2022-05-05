@@ -228,9 +228,8 @@ class XY:
         ax: matplotlib.axes = None,
         **kwargs,
     ) -> matplotlib.axes:
-        """
-        Wrapper function that calls the actual plotting functions based on the selected
-        plot type.
+        """Wrapper function that calls the actual plotting functions based on the
+        selected plot type.
 
         Parameters
         ----------
@@ -253,7 +252,7 @@ class XY:
             given default values are used (see floodlight.vis.positions).
         Returns
         -------
-        axes: matplotlib.axes:
+        axes: matplotlib.axes
             Specified plot function which returns a matplotlib.axes object.
 
         Notes
@@ -275,7 +274,9 @@ class XY:
         >>> from floodlight.core.pitch import Pitch
         >>> from floodlight.core.xy import XY
 
-        >>> pos = np.array([[35,5,35,63,25,25,25,50], # positions
+        >>> # positions
+        >>> pos = np.array(
+        >>>     [[35,5,35,63,25,25,25,50],
         >>>     [45,10,45,55,35,20,35,45],
         >>>     [55,10,55,55,45,20,45,45],
         >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
@@ -284,19 +285,21 @@ class XY:
 
         >>> # create Pitch object
         >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m",
-        >>> boundaries="fixed", sport="football")
+        >>> sport="football")
 
-        >>> ax = plt.subplots()[1] # create axes
+        >>> # create matplotlib.axes
+        >>> ax = plt.subplots()[1]
 
-        >>> football_pitch.plot(color_scheme="standard", ax=ax) # plot pitch on ax
+        >>> # plot pitch on ax
+        >>> football_pitch.plot(color_scheme="standard", ax=ax)
 
         >>> # plot positions on ax
-        >>> xy_pos.plot(plot_type="positions", t= 0, ax=ax)
+        >>> xy_pos.plot(plot_type="positions", t=0, ax=ax)
         >>> plt.show()
 
         .. image:: ../../_img/positions_example.png
 
-        >>> # plot trajectories on ax
+        >>> # plot trajectories from frame 0 to 4 on ax
         >>> xy_pos.plot(plot_type="trajectories", t=(0,4), ball= False, ax=ax)
         >>> plt.show()
 
@@ -306,7 +309,7 @@ class XY:
 
         plot_types = ["positions", "trajectories"]
 
-        # call visualization function based on plot type
+        # call visualization function based on plot_type
         if plot_type == "positions":
             return plot_positions(self, t, ball, ax=ax, **kwargs)
         elif plot_type == "trajectories":

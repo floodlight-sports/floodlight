@@ -165,11 +165,9 @@ class Pitch:
         Parameters
         ----------
         color_scheme: str, optional
-            Color scheme of the plot. One of {'standard', 'bw'}.  If not given
-            default = 'standard'.
+            Color scheme of the plot. One of {'standard', 'bw'}. Defaults to 'standard'.
         show_axis_ticks: bool, optional
-            If set to True, the axis ticks are visible. If not specified as an argument,
-            the axes ticks are not visible.
+            If set to True, the axis ticks are visible. Defaults to False.
         ax: matplotlib.axes, optional
             Axes from matplotlib library on which the playing field is plotted. If ax is
             None, a default-sized matplotlib.axes object is created.
@@ -189,8 +187,8 @@ class Pitch:
         plots have a look at `matplotlib
         <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
         For example in order to modify the linewidth pass a float to the keyworded
-        argument 'linewidth'. The same principle applies to other kwargs like
-        'zorder', 'scalex' and 'scaley'.
+        argument 'linewidth'. The same principle applies to other kwargs like 'zorder',
+        'scalex' and 'scaley'.
 
         Examples
         --------
@@ -199,7 +197,7 @@ class Pitch:
 
         >>> # create Pitch object
         >>> football_pitch = Pitch(xlim=(0, 105), ylim=(0,68), unit="m",
-        >>> boundaries="flexible", sport="football")
+        >>>                  sport="football")
 
         >>> # plot football pitch
         >>> football_pitch.plot()
@@ -208,8 +206,7 @@ class Pitch:
         .. image:: ../../_img/football_pitch_example.png
 
         >>> # create Pitch object
-        >>> handball_pitch = Pitch(xlim=(0,40), ylim=(0,20), unit="m",
-        >>> boundaries="flexible", sport="handball")
+        >>> handball_pitch = Pitch(xlim=(0,40), ylim=(0,20), unit="m", sport="handball")
 
         >>> # plot handball pitch
         >>> handball_pitch.plot()

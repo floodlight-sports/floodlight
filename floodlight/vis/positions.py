@@ -7,14 +7,14 @@ from floodlight.vis.utils import check_axes_given
 def plot_positions(
     xy, frame: int, ball: bool, ax: matplotlib.axes, **kwargs
 ) -> matplotlib.axes:
-    """
-    Scatter plots positions for a given frame of the XY.xy array on a matplotlib.axes.
+    """Scatter plots positions for a given frame of the XY.xy array on a
+    matplotlib.axes.
 
     Parameters
     ----------
     xy: floodlight.core.xy.XY
         Spatio-temporal data fragment object that contains the positions
-        (XY.xy: np.ndarray) and functgiions for manipulation.
+        (XY.xy: np.ndarray) and functions for manipulation.
     frame: int
         Frame in the postions-array (XY.xy) for which the positions are plotted.
     ball: bool
@@ -28,7 +28,7 @@ def plot_positions(
 
     Returns
     -------
-    matplotib.axes
+    axes: matplotib.axes
         A matplotlib.axes on which the positions are plotted.
     """
 
@@ -72,8 +72,7 @@ def plot_trajectories(
     ax: matplotlib.axes,
     **kwargs,
 ) -> matplotlib.axes:
-    """
-    Draws the trajectories of the XY.xy array for a given range of frames on a
+    """Draws the trajectories of the XY.xy array for a given range of frames on a
     matplotlib.axes.
 
     Parameters
@@ -96,7 +95,7 @@ def plot_trajectories(
 
     Returns
     -------
-    matplotib.axes
+    axes: matplotib.axes
         A matplotlib.axes on which the trajectories are drawn.
     """
 
