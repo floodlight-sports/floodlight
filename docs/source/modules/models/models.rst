@@ -9,3 +9,5 @@ Some useful models
    :caption: Models
 
    geometry
+   kinematics
+   kinetics
