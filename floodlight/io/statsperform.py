@@ -154,7 +154,7 @@ def _read_open_event_csv_single_line(
     return event, team, segment
 
 
-def create_links_from_open_tracking_csv(
+def create_links_from_open_tracking_data_csv(
     filepath_tracking: Union[str, Path]
 ) -> Dict[str, Dict[int, int]]:
     """Parses the entire StatsPerform CSV file for unique jIDs (jerseynumbers) and team
@@ -708,7 +708,7 @@ def create_links_from_statsperform_tracking_data_txt(
     return links
 
 
-def read_statsperform_event_data_xml(
+def read_event_data_xml(
     filepath_xml: Union[str, Path],
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Parses a StatsPerform .xml file and extracts event data and pitch information.
@@ -862,7 +862,7 @@ def read_statsperform_event_data_xml(
     return data_objects
 
 
-def read_statsperform_tracking_data_txt(
+def read_tracking_data_txt(
     filepath_txt: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY]:
@@ -985,7 +985,7 @@ def read_statsperform_tracking_data_txt(
     return data_objects
 
 
-def read_statsperform_event_data_url(
+def read_event_data_from_url(
     url_events: str,
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Reads a URL from the StatsPerform API containing an events csv file and extracts
@@ -1004,17 +1004,13 @@ def read_statsperform_event_data_url(
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     temp_file = "events_temp.xml"
-    download_event_data_url_to_xml_file(
-        url_events=url_events, target_filename=temp_file
-    )
-    data_objects = read_statsperform_event_data_xml(
-        filepath_xml=os.path.join(data_dir, temp_file)
-    )
+    download_event_data_from_url(url_events=url_events, target_filename=temp_file)
+    data_objects = read_event_data_xml(filepath_xml=os.path.join(data_dir, temp_file))
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
 
 
-def read_statsperform_tracking_data_url(
+def read_tracking_data_from_url(
     url_tracking: str,
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY]:
@@ -1043,10 +1039,10 @@ def read_statsperform_tracking_data_url(
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     temp_file = "tracking_temp.txt"
-    download_tracking_data_url_to_txt_file(
+    download_tracking_data_from_url(
         url_tracking=url_tracking, target_filename=temp_file
     )
-    data_objects = read_statsperform_tracking_data_txt(
+    data_objects = read_tracking_data_txt(
         filepath_txt=os.path.join(data_dir, temp_file),
         links=links,
     )
@@ -1054,7 +1050,7 @@ def read_statsperform_tracking_data_url(
     return data_objects
 
 
-def download_event_data_url_to_xml_file(
+def download_event_data_from_url(
     url_events: str, target_filename: Union[str, Path] = None
 ):
     """Downloads a tracking data xml file stored at the given URL into a sub folder
@@ -1087,7 +1083,7 @@ def download_event_data_url_to_xml_file(
                 file_xml.write(line)
 
 
-def download_tracking_data_url_to_txt_file(
+def download_tracking_data_from_url(
     url_tracking: str, target_filename: Union[str, Path] = None
 ):
     """Downloads a tracking data txt file stored at the given URL into a sub folder
