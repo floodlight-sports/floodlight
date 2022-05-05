@@ -179,7 +179,7 @@ class Pitch:
         Returns
         -------
         axes: matplotlib.axes
-            Plot function for specified pitch which returns a matplotlib.axes object.
+            Axes from matplotlib library on which the specified pitch is plotted.
 
         Notes
         -----
@@ -194,7 +194,6 @@ class Pitch:
         --------
         >>> import matplotlib.pyplot as plt
         >>> from floodlight.core.pitch import Pitch
-
         >>> # create Pitch object
         >>> football_pitch = Pitch(xlim=(0, 105), ylim=(0,68), unit="m",
         >>>                  sport="football")

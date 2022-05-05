@@ -253,7 +253,7 @@ class XY:
         Returns
         -------
         axes: matplotlib.axes
-            Specified plot function which returns a matplotlib.axes object.
+            Axes from matplotlib library on which the specified plot type is plotted.
 
         Notes
         -----
@@ -273,23 +273,18 @@ class XY:
         >>> import numpy as np
         >>> from floodlight.core.pitch import Pitch
         >>> from floodlight.core.xy import XY
-
         >>> # positions
         >>> pos = np.array(
         >>>     [[35,5,35,63,25,25,25,50],
         >>>     [45,10,45,55,35,20,35,45],
         >>>     [55,10,55,55,45,20,45,45],
         >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
-
         >>> xy_pos = XY(pos) # create XY object
-
         >>> # create Pitch object
         >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m",
         >>> sport="football")
-
         >>> # create matplotlib.axes
         >>> ax = plt.subplots()[1]
-
         >>> # plot pitch on ax
         >>> football_pitch.plot(color_scheme="standard", ax=ax)
 

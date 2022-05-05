@@ -29,7 +29,7 @@ def plot_positions(
     Returns
     -------
     axes: matplotib.axes
-        A matplotlib.axes on which the positions are plotted.
+        Axes from matplotlib library on which the positions are plotted.
     """
 
     # kwargs which are used to configure the plot with default values.
@@ -96,7 +96,7 @@ def plot_trajectories(
     Returns
     -------
     axes: matplotib.axes
-        A matplotlib.axes on which the trajectories are drawn.
+        Axes from matplotlib library on which the trajectories are drawn.
     """
 
     # kwargs which are used to configure the plot with default values.
