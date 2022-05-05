@@ -988,8 +988,8 @@ def read_tracking_data_txt(
 def read_event_data_from_url(
     url_events: str,
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
-    """Reads a URL from the StatsPerform API containing an events csv file and extracts
-     the event data.
+    """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing an events csv
+    file and extracts the stored event data and pitch information.
 
     Parameters
     ----------
@@ -1004,7 +1004,7 @@ def read_event_data_from_url(
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     temp_file = "events_temp.xml"
-    download_event_data_from_url(url_events=url_events, target_filename=temp_file)
+    download_event_data_from_url(url_events=url_events, filename_xml=temp_file)
     data_objects = read_event_data_xml(filepath_xml=os.path.join(data_dir, temp_file))
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
@@ -1014,8 +1014,8 @@ def read_tracking_data_from_url(
     url_tracking: str,
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY]:
-    """Reads a URL from the StatsPerform API containing a txt file with tracking data
-    and extracts position data and pitch information.
+    """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a tracking
+    data txt file and extracts position data.
 
     The tracking from the URL is downloaded into a temporary file stored in the
     repository's internal root ``.data``-folder that is removed afterwards.
@@ -1039,9 +1039,7 @@ def read_tracking_data_from_url(
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     temp_file = "tracking_temp.txt"
-    download_tracking_data_from_url(
-        url_tracking=url_tracking, target_filename=temp_file
-    )
+    download_tracking_data_from_url(url_tracking=url_tracking, filename_txt=temp_file)
     data_objects = read_tracking_data_txt(
         filepath_txt=os.path.join(data_dir, temp_file),
         links=links,
@@ -1051,16 +1049,16 @@ def read_tracking_data_from_url(
 
 
 def download_event_data_from_url(
-    url_events: str, target_filename: Union[str, Path] = None
+    url_events: str, filename_xml: Union[str, Path] = None
 ):
-    """Downloads a tracking data xml file stored at the given URL into a sub folder
+    """Downloads an event data xml file stored at the given URL into a sub folder
     ``statsperform`` within the repository's root ``.data``-folder.
 
     Parameters
     ----------
     url_events: str
         URL to the xml file containing the event data.
-    target_filename: str or pathlib.Path
+    filename_xml: str or pathlib.Path
         The target filename. If None (default), the name is chosen according to URL
         after the final '/'.
     """
@@ -1068,14 +1066,14 @@ def download_event_data_from_url(
     data_dir = os.path.join(DATA_DIR, "statsperform")
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir, exist_ok=True)
-    if target_filename is None:
-        target_filename = url_events.split("/")[-1]
-    if target_filename[-4:].lower() != ".xml":
-        target_filename += ".xml"
+    if filename_xml is None:
+        filename_xml = url_events.split("/")[-1]
+    if filename_xml[-4:].lower() != ".xml":
+        filename_xml += ".xml"
 
     # write url stream to file
     with urllib.request.urlopen(url_events) as url_stream:
-        with open(os.path.join(data_dir, target_filename), "wb") as file_xml:
+        with open(os.path.join(data_dir, filename_xml), "wb") as file_xml:
             while True:
                 line = url_stream.read()
                 if len(line) == 0:
@@ -1084,7 +1082,7 @@ def download_event_data_from_url(
 
 
 def download_tracking_data_from_url(
-    url_tracking: str, target_filename: Union[str, Path] = None
+    url_tracking: str, filename_txt: Union[str, Path] = None
 ):
     """Downloads a tracking data txt file stored at the given URL into a sub folder
     ``statsperform`` within the repository's root ``.data``-folder.
@@ -1093,7 +1091,7 @@ def download_tracking_data_from_url(
     ----------
     url_tracking: str
         URL to the txt file containing the tracking data.
-    target_filename: str or pathlib.Path
+    filename_txt: str or pathlib.Path
         The target filename. If None (default), the name is chosen according to URL
         after the final '/'.
     """
@@ -1101,14 +1099,14 @@ def download_tracking_data_from_url(
     data_dir = os.path.join(DATA_DIR, "statsperform")
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir, exist_ok=True)
-    if target_filename is None:
-        target_filename = url_tracking.split("/")[-1]
-    if target_filename[-4:].lower() != ".txt":
-        target_filename += ".txt"
+    if filename_txt is None:
+        filename_txt = url_tracking.split("/")[-1]
+    if filename_txt[-4:].lower() != ".txt":
+        filename_txt += ".txt"
 
     # write url stream to file
     with urllib.request.urlopen(url_tracking) as url_stream:
-        with open(os.path.join(data_dir, target_filename), "wb") as file_txt:
+        with open(os.path.join(data_dir, filename_txt), "wb") as file_txt:
             while True:
                 line = url_stream.read()
                 if len(line) == 0:
