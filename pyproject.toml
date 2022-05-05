@@ -78,4 +78,5 @@ exclude = '''
 [tool.pytest.ini_options]
 markers = [
     "unit: marks unit tests (deselect with '-m \"not unit\"')",
+    "plot: marks tests creating visualizations (deselect with '-m \"not plot\"')"
 ]

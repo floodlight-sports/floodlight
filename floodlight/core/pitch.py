@@ -165,23 +165,54 @@ class Pitch:
         Parameters
         ----------
         color_scheme: str, optional
-            Color scheme of the plot. One of {'standard', 'bw'}.  If not given
-            default = 'standard'.
+            Color scheme of the plot. One of {'standard', 'bw'}. Defaults to 'standard'.
         show_axis_ticks: bool, optional
-            If set to True, the axis ticks are visible. If not specified as an argument,
-            the axes ticks are not visible.
+            If set to True, the axis ticks are visible. Defaults to False.
         ax: matplotlib.axes, optional
             Axes from matplotlib library on which the playing field is plotted. If ax is
             None, a default-sized matplotlib.axes object is created.
         kwargs:
-            Optional keyworded arguments ('linewidth', 'zorder', 'scalex', 'scaley'}
+            Optional keyworded arguments {'linewidth', 'zorder', 'scalex', 'scaley'}
             which can be used for the plot functions from matplotlib. The kwargs are
             only passed to all the plot functions of matplotlib.
 
         Returns
         -------
-        matplotlib.axes
-            An axes to which all elements of the sport-specific pitch are added.
+        axes: matplotlib.axes
+            Axes from matplotlib library on which the specified pitch is plotted.
+
+        Notes
+        -----
+        The kwargs are only passed to the plot functions of matplotlib. To customize the
+        plots have a look at `matplotlib
+        <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+        For example in order to modify the linewidth pass a float to the keyworded
+        argument 'linewidth'. The same principle applies to other kwargs like 'zorder',
+        'scalex' and 'scaley'.
+
+        Examples
+        --------
+        >>> import matplotlib.pyplot as plt
+        >>> from floodlight.core.pitch import Pitch
+        >>> # create Pitch object
+        >>> football_pitch = Pitch(xlim=(0, 105), ylim=(0,68), unit="m",
+        >>>                  sport="football")
+
+        >>> # plot football pitch
+        >>> football_pitch.plot()
+        >>> plt.show()
+
+        .. image:: ../../_img/football_pitch_example.png
+
+        >>> # create Pitch object
+        >>> handball_pitch = Pitch(xlim=(0,40), ylim=(0,20), unit="m", sport="handball")
+
+        >>> # plot handball pitch
+        >>> handball_pitch.plot()
+        >>> plt.show()
+
+        .. image:: ../../_img/handball_pitch_example.png
+
         """
         # list of existing color_schemes and sports
         color_schemes = ["bw", "standard"]

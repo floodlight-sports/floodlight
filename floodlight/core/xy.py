@@ -1,10 +1,12 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Union
 
+import matplotlib
 import numpy as np
 
 from floodlight.utils.types import Numeric
+from floodlight.vis.positions import plot_positions, plot_trajectories
 
 
 @dataclass
@@ -217,3 +219,100 @@ class XY:
             )
 
         return xy_sliced
+
+    def plot(
+        self,
+        t: Union[int, Tuple[int, int]],
+        plot_type: str = "positions",
+        ball: bool = False,
+        ax: matplotlib.axes = None,
+        **kwargs,
+    ) -> matplotlib.axes:
+        """Plots a snapshot or time intervall of the object's spatiotemporal data on a
+        matplotlib axes.
+
+        Parameters
+        ----------
+        t: Union[int, Tuple [int, int]]
+            Frame for which postions should be plotted if plot_type == 'positions', or a
+            Tuple that has the form (start_frame, end_frame) if
+            plot_type == 'trajectories'.
+        plot_type: str, optional
+            One of {'positions', 'trajectories'}. Determines which plotting function is
+            called. Defaults to 'positions'.
+        ball: bool, optional
+            Boolean indicating whether this object is storing ball data. If set to True,
+            the styling is adjusted accordingly. Defaults to False.
+        ax: matplotlib.axes, optional
+            Axes from matplotlib library to plot on. Defaults to None.
+        kwargs:
+            Optional keyworded arguments e.g. {'color', 'zorder', 'marker', 'linestyle',
+            'alpha'} which can be used for the plot functions from matplotlib.
+            The kwargs are only passed to all the plot functions of matplotlib. If not
+            given default values are used (see floodlight.vis.positions).
+
+
+        Returns
+        -------
+        axes: matplotlib.axes
+            Axes from matplotlib library on which the specified plot type is plotted.
+
+        Notes
+        -----
+        The kwargs are only passed to the plot functions of matplotlib. To customize the
+        plots have a look at
+        `matplotlib
+        <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+        For example in order to modify the color of the points and lines pass a color
+        name or rgb-value (`matplotlib colors
+        <https://matplotlib.org/3.5.0/tutorials/colors/colors.html>`_) to the keyworded
+        argument 'color'. The same principle applies to other kwargs like 'zorder',
+        'marker' and 'linestyle'.
+
+        Examples
+        --------
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from floodlight.core.pitch import Pitch
+        >>> from floodlight.core.xy import XY
+        >>> # positions
+        >>> pos = np.array(
+        >>>     [[35,5,35,63,25,25,25,50],
+        >>>     [45,10,45,55,35,20,35,45],
+        >>>     [55,10,55,55,45,20,45,45],
+        >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
+        >>> xy_pos = XY(pos) # create XY object
+        >>> # create Pitch object
+        >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m",
+        >>> sport="football")
+        >>> # create matplotlib.axes
+        >>> ax = plt.subplots()[1]
+        >>> # plot pitch on ax
+        >>> football_pitch.plot(color_scheme="standard", ax=ax)
+
+        >>> # plot positions on ax
+        >>> xy_pos.plot(plot_type="positions", t=0, ax=ax)
+        >>> plt.show()
+
+        .. image:: ../../_img/positions_example.png
+
+        >>> # plot trajectories from frame 0 to 4 on ax
+        >>> xy_pos.plot(plot_type="trajectories", t=(0,4), ball= False, ax=ax)
+        >>> plt.show()
+
+        .. image:: ../../_img/trajectories_example.png
+
+        """
+
+        plot_types = ["positions", "trajectories"]
+
+        # call visualization function based on plot_type
+        if plot_type == "positions":
+            return plot_positions(self, t, ball, ax=ax, **kwargs)
+        elif plot_type == "trajectories":
+            return plot_trajectories(self, t[0], t[1], ball, ax=ax, **kwargs)
+        else:
+            raise ValueError(
+                f"Expected plot_type to be one of {plot_types}, got {plot_type} "
+                "instead."
+            )
