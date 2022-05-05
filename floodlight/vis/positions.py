@@ -7,18 +7,18 @@ from floodlight.vis.utils import check_axes_given
 def plot_positions(
     xy, frame: int, ball: bool, ax: matplotlib.axes, **kwargs
 ) -> matplotlib.axes:
-    """Scatter plots positions for a given frame of the XY.xy array on a
+    """Scatter plots positions for a given frame of an XY object on a
     matplotlib.axes.
 
     Parameters
     ----------
     xy: floodlight.core.xy.XY
-        Spatio-temporal data fragment object that contains the positions
-        (XY.xy: np.ndarray) and functions for manipulation.
+        XY object containing spatiotemporal data to be plotted.
     frame: int
-        Frame in the postions-array (XY.xy) for which the positions are plotted.
+        Number of frame to be plotted.
     ball: bool
-        If set to False marker="o". Else marker="."
+         Boolean indicating whether this object is storing ball data. If set to False
+         marker="o", else marker=".".
     ax: matplotlib.axes
         Axes from matplotlib library on which the positions are plotted.
     kwargs:
@@ -72,20 +72,20 @@ def plot_trajectories(
     ax: matplotlib.axes,
     **kwargs,
 ) -> matplotlib.axes:
-    """Draws the trajectories of the XY.xy array for a given range of frames on a
+    """Draws the trajectories of an XY object from a given time interval on a
     matplotlib.axes.
 
     Parameters
     ----------
     xy: floodlight.core.xy.XY
-        Spatio-temporal data fragment object that contains the positions
-        (XY.xy: np.ndarray) and functions for manipulation.
+         XY object containing spatiotemporal data to be plotted.
     start_frame: int
-        First frame of the range of frames for which the trajectories are drawn.
+        Starting frame of time interval to be plotted.
     end_frame: int
-        Last frame of the range of frames for which the trajectories are drawn.
+        Closing frame of time interval to be plotted.
     ball: bool
-        If set to False marker="o". Else marker="."
+        Boolean indicating whether this object is storing ball data. If set to False
+        marker="o", else marker=".".
     ax: matplotlib.axes
         Axes from matplotlib library on which the trajectories are drawn.
     kwargs:

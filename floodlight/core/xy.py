@@ -228,8 +228,8 @@ class XY:
         ax: matplotlib.axes = None,
         **kwargs,
     ) -> matplotlib.axes:
-        """Wrapper function that calls the actual plotting functions based on the
-        selected plot type.
+        """Plots a snapshot or time intervall of the object's spatiotemporal data on a
+        matplotlib axes.
 
         Parameters
         ----------
@@ -241,8 +241,8 @@ class XY:
             One of {'positions', 'trajectories'}. Determines which plotting function is
             called. Defaults to 'positions'.
         ball: bool, optional
-            If ball == True the points and lines are adjusted accordingly.
-            Defaults to False.
+            Boolean indicating whether this object is storing ball data. If set to True,
+            the styling is adjusted accordingly. Defaults to False.
         ax: matplotlib.axes, optional
             Axes from matplotlib library to plot on. Defaults to None.
         kwargs:
@@ -250,6 +250,8 @@ class XY:
             'alpha'} which can be used for the plot functions from matplotlib.
             The kwargs are only passed to all the plot functions of matplotlib. If not
             given default values are used (see floodlight.vis.positions).
+
+
         Returns
         -------
         axes: matplotlib.axes
@@ -311,5 +313,6 @@ class XY:
             return plot_trajectories(self, t[0], t[1], ball, ax=ax, **kwargs)
         else:
             raise ValueError(
-                f"Unknown plot type: {plot_type}, choose one of " f"{plot_types}"
+                f"Expected plot_type to be one of {plot_types}, got {plot_type} "
+                "instead."
             )

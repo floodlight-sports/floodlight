@@ -8,13 +8,13 @@ def check_axes_given(func):
     Parameters
     ----------
     func:
-        Object of a function that needs a matplotlib.axes as an argument. If ax == None
+        Function object that needs a matplotlib.axes as an argument. If ax == None
         an axes is created an passed to the given function object as a keyworded
         argument.
 
     Returns
     -------
-    func():
+    func:
         Function with matplotlib.axes as additional argument if not specified.
         Otherwise the function is returned as it is.
     """
