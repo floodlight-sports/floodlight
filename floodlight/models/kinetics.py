@@ -1,9 +1,7 @@
 import numpy as np
-
 from scipy.constants import g
 
 from floodlight.utils.types import Numeric
-
 from floodlight.core.xy import XY
 from floodlight.core.property import PlayerProperty
 from floodlight.models.base import BaseModel, requires_fit
@@ -187,9 +185,9 @@ equivalent_distance`
 
         Returns
         -------
-        is_running: bool
-            True: Athlete is running
-            False: Athlete is walking
+        is_running: np.ndarray
+            Array containing boolean values indicating whether an athlete is running
+            (True) or not (False).
         """
         # Calculate walk-run-transition velocity
         v_trans = MetabolicPowerModel._calc_v_trans(es)
@@ -413,10 +411,9 @@ equivalent_distance`
         ----------
         xy: XY
             Floodlight XY Data object.
-        difference: str
+        difference: {'central', 'forward}, optional
             The method of differentiation to calculate velocity and acceleration.
             See :func:`~floodlight.models.kinematics.VelocityModel` for further details.
-
         axis: {None, 'x', 'y'}, optional
                 Optional argument that restricts distance calculation to either the x-
                 or y-dimension of the data. If set to None (default), distances are
@@ -461,7 +458,7 @@ equivalent_distance`
         Returns
         -------
         metabolic_power: PlayerProperty
-            An Player Property object of shape (T, N), where T is the total number of
+            A Player Property object of shape (T, N), where T is the total number of
             frames and N is the number of players. The columns contain the frame-wise
             metabolic power.
         """
@@ -475,8 +472,8 @@ equivalent_distance`
         Returns
         -------
         metabolic_power: PlayerProperty
-            An Player Property object of shape (T, N), where T is the total number of
-            frames and N is the number of players. The columns contain the frame-wise
+            A Player Property object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the cumulative
             metabolic power calculated by numpy.nancumsum() over axis=0.
         """
         cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
@@ -503,7 +500,9 @@ equivalent_distance`
         Returns
         -------
         equivalent_distance: PlayerProperty
-            PlayerProperty of the instantaneous equivalent distance covered.
+            A Player Property object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            equivalent distance.
         """
         eq_dist = self._metabolic_power_.property / eccr
         cumulative_metabolic_power = PlayerProperty(
@@ -529,8 +528,9 @@ equivalent_distance`
         Returns
         -------
         cumulative_equivalent_distance: PlayerProperty
-            PlayerProperty of the cumulative equivalent distance covered calculated by
-            numpy.nancumsum() over axis=0.
+            A Player Property object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the cumulative
+            equivalent distance calculated by numpy.nancumsum() over axis=0.
         """
         cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
         cum_eqdist = cum_metp / eccr
