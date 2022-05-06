@@ -1,52 +1,12 @@
 import warnings
 from pathlib import Path
-from typing import Tuple, Union, Dict
+from typing import Tuple, Union
 
 import os
 import json
 import pandas as pd
 
 from floodlight.core.events import Events
-
-
-def create_links_from_open_statsbomb_event_data_json(
-    filepath_events: Union[str, Path]
-) -> Tuple[Dict[int, str], Dict[int, str], Dict[int, str]]:
-    """Parses a StatsPerform Match Event json file for the links between ID and name
-    for eID and event, tID and team, and  pID and player.
-
-    Parameters
-    ----------
-    filepath_events: str or pathlib.Path
-        Full path to json file where the Event data is saved.
-
-    Returns
-    -------
-    links: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]]:
-        Returns three link dictionary objects of the form (links_eID_to_event,
-        links_tID_to_team, links_pID_to_player) respectively mapping the eIDs to the
-        event names, the tIDs to the team names and the pIDs to the player names.
-    """
-    # bins
-    links_eID_to_event = {}
-    links_tID_to_team = {}
-    links_pID_to_player = {}
-
-    # load json files into memory
-    with open(filepath_events, "r", encoding="utf8") as f:
-        file_event_list = json.load(f)
-
-    # loop
-    for event in file_event_list:
-        links_eID_to_event.update({event["type"]["id"]: event["type"]["name"]})
-        links_tID_to_team.update(
-            {event["possession_team"]["id"]: event["possession_team"]["name"]}
-        )
-        if "player" in event:
-            links_pID_to_player.update({event["player"]["id"]: event["player"]["name"]})
-
-    links = (links_eID_to_event, links_tID_to_team, links_pID_to_player)
-    return links
 
 
 def read_open_statsbomb_event_data_json(
@@ -133,6 +93,9 @@ def read_open_statsbomb_event_data_json(
         "at_y",
         "to_x",
         "to_y",
+        "event_name",
+        "player_name",
+        "team_name",
         "qualifier",
     ]
 
@@ -152,6 +115,10 @@ def read_open_statsbomb_event_data_json(
         eID = event["type"]["id"]
         tID = event["team"]["id"]
         pID = event["player"]["id"] if "player" in event else None
+        event_name = event["type"]["name"]
+        team_name = event["team"]["name"]
+        player_name = event["player"]["name"] if "player" in event else None
+
         if "type" in event and event["type"]["name"].lower() in event:
             outcome = (
                 event[event["type"]["name"].lower()]["outcome"]["name"]
@@ -164,13 +131,17 @@ def read_open_statsbomb_event_data_json(
         team_event_lists[team][segment]["eID"].append(eID)
         team_event_lists[team][segment]["tID"].append(tID)
         team_event_lists[team][segment]["pID"].append(pID)
+        team_event_lists[team][segment]["event_name"].append(event_name)
+        team_event_lists[team][segment]["team_name"].append(team_name)
+        team_event_lists[team][segment]["player_name"].append(player_name)
         team_event_lists[team][segment]["outcome"].append(outcome)
 
         # relative time
         timestamp = event["timestamp"]
         minute = event["minute"]
         second = event["second"]
-        gameclock = 60 * minute + second  # in seconds
+        millisecond = int(timestamp.split(".")[1])
+        gameclock = 60 * minute + second + millisecond * 0.001  # in seconds
         team_event_lists[team][segment]["timestamp"].append(timestamp)
         team_event_lists[team][segment]["minute"].append(minute)
         team_event_lists[team][segment]["second"].append(second)
@@ -203,7 +174,6 @@ def read_open_statsbomb_event_data_json(
         qual_dict["unique_identifier"] = event["id"]
         for qualifier in event:
             if qualifier in [
-                "type",
                 "period",
                 "timestamp",
                 "minute",
