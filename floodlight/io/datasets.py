@@ -124,15 +124,7 @@ class EIGDDataset:
     @staticmethod
     def get_pitch() -> Pitch:
         """Returns a Pitch object corresponding to the EIGD-data."""
-        return Pitch(
-            xlim=(0, 40),
-            ylim=(0, 20),
-            unit="m",
-            boundaries="fixed",
-            length=40,
-            width=20,
-            sport="handball",
-        )
+        return Pitch.from_template("eidg")
 
     def _download_and_extract(self) -> None:
         """Downloads an archive file into temporary storage and
