@@ -275,14 +275,15 @@ class StatsBombOpenDataset:
     -----
     The dataset contains result, lineup, and event data for a variety of matches from a
     total of eight different competitions (Women's World Cup, FIFA World Cup, UEFA Euro,
-    Champions League, FA Women's Super League, NWSL, Premier League, and La Liga). The
+    Champions League, FA Women's Super League, NWSL, Premier League, and La Liga). For
+    the Champions League all Finals from 2003/2004 to 2018/2019 are contained. The
     competition with the most matches is La Liga where StatsBomb provides data for every
     one of the 520 matches ever played by Lionel Messi for FC Barcelona. In addition,
     for 51 matches from the UEFA Euro 2020 additional StatsBomb360 data is available.
     This data contains the tracked positions of (some) players at the captured events of
     these matches. As the data is constantly updated, we provide an overview over the
     stats here but refer to the official repository for up-to-date information (last
-    modified 27.04.2022)::
+    modified 06.05.2022)::
 
         number_of_matches = {
             "Champions League": {
@@ -512,7 +513,9 @@ class StatsBombOpenDataset:
                 f"{self._STATSBOMB_FILE_EXT}"
             )
             try:
-                binary_file.write(download_from_url(threesixty_host_url))
+                data = download_from_url(threesixty_host_url)
+                with open(filepath_threesixty, "wb") as binary_file:
+                    binary_file.write(data)
             except HTTPError:
                 filepath_threesixty = None
 

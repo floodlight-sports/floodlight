@@ -118,15 +118,23 @@ def read_open_statsbomb_event_data_json(
         event_name = event["type"]["name"]
         team_name = event["team"]["name"]
         player_name = event["player"]["name"] if "player" in event else None
-
+        outcome = None
         if "type" in event and event["type"]["name"].lower() in event:
-            outcome = (
+            outcome_name = (
                 event[event["type"]["name"].lower()]["outcome"]["name"]
                 if "outcome" in event[event["type"]["name"].lower()]
-                else None
+                else "None"
             )
-        else:
-            outcome = None
+            if outcome_name in ["Goal", "Won", "Complete", "Success In Play"]:
+                outcome = 1
+            elif outcome_name in [
+                "Incomplete",
+                "Lost In Play",
+                "Saved Off Target",
+                "Off T",
+                "Blocked",
+            ]:
+                outcome = 0
         team_event_lists[team][segment]["mID"].append(mID)
         team_event_lists[team][segment]["eID"].append(eID)
         team_event_lists[team][segment]["tID"].append(tID)
