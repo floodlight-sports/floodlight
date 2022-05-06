@@ -96,7 +96,7 @@ def test_protected_missing(
     missing_protected_columns = data.protected_missing
 
     # Assert
-    assert len(missing_protected_columns) == 14
+    assert len(missing_protected_columns) == 15
 
 
 @pytest.mark.unit
@@ -356,7 +356,7 @@ def test_rotate(
 
 
 @pytest.mark.unit
-def test_slice(
+def test_slice_new_object(
     example_events_data_minimal,
     example_events_data_minimal_none,
     example_events_data_frameclock,
@@ -374,11 +374,8 @@ def test_slice(
     data_minimal_start_sliced = data_minimal.slice(start=1.2, inplace=False)
     data_none_sliced = data_none.slice(inplace=False)
     data_frameclock_sliced = data_frameclock.slice(
-        end=15, use_frameclock=True, inplace=False
+        end=15, slice_by="frameclock", inplace=False
     )
-    data_minimal.slice(start=10, inplace=True)
-    data_none.slice(inplace=True)
-    data_frameclock.slice(start=15, use_frameclock=True, inplace=True)
 
     # Assert
     assert data_minimal_full.events.shape == (2, 2)
@@ -387,130 +384,85 @@ def test_slice(
     assert data_minimal_start_sliced.events.shape == (1, 2)
     assert data_none_sliced.events.shape == (1, 2)
     assert data_frameclock_sliced.events.shape == (1, 3)
+
+
+@pytest.mark.unit
+def test_slice_inplace(
+    example_events_data_minimal,
+    example_events_data_minimal_none,
+    example_events_data_frameclock,
+) -> None:
+
+    # Arrange
+    data_minimal = Events(example_events_data_minimal)
+    data_none = Events(example_events_data_minimal_none)
+    data_frameclock = Events(example_events_data_frameclock)
+
+    # Act
+    data_minimal.slice(start=10, inplace=True)
+    data_none.slice(inplace=True)
+    data_frameclock.slice(start=15, slice_by="frameclock", inplace=True)
+
+    # Assert
     assert data_minimal.events.shape == (0, 2)
     assert data_none.events.shape == (1, 2)
     assert data_frameclock.events.shape == (1, 3)
 
 
 @pytest.mark.unit
-@pytest.mark.filterwarnings("ignore: Cannot estimate playing direction for an events")
-@pytest.mark.filterwarnings("ignore: Need at least one goalkeeper and one shot event")
-@pytest.mark.filterwarnings("ignore: Estimated playing direction is")
-def test_estimate_playing_direction(
-    example_events_data_minimal,
-    example_events_data_xy_long,
-    example_events_data_xy_none_long,
-    example_football_pitch,
-):
-    # Arrange
-    data_minimal = Events(example_events_data_minimal)
-    data_xy_long = Events(example_events_data_xy_long)
-    data_xy_none_long = Events(example_events_data_xy_none_long)
-    links_lr = {
-        0: "GoalkeeperAction",
-        6: "goalkeeper",
-        8: "event-KICK-goalkeeper",
-        3: "undefined",
-        12: "ShotOnTarget",
-        125: "shotdeflected",
-    }
-    links_rl = {
-        0: "ShotOffTarget",
-        6: "leftLegShot",
-        8: "right-legged-shot",
-        3: "undefined",
-        12: "goalkeeper_save",
-        125: "Kick(GoalKeeper)",
-    }
-
-    # Act
-    try:
-        direction_minimal = data_minimal.estimate_playing_direction(
-            pitch=example_football_pitch
-        )
-    except ValueError:
-        direction_minimal = None
-
-    direction_no_links = data_xy_long.estimate_playing_direction(
-        pitch=example_football_pitch
-    )
-    direction_xy_long_lr = data_xy_long.estimate_playing_direction(
-        pitch=example_football_pitch, links_eID_to_event_names=links_lr
-    )
-    direction_xy_long_rl = data_xy_long.estimate_playing_direction(
-        pitch=example_football_pitch, links_eID_to_event_names=links_rl
-    )
-    direction_xy_none_long_lr = data_xy_none_long.estimate_playing_direction(
-        example_football_pitch, links_eID_to_event_names=links_lr
-    )
-    direction_xy_none_long_rl = data_xy_none_long.estimate_playing_direction(
-        example_football_pitch, links_eID_to_event_names=links_rl
-    )
-
-    # Assert
-    assert direction_minimal is None
-    assert direction_no_links is None
-    assert direction_xy_long_lr == "lr"
-    assert direction_xy_long_rl == "rl"
-    assert direction_xy_none_long_lr == "lr"
-    assert direction_xy_none_long_rl == "rl"
-
-
-@pytest.mark.unit
-def test_get_event_stream(
+def test_get_event_stream_frameclock(
     example_events_data_minimal,
     example_events_data_frameclock,
-    example_events_data_frameclock_none,
-    example_events_data_frameclock_unsorted,
-    example_events_data_frameclock_long,
 ):
     # Arrange
     data_minimal = Events(example_events_data_minimal)
     data_frameclock = Events(example_events_data_frameclock)
-    data_frameclock_none = Events(example_events_data_frameclock_none)
-    data_frameclock_unsorted = Events(example_events_data_frameclock_unsorted)
-    data_frameclock_long = Events(example_events_data_frameclock_long)
-    links_long = {0: "A", 2: "A", 12: "A", 1: "H", 17: "H", 23: "H"}
 
     # Act
     try:
         event_stream_minimal = data_minimal.get_event_stream()
     except ValueError:
         event_stream_minimal = None
-    event_stream_frameclock = data_frameclock.get_event_stream(start=5, end=17)
-    event_stream_frameclock_none = data_frameclock_none.get_event_stream()
-    event_stream_frameclock_unsorted = data_frameclock_unsorted.get_event_stream(
-        fade=3, placeholder=-1
-    )
-    event_stream_frameclock_long = data_frameclock_long.get_event_stream(
-        start=0,
-        end=500,
-        fade=100,
-        links_eID_to_code=links_long,
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-    )
+    event_stream_frameclock = data_frameclock.get_event_stream()
 
     # Assert
     assert event_stream_minimal is None
-    assert len(event_stream_frameclock) == 12
-    assert np.nansum(event_stream_frameclock[:7]) == 0
-    assert np.sum(event_stream_frameclock[8:]) == 4
-    assert len(event_stream_frameclock_none) == 18
-    assert np.nansum(event_stream_frameclock_none[:17]) == 0
-    assert event_stream_frameclock_none[17] == 2
-    assert len(event_stream_frameclock_unsorted) == 27
-    assert np.sum(event_stream_frameclock_unsorted[:12]) == 12 * -1
-    assert np.sum(event_stream_frameclock_unsorted[12:16]) == 4 * 2
-    assert event_stream_frameclock_unsorted[16] == -1
-    assert np.sum(event_stream_frameclock_unsorted[17:21]) == 4 * 3
-    assert np.sum(event_stream_frameclock_unsorted[21:]) == -1 * 5 + 1 * 1
-    assert len(event_stream_frameclock_long) == 500
-    assert np.all(event_stream_frameclock_long[:25] == "A")
-    assert np.all(event_stream_frameclock_long[25:50] == "H")
-    assert np.all(event_stream_frameclock_long[50:251] == "A")
-    assert np.nansum(event_stream_frameclock_long[251:375]) == 0
-    assert np.all(event_stream_frameclock_long[375:425] == "A")
-    assert np.all(event_stream_frameclock_long[425:] == "H")
-    assert event_stream_frameclock_long.name == "possession"
-    assert event_stream_frameclock_long.definitions["H"] == "Home"
+    assert len(event_stream_frameclock) == 6
+    assert event_stream_frameclock[0] == 1
+    assert event_stream_frameclock[-1] == 2
+    assert np.nansum(event_stream_frameclock[1:5]) == 0
+
+
+@pytest.mark.unit
+def test_get_event_stream_frameclock_none(
+    example_events_data_frameclock_none,
+):
+    # Arrange
+    data_frameclock_none = Events(example_events_data_frameclock_none)
+
+    # Act
+    event_stream_frameclock_none = data_frameclock_none.get_event_stream()
+
+    # Assert
+    assert len(event_stream_frameclock_none) == 1
+    assert event_stream_frameclock_none[0] == "2"
+
+
+@pytest.mark.unit
+def test_get_event_stream_frameclock_unsorted(
+    example_events_data_frameclock_unsorted,
+):
+    # Arrange
+    data_frameclock_unsorted = Events(example_events_data_frameclock_unsorted)
+
+    # Act
+    event_stream_frameclock_unsorted = data_frameclock_unsorted.get_event_stream(
+        fade=3,
+        name="possession",
+    )
+
+    # Assert
+    assert len(event_stream_frameclock_unsorted) == 15
+    assert np.sum(event_stream_frameclock_unsorted[:4]) == 4 * 2
+    assert np.isnan(event_stream_frameclock_unsorted[4])
+    assert np.nansum(event_stream_frameclock_unsorted[5:]) == 4 * 3 + 1 * 1
