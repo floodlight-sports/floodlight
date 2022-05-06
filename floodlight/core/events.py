@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Any, Union
+from typing import Dict, List, Tuple, Any
 import warnings
 
 import numpy as np
@@ -8,7 +8,6 @@ import pandas as pd
 
 from floodlight.utils.types import Numeric
 from floodlight.core.definitions import essential_events_columns, protected_columns
-from floodlight.core.pitch import Pitch
 from floodlight.core.code import Code
 
 
@@ -397,7 +396,7 @@ class Events:
         self,
         start: float = None,
         end: float = None,
-        use_frameclock=False,
+        slice_by="gameclock",
         inplace: bool = False,
     ):
         """Return copy of object with events sliced in a time interval using either the
@@ -407,12 +406,12 @@ class Events:
         Parameters
         ----------
         start : float, optional
-            Start of slice. Defaults to beginning of segment.
+            Start frame or second of slice. Defaults to beginning of segment.
         end : float, optional
-            End of slice (endframe is excluded). Defaults to end of segment.
-        use_frameclock: bool, optional
-            Whether the ``frameclock`` column should be used instead of the
-            ``gameclock``. Defaults to False.
+            End frame or second of slice (endframe is excluded). Defaults to last event
+            of segment (including).
+        slice_by: str, optional
+            Column used to slice the events. Defaults to ``gameclock``.
         inplace: bool, optional
             If set to ``False`` (default), a new object is returned, otherwise the
             operation is performed in place on the called object.
@@ -421,14 +420,15 @@ class Events:
         -------
         events_sliced: Union[Event, None]
         """
-        col = "frameclock" if use_frameclock else "gameclock"
+        if slice_by not in self.events:
+            ValueError(f"Events object does not contain column {slice_by}!")
         if start is None:
             start = 0
         if end is None:
-            end = np.nanmax(self.events[col].values) + 1
+            end = np.nanmax(self.events[slice_by].values) + 1
 
-        sliced_data = self.events[self.events[col] >= start].copy()
-        sliced_data = sliced_data[sliced_data[col] < end]
+        sliced_data = self.events[self.events[slice_by] >= start].copy()
+        sliced_data = sliced_data[sliced_data[slice_by] < end]
 
         events_sliced = None
         if inplace:
@@ -441,133 +441,34 @@ class Events:
 
         return events_sliced
 
-    def estimate_playing_direction(
-        self, pitch: Pitch, links_eID_to_event_names: Dict[Union[str, int], str] = None
-    ):
-        """Estimates one of two possible directions 'lr' (left-to-right) or 'rl'
-        (right-to-left) from the location of "shot" and "goalkeeper" events (of the team
-        assigned to the events, must contain at least one shot and one goalkeeper event)
-        . To ensure functionality, a mapping between eID to event name for those events
-        should be provided but is not mandatory. Returns None if no clear direction can
-        be estimated.
-
-        Parameters
-        ----------
-        pitch: Pitch
-        links_eID_to_event_names: Dict[Union[str, int], str], optional
-            A link dictionary mapping specific eIDs to either "shot" or "goalkeeper"
-            events.
-
-        Returns
-        -------
-        est_direction: {None, 'lr', 'rl'}
-            Estimated playing direction of players in data fragment.
-        """
-        if "at_x" in self.protected_missing:
-            raise ValueError(
-                f"Cannot estimate playing direction for an events object missing the "
-                f"column {'at_x'}!"
-            )
-
-        event_names = [
-            links_eID_to_event_names[eID]
-            if links_eID_to_event_names is not None and eID in links_eID_to_event_names
-            else str(eID)
-            for eID in self.events["eID"]
-        ]
-
-        goalkeeper_events = ["goalkeeper" in name.lower() for name in event_names]
-        shot_events = ["shot" in name.lower() for name in event_names]
-        goalkeeper_at_x = self.events[goalkeeper_events]["at_x"]
-        shot_at_x = self.events[shot_events]["at_x"]
-
-        est_direction = None
-        pitch_half = pitch.xlim[0] + pitch.length / 2
-
-        if not bool(len(goalkeeper_at_x)) or not bool(len(shot_at_x)):
-            warnings.warn(
-                f"Need at least one goalkeeper and one shot event to "
-                f"estimate playing direction, found {len(goalkeeper_events)} "
-                f"goalkeeper events and {len(shot_events)} shot events."
-            )
-            return est_direction
-
-        if np.nanmean(goalkeeper_at_x) < pitch_half < np.nanmean(shot_at_x):
-            est_direction = "lr"
-            num_goalkeeper_outliers = np.nansum(goalkeeper_at_x >= pitch_half)
-            num_shot_outliers = np.nansum(shot_at_x <= pitch_half)
-            if bool(num_goalkeeper_outliers) or bool(num_shot_outliers):
-                warnings.warn(
-                    f"Estimated playing direction is from left to right, "
-                    f"however, found {num_goalkeeper_outliers} goalkeeper "
-                    f"event(s) taking place in the right pitch half and "
-                    f"{num_shot_outliers} shot event(s) taking place in "
-                    f"the left pitch half."
-                )
-        elif np.nanmean(goalkeeper_at_x) > pitch_half > np.nanmean(shot_at_x):
-            est_direction = "rl"
-            num_goalkeeper_outliers = np.nansum(goalkeeper_at_x <= pitch_half)
-            num_shot_outliers = np.nansum(shot_at_x >= pitch_half)
-            if bool(num_goalkeeper_outliers) or bool(num_shot_outliers):
-                warnings.warn(
-                    f"Estimated playing direction is from left to right, "
-                    f"however, found {num_goalkeeper_outliers} goalkeeper "
-                    f"event(s) taking place in the left pitch half and "
-                    f"{num_shot_outliers} shot event(s) taking place in "
-                    f"the right pitch half."
-                )
-        else:
-            warnings.warn(
-                f"Cannot estimate playing direction from goalkeeper and shot events "
-                f"occuring on the same half of the pitch given the "
-                f"{len(goalkeeper_events)} goalkeeper events at mean lateral "
-                f"location {np.mean(goalkeeper_at_x)} and {len(shot_events)} "
-                f"shot events at mean lateral location {np.mean(shot_at_x)} (middle "
-                f"line of the pitch is located at {pitch_half})."
-            )
-        return est_direction
-
     def get_event_stream(
         self,
-        start: int = None,
-        end: int = None,
-        fade: int = None,
-        placeholder: int = None,
-        links_eID_to_code: Dict[Union[str, int], str] = None,
+        fade: int = 0,
         **kwargs,
     ) -> Code:
-        """Generates a continuous Code object between the start and end frame based on
-        the events defined in the links_eID_to_code dictionary. If no links are
-        provided, code values are obtained from the raw eIDs of all events. Requires the
-        protected column ``frameclock`` in the inner events DataFrame.
+        """Generates a continuous Code object containing the eIDs of all events at the
+        corresponding frame numbers. The eID are maintained for a certain fade duration.
+        Remaining values are set to np.nan. Requires the protected column ``frameclock``
+        to function.
 
         Parameters
         ----------
-        start: float, optional
-            Start of the generated Code object. Defaults to beginning of segment.
-        end: float, optional
-            End of the generated Code object (endframe is excluded). Defaults to end of
-            segment.
         fade: int, optional
             Number of additional frames for which the Code object should stay at a
             value after the event occurred. The value is overwritten if another event
             occurs within the fade duration. If chosen to zero, the value is maintained
             only for a single frame. If chosen to None, the value is maintained until
-            either the next event or until the end of the sequence. Defaults to None.
-        placeholder: int, optional
-            Value that the generated Code object is set to if no information from an
-            event is present. Defaults to None.
-        links_eID_to_code: dict[Union[str, int]], str], optional
-            A link dictionary mapping specific eIDs to certain game states.
+            either the next event or until the end of the sequence. Defaults to 0.
         kwargs:
-            Other keyword arguments are passed down to the Code object.
+            Other keyword arguments ("name", "definitions", "framerate") are passed down
+             to the Code object.
 
         Returns
         -------
         event_stream: Code
             Generated continuous event stream describing the designated game state.
         """
-        if "frameclock" not in self.events:
+        if "frameclock" in self.protected_missing:
             raise ValueError(
                 "Cannot create event stream from Events object missing "
                 "the protected column 'frameclock'. Consider calling "
@@ -575,34 +476,15 @@ class Events:
             )
 
         sorted_events = self.events.sort_values("frameclock")
+        start = int(np.round(np.nanmin(sorted_events["frameclock"].values)))
+        end = int(np.round(np.nanmax(sorted_events["frameclock"].values))) + 1
 
-        if start is None:
-            start = 0
-        if end is None:
-            end = int(np.round(np.nanmax(sorted_events.values))) + 1
-        if placeholder is None:
-            placeholder = np.nan
-        if links_eID_to_code is None:
-            event_codes_and_times = [
-                (round(evnt["frameclock"]), evnt["eID"])
-                for _, evnt in sorted_events.iterrows()
-                if not pd.isna(evnt["frameclock"])
-            ]
-        else:
-            event_codes_and_times = [
-                (round(evnt["frameclock"]), links_eID_to_code[evnt["eID"]])
-                for _, evnt in sorted_events.iterrows()
-                if evnt["eID"] in links_eID_to_code and not pd.isna(evnt["frameclock"])
-            ]
-
-        code = np.full((end - start,), placeholder, dtype=object)
-        for event_tuple in event_codes_and_times:
-            if fade is None:
-                code[event_tuple[0] - start :] = event_tuple[1]
-            else:
-                code[
-                    event_tuple[0] - start : event_tuple[0] - start + fade + 1
-                ] = event_tuple[1]
+        code = np.full((end - start,), np.nan, dtype=object)
+        for _, event in sorted_events.iterrows():
+            if pd.isna(event["frameclock"]):
+                continue
+            event_frame = int(np.round(event["frameclock"]))
+            code[event_frame - start : event_frame - start + fade + 1] = event["eID"]
 
         event_stream = Code(
             code=code,
