@@ -359,69 +359,42 @@ def test_rotate(
 @pytest.mark.unit
 def test_slice_new_object(
     example_events_data_minimal,
-    example_events_data_frameclock,
 ) -> None:
 
     # Arrange
     data_minimal = Events(example_events_data_minimal)
-    data_frameclock = Events(example_events_data_frameclock)
 
     # Act
     data_minimal_full = data_minimal.slice(inplace=False)
     data_minimal_full_arguments = data_minimal.slice(start=1.1, end=2.3, inplace=False)
     data_minimal_end_sliced = data_minimal.slice(end=2.2, inplace=False)
     data_minimal_start_sliced = data_minimal.slice(start=1.2, inplace=False)
-    data_frameclock_sliced = data_frameclock.slice(
-        end=15, slice_by="frameclock", inplace=False
-    )
 
     # Assert
-    assert all(
-        data_minimal_full.events
-        == pd.DataFrame(
-            {
-                "eID": [1, 2],
-                "gameclock": [1.1, 2.2],
-            }
-        )
+    full_events = pd.DataFrame(
+        {
+            "eID": [1, 2],
+            "gameclock": [1.1, 2.2],
+        }
     )
-    assert all(
-        data_minimal_full_arguments.events
-        == pd.DataFrame(
-            {
-                "eID": [1, 2],
-                "gameclock": [1.1, 2.2],
-            }
-        )
+    start_events = pd.DataFrame(
+        {
+            "eID": [1],
+            "gameclock": [1.1],
+        }
     )
-    assert all(
-        data_minimal_end_sliced.events
-        == pd.DataFrame(
-            {
-                "eID": [1],
-                "gameclock": [1.1],
-            }
-        )
+    end_events = pd.DataFrame(
+        {
+            "eID": [2],
+            "gameclock": [2.2],
+        }
     )
-    assert all(
-        data_minimal_start_sliced.events
-        == pd.DataFrame(
-            {
-                "eID": [2],
-                "gameclock": [2.2],
-            }
-        )
-    )
-    assert all(
-        data_frameclock_sliced.events
-        == pd.DataFrame(
-            {
-                "eID": [1],
-                "gameclock": [0.1],
-                "frameclock": [12.4],
-            }
-        )
-    )
+    assert all(data_minimal_full.events == full_events)
+    assert all(data_minimal_full_arguments.events == full_events)
+
+    assert all(data_minimal_end_sliced.events == start_events)
+
+    assert all(data_minimal_start_sliced.events == end_events)
 
 
 # tests for slice with inplace=True
@@ -440,17 +413,39 @@ def test_slice_inplace(
     data_frameclock.slice(start=15, slice_by="frameclock", inplace=True)
 
     # Assert
-    assert len(data_minimal.events) == 0
-    assert all(
-        data_frameclock.events
-        == pd.DataFrame(
-            {
-                "eID": [2],
-                "gameclock": [0.2],
-                "frameclock": [16.7],
-            }
-        )
+    frameclock_end_events = pd.DataFrame(
+        {
+            "eID": [2],
+            "gameclock": [0.2],
+            "frameclock": [16.7],
+        }
     )
+    assert len(data_minimal.events) == 0
+    assert all(data_frameclock.events == frameclock_end_events)
+
+
+# tests slice using the frameclock column
+@pytest.mark.unit
+def test_slice_frameclock(
+    example_events_data_frameclock,
+):
+    # Arrange
+    data_frameclock = Events(example_events_data_frameclock)
+
+    # Act
+    data_frameclock_sliced = data_frameclock.slice(
+        end=15, slice_by="frameclock", inplace=False
+    )
+
+    # Assert
+    frameclock_start_events = pd.DataFrame(
+        {
+            "eID": [1],
+            "gameclock": [0.1],
+            "frameclock": [12.4],
+        }
+    )
+    assert all(data_frameclock_sliced.events == frameclock_start_events)
 
 
 # tests slice for objects containing None
@@ -466,20 +461,14 @@ def test_slice_none(
     data_none.slice(start=1.1, end=1.2, inplace=True)
 
     # Assert
-    assert all(
-        data_none_sliced.events
-        == {
-            "eID": [None, 2],
-            "gameclock": [1.1, None],
+    data_none_events = pd.DataFrame(
+        {
+            "eID": [None],
+            "gameclock": [1.1],
         }
     )
-    assert all(
-        data_none.events
-        == {
-            "eID": [None, 2],
-            "gameclock": [1.1, None],
-        }
-    )
+    assert all(data_none_sliced.events == data_none_events)
+    assert all(data_none.events == data_none_events)
 
 
 # tests get_event_stream with and without frameclock (latter should fail)
