@@ -399,9 +399,12 @@ class Events:
         slice_by="gameclock",
         inplace: bool = False,
     ):
-        """Return copy of object with events sliced in a time interval using either the
-        gameclock (total seconds) or the frameclock. All entries without a valid time
-        entry (e.g. None) are excluded.
+        """Return copy of object with events sliced in a time interval.
+
+        Intended columns for using this function are ``gameclock`` (total seconds) or
+        ``frameclock``. However, also allows slicing by any other column that manifests
+        a  temporal relation between events (e.g. ``minute``). Excludes all entries
+        without a valid entry in the specified column (e.g. None).
 
         Parameters
         ----------
@@ -410,7 +413,7 @@ class Events:
         end : float, optional
             End frame or second of slice (endframe is excluded). Defaults to last event
             of segment (including).
-        slice_by: str, optional
+        slice_by: {'gameclock', 'frameclock'}, optional
             Column used to slice the events. Defaults to ``gameclock``.
         inplace: bool, optional
             If set to ``False`` (default), a new object is returned, otherwise the
@@ -446,10 +449,19 @@ class Events:
         fade: int = 0,
         **kwargs,
     ) -> Code:
-        """Generates a continuous Code object containing the eIDs of all events at the
-        corresponding frame numbers. The eID are maintained for a certain fade duration.
-        Remaining values are set to np.nan. Requires the protected column ``frameclock``
-        to function.
+        """Generates a Code object containing the eIDs of all events at the
+        respective frame and optionally subsequent frames as defined by the fade
+        argument.
+
+        This function translates the object's DataFrame of temporally irregular events
+        to a continuous frame-wise representation. This can be especially helpful to
+        connect event data with spatiotemporal data, e.g., for filtering the latter
+        based on the former. Events overwrite preceding event's fade, and unfilled
+        values are set to np.nan.
+
+        Notes
+        ------
+        Requires the DataFrame to contain the protected ``frameclock`` column.
 
         Parameters
         ----------
@@ -460,8 +472,8 @@ class Events:
             only for a single frame. If chosen to None, the value is maintained until
             either the next event or until the end of the sequence. Defaults to 0.
         kwargs:
-            Other keyword arguments ("name", "definitions", "framerate") are passed down
-             to the Code object.
+            Keyword arguments of the Code object ("name", "definitions", "framerate")
+            that are passed down to instantiate the returned event_stream.
 
         Returns
         -------
