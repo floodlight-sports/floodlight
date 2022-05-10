@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Tuple
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 import h5py
 import numpy as np
@@ -395,7 +395,7 @@ class StatsBombOpenDataset:
 
         Returns
         -------
-        dataset_summary: pd.DataFrame
+        summary: pd.DataFrame
         """
         summary = pd.DataFrame()
 
@@ -441,9 +441,10 @@ class StatsBombOpenDataset:
         season_name: str = "2020/2021",
         match_name: str = None,
     ) -> Tuple[Events, Events, Events, Events]:
-        """Get events with included Statsbomb360 data (if available) from one match of
-        the StatsBomb open dataset. If the files are not contained in the repository's
-        root ``data`` folder they are downloaded first.
+        """Get events from one match of the StatsBomb open dataset. If StatsBomb360 data
+        ("freeze frames") are available, they are stored in the  ``qualifier`` column.
+        If the files are not contained in the repository's root ``data`` folder they are
+        downloaded to the folder and will be stored until removed by hand.
 
         Parameters
         ----------
@@ -588,14 +589,22 @@ class StatsBombOpenDataset:
         )
 
         # download file with information of all seasons
-        with open(self.filepath_competitions, "wb") as binary_file:
-            binary_file.write(download_from_url(competitions_host_url))
+        try:
+            with open(self.filepath_competitions, "wb") as binary_file:
+                binary_file.write(download_from_url(competitions_host_url))
+        except URLError:  # remove empty json file if download fails
+            os.remove(self.filepath_competitions)
+            raise URLError(
+                f"Could not download competitions.json from URL "
+                f"{competitions_host_url}. Check your internet connection!"
+            )
 
     def _download_matches_info(self) -> None:
         """Downloads the json files containing information about available matches from
         all available seasons into the file system.
         """
         competition_info = pd.read_json(self.filepath_competitions)
+
         for _, single_season in competition_info.iterrows():
             cID = single_season["competition_id"]
             sID = single_season["season_id"]
