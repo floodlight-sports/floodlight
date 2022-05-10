@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Union
 import warnings
 
 import numpy as np
@@ -432,6 +432,7 @@ class Events:
 
         sliced_data = self.events[self.events[slice_by] >= start].copy()
         sliced_data = sliced_data[sliced_data[slice_by] < end]
+        sliced_data.reset_index(drop=True, inplace=True)
 
         events_sliced = None
         if inplace:
@@ -446,7 +447,7 @@ class Events:
 
     def get_event_stream(
         self,
-        fade: int = 0,
+        fade: Union[int, None] = 0,
         **kwargs,
     ) -> Code:
         """Generates a Code object containing the eIDs of all events at the
@@ -486,6 +487,10 @@ class Events:
                 "the protected column 'frameclock'. Consider calling "
                 "add_frameclock to the Events object first!"
             )
+        if fade is not None and fade < 0:
+            raise ValueError(
+                "Function get_event_stream is not defined for negative values of fade!"
+            )
 
         sorted_events = self.events.sort_values("frameclock")
         start = int(np.round(np.nanmin(sorted_events["frameclock"].values)))
@@ -495,8 +500,11 @@ class Events:
         for _, event in sorted_events.iterrows():
             if pd.isna(event["frameclock"]):
                 continue
-            event_frame = int(np.round(event["frameclock"]))
-            code[event_frame - start : event_frame - start + fade + 1] = event["eID"]
+            frame = int(np.round(event["frameclock"]))
+            if fade is None:
+                code[frame - start :] = event["eID"]
+            else:
+                code[frame - start : frame - start + fade + 1] = event["eID"]
 
         event_stream = Code(
             code=code,
