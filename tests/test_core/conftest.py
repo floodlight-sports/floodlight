@@ -179,7 +179,7 @@ def example_events_data_frameclock_unsorted() -> pd.DataFrame:
     data = {
         "eID": [1, 2, 3],
         "gameclock": [1.3, 0.1, 0.2],
-        "frameclock": [25.6, 12.4, 16.7],
+        "frameclock": [21.6, 12.4, 16.7],
     }
     return pd.DataFrame(data)
 
