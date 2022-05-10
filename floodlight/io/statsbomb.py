@@ -20,15 +20,16 @@ def read_open_statsbomb_event_data_json(
     published StatsBomb open data and returns Event objects for both teams for the first
     two periods. A StatsBomb360 json file can be passed to the function to include
     information about the tracked position of (some) players at certain events to the
-    ``qualifier`` column.
+    ``qualifier`` column. Requires the parsed files from the dataset to maintain their
+    original names from <https://github.com/statsbomb/open-data>`_.
 
     Parameters
     ----------
     filepath_events: str or pathlib.Path
         Full path to json file where the Event data is saved.
     filepath_match: str or pathlib.Path
-        Full path to json file where information about all matches of a competition are
-         stored.
+        Full path to json file where information about all matches of a season are
+        stored.
     filepath_threesixty: str or pathlib.Path, optional
         Full path to json file where the StatsBomb360 data in is saved if available. The
         information about the area of the field where player positions are tracked
@@ -149,7 +150,7 @@ def read_open_statsbomb_event_data_json(
         minute = event["minute"]
         second = event["second"]
         millisecond = int(timestamp.split(".")[1])
-        gameclock = 60 * minute + second + millisecond * 0.001  # in seconds
+        gameclock = 60 * minute + second + millisecond * 0.001
         team_event_lists[team][segment]["timestamp"].append(timestamp)
         team_event_lists[team][segment]["minute"].append(minute)
         team_event_lists[team][segment]["second"].append(second)
@@ -182,12 +183,15 @@ def read_open_statsbomb_event_data_json(
         qual_dict["unique_identifier"] = event["id"]
         for qualifier in event:
             if qualifier in [
+                "team",
+                "player",
                 "period",
                 "timestamp",
                 "minute",
                 "second",
                 "location",
                 "id",
+                "type",
             ]:
                 continue
             qual_value = event[qualifier]
