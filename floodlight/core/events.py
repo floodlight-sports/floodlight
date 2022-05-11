@@ -489,7 +489,7 @@ class Events:
             )
         if fade is not None and fade < 0:
             raise ValueError(
-                "Function get_event_stream is not defined for negative values of fade!"
+                f"Expected fade to be a positive integer or None, got {fade} instead."
             )
 
         sorted_events = self.events.sort_values("frameclock")
