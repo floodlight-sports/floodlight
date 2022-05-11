@@ -196,6 +196,7 @@ def read_open_statsbomb_event_data_json(
                 continue
             qual_value = event[qualifier]
             qual_dict[qualifier] = qual_value
+
         if file_threesixty_list is not None:
             threesixty_event = [
                 event
