@@ -267,7 +267,7 @@ class StatsBombOpenDataset:
     data repository <https://github.com/statsbomb/open-data>`_.
 
     Due to the size of the full dataset (~5GB), only metadata (~2MB) are downloaded
-    to the repository's root ``.data``-folder upon instanteation while the other data
+    to the repository's root ``.data``-folder upon instantiation while the other data
     are only downloaded on demand. All downloaded files stay on disk if not manually
     removed.
 
@@ -328,17 +328,21 @@ class StatsBombOpenDataset:
     >>> events = dataset.get("UEFA Euro", "2020", "England vs. Germany")
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
-    # get List of events for every El Clásico ever played by Lionel Messi in Camp Nou
+    # get a summary of available matches in the dataset
+    >>> matches = dataset.available_matches
+    # read events for every La Liga Clásico played in Camp Nou by Lionel Messi
     >>> clasico_events = []
-    >>> for season in dataset.links_match_to_mID["La Liga"]:
-    >>>     for match in dataset.links_match_to_mID["La Liga"][season]:
-    >>>        if match == "Barcelona vs. Real Madrid"
-    >>>            events = dataset.get("La Liga", season, match)
-    >>>            clasico_events.append(events)
+    >>> clasicos = matches[matches["match_name"] == "Barcelona vs. Real Madrid"]
+    >>> for _, clasico in clasicos.iterrows():
+    >>>     data = dataset.get("La Liga", clasico["season_name"], clasico["match_name"])
+    >>>     clasico_events.append(data)
     """
 
     def __init__(self, dataset_path="statsbomb_dataset"):
         # setup
+        self._links_competition_to_cID = {}
+        self._links_season_to_sID = {}
+        self._links_match_to_mID = {}
         self._STATSBOMB_SCHEMA = "https"
         self._STATSBOMB_BASE_URL = (
             "raw.githubusercontent.com/statsbomb/open-data/master/data"
@@ -357,7 +361,7 @@ class StatsBombOpenDataset:
         )
         if not os.path.isdir(self._data_dir):
             os.makedirs(self._data_dir, exist_ok=True)
-        if not bool(os.listdir(self._data_dir)):
+        if not os.path.exists(self.filepath_competitions):
             self._download_competition_info()
 
         # create matches directory and check if match info needs to be downloaded
@@ -366,8 +370,7 @@ class StatsBombOpenDataset:
         )
         if not os.path.isdir(self._matches_data_dir):
             os.makedirs(self._matches_data_dir, exist_ok=True)
-        if not bool(os.listdir(self._matches_data_dir)):
-            self._download_matches_info()
+        self._download_matches_info()
 
         # create events location
         self._events_data_dir = os.path.join(
@@ -383,11 +386,8 @@ class StatsBombOpenDataset:
         if not os.path.isdir(self._threesixty_data_dir):
             os.makedirs(self._threesixty_data_dir, exist_ok=True)
 
-        # create and update links
-        self.links_competition_to_cID = {}
-        self.links_season_to_sID = {}
-        self.links_match_to_mID = {}
-        self._read_competition_season_and_match_links_from_files()
+        # read links from files and update class level dictionaries
+        self._read_competition_links_from_file()
 
     @property
     def available_matches(self) -> pd.DataFrame:
@@ -400,10 +400,11 @@ class StatsBombOpenDataset:
         summary = pd.DataFrame()
 
         # loop over season and competition
-        for competition in self.links_competition_to_cID:
-            cID = self.links_competition_to_cID[competition]
-            for season in self.links_season_to_sID[competition]:
-                sID = self.links_season_to_sID[competition][season]
+        for competition in self._links_competition_to_cID:
+            cID = self._links_competition_to_cID[competition]
+            self._read_season_match_links_for_competition_from_files(competition)
+            for season in self._links_season_to_sID[competition]:
+                sID = self._links_season_to_sID[competition][season]
 
                 # loop over matches
                 filepath_matches = os.path.join(
@@ -470,9 +471,11 @@ class StatsBombOpenDataset:
             column.
         """
         # get identifiers from links
-        cID = self.links_competition_to_cID[competition_name]
-        sID = self.links_season_to_sID[competition_name][season_name]
-        matches_dict = self.links_match_to_mID[competition_name][season_name]
+        cID = self._links_competition_to_cID[competition_name]
+        if competition_name not in self._links_season_to_sID:
+            self._read_season_match_links_for_competition_from_files(competition_name)
+        sID = self._links_season_to_sID[competition_name][season_name]
+        matches_dict = self._links_match_to_mID[competition_name][season_name]
         if match_name is None:
             mID = list(matches_dict.values())[0]
         else:
@@ -533,49 +536,59 @@ class StatsBombOpenDataset:
         """Returns a Pitch object corresponding to the StatsBomb Dataset."""
         return Pitch.from_template("statsbomb", sport="football")
 
-    def _read_competition_season_and_match_links_from_files(self):
-        """Creates the dictionaries containing data links between competition, season,
-        and matches to the respective cIDs, sIDs, and mIDs for all available matches and
-        every competition and season in the StatsBomb dataset.
+    def _read_competition_links_from_file(self):
+        """Writes the data links between the available competitions and the respective
+        cIDs to the class level dictionary.
         """
         # updates on competition level
         competition_info = pd.read_json(self.filepath_competitions)
         cIDs = competition_info["competition_id"].unique()
         competitions = competition_info["competition_name"].unique()
-        self.links_competition_to_cID.update(
+        self._links_competition_to_cID.update(
             {competition: cIDs[i] for i, competition in enumerate(competitions)}
         )
-        self.links_season_to_sID.update(
-            {competition: {} for competition in competitions}
-        )
-        self.links_match_to_mID.update(
-            {competition: {} for competition in competitions}
-        )
 
-        # loop
+    def _read_season_match_links_for_competition_from_files(self, competition_name):
+        """Writes the data links between the seasons and matches to the resective sIDs
+        and mIDs for a given competition to the class level dictionaries.
+        """
+        # read competition file
+        cID = self._links_competition_to_cID[competition_name]
+        competition_info = pd.read_json(self.filepath_competitions)
+
+        # update season and match dictionaries with competition information
+        self._links_season_to_sID.update({competition_name: {}})
+        self._links_match_to_mID.update({competition_name: {}})
+
+        # loop over all available seasons of the given competition
         for _, single_season in competition_info.iterrows():
-            # update on season level
-            cID = single_season["competition_id"]
-            competition = single_season["competition_name"]
-            sID = single_season["season_id"]
-            season = single_season["season_name"]
-            self.links_season_to_sID[competition].update({season: sID})
+            if cID != single_season["competition_id"]:
+                continue
 
-            # update on match level
-            with open(
-                os.path.join(
-                    os.path.join(self._matches_data_dir, str(cID)),
-                    str(sID) + self._STATSBOMB_FILE_EXT,
-                ),
-                "rb",
-            ) as matches_file:
-                matches_info = json.load(matches_file)
-            self.links_match_to_mID[competition][season] = {
-                f"{info['home_team']['home_team_name']} "
-                f"vs. "
-                f"{info['away_team']['away_team_name']}": info["match_id"]
-                for info in matches_info
-            }
+            # update season and match dictionaries with season information
+            sID = single_season["season_id"]
+            season_name = single_season["season_name"]
+            self._links_season_to_sID[competition_name].update({season_name: sID})
+            self._links_match_to_mID[competition_name].update({season_name: {}})
+
+            # read information of all matches within the season
+            filepath_matches = os.path.join(
+                os.path.join(self._matches_data_dir, str(cID)),
+                str(sID) + self._STATSBOMB_FILE_EXT,
+            )
+            with open(filepath_matches, "rb") as matches_file:
+                season_matches_info = json.load(matches_file)
+
+            # update match dictionary with match information
+            for info in season_matches_info:
+                match_name = (
+                    f"{info['home_team']['home_team_name']} vs. "
+                    f"{info['away_team']['away_team_name']}"
+                )
+                mID = info["match_id"]
+                self._links_match_to_mID[competition_name][season_name].update(
+                    {match_name: mID}
+                )
 
     def _download_competition_info(self) -> None:
         """Downloads the json file containing competition information into the file
@@ -608,12 +621,11 @@ class StatsBombOpenDataset:
         for _, single_season in competition_info.iterrows():
             cID = single_season["competition_id"]
             sID = single_season["season_id"]
-            if not os.path.exists(
-                os.path.join(
-                    os.path.join(self._matches_data_dir, str(cID)),
-                    str(sID) + self._STATSBOMB_FILE_EXT,
-                )
-            ):
+            matches_filepath = os.path.join(
+                os.path.join(self._matches_data_dir, str(cID)),
+                str(sID) + self._STATSBOMB_FILE_EXT,
+            )
+            if not os.path.exists(matches_filepath):
                 season_host_url = (
                     f"{self._STATSBOMB_SCHEMA}://"
                     f"{self._STATSBOMB_BASE_URL}/"
