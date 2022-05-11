@@ -1,13 +1,14 @@
 import os.path
 import warnings
-from typing import Any, Dict, Tuple, Union
+from typing import Dict, Tuple, Union
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import urllib.request
 from lxml import etree
 
+from floodlight.io.utils import download_from_url
+from floodlight.io.opta import get_and_convert
 from floodlight.core.code import Code
 from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
@@ -437,40 +438,7 @@ def read_open_tracking_data_csv(
 # ----------------------------- StatsPerform Format ---------------------------
 
 
-def _get_and_convert(dic: dict, key: Any, value_type: type, default: Any = None) -> Any:
-    """Performs dictionary get and type conversion simultaneously.
-
-    Parameters
-    ----------
-    dic: dict
-        Dictionary to be queried.
-    key: Any
-        Key to be looked up.
-    value_type: type
-        Desired output type the value should be cast into.
-    default: Any, optional
-        Return value if key is not in dic, defaults to None.
-
-    Returns
-    -------
-    value: value_type
-        Returns the value for key if key is in dic, else default. Tries type conversion
-        to `type(value) = value_type`. If type conversion fails, e.g. by trying to force
-        something like `float(None)` due to a missing dic entry, value is returned in
-        its original data type.
-    """
-    value = dic.get(key, default)
-    try:
-        value = value_type(value)
-    except TypeError:
-        pass
-    except ValueError:
-        pass
-
-    return value
-
-
-def _read_full_tracking_data_txt_single_line(
+def _read_tracking_data_txt_single_line(
     package: str,
 ) -> Tuple[
     int,
@@ -495,7 +463,7 @@ def _read_full_tracking_data_txt_single_line(
         The segment ID.
     positions: Dict[str, Dict[str, Tuple[float, float, float]]]
         Nested dictionary that stores player position information for each team and
-        player. Has the form `positions[team][jID] = (x, y, speed)`.
+        player. Has the form ``positions[team][jID] = (x, y, speed)``.
     ball: Dict[str]
         Dictionary with ball information. Has keys 'position', 'possession' and
         'ballstatus'.
@@ -557,7 +525,7 @@ def _read_full_tracking_data_txt_single_line(
 
 
 def _read_time_information_from_tracking_data_txt(
-    file_location_txt: Union[str, Path],
+    filepath_txt: Union[str, Path],
     estimate_framerate: bool = None,
 ) -> Tuple[Dict, int]:
     """Reads StatsPerform's tracking .txt file and extracts information about the first
@@ -566,15 +534,16 @@ def _read_time_information_from_tracking_data_txt(
 
     Parameters
     ----------
-    file_location_txt: str or pathlib.Path
+    filepath_txt: str or pathlib.Path
         Full path to the txt file containing the tracking data.
     estimate_framerate: bool
         Whether the framerate should estimated. Returns None if set to False.
+
     Returns
     -------
     periods: Dict
         Dictionary with start and endframes:
-        `periods[segment] = [startframe, endframe]`.
+        ``periods[segment] = [startframe, endframe]``.
     framerate_est: int or None
         Estimated temporal resolution of data in frames per second/Hertz if specified
         or None otherwise.
@@ -586,7 +555,7 @@ def _read_time_information_from_tracking_data_txt(
     framerate_est = None
 
     # read txt file from disk
-    file_txt = open(file_location_txt, "r")
+    file_txt = open(filepath_txt, "r")
 
     # loop
     last_gameclock = None
@@ -594,7 +563,7 @@ def _read_time_information_from_tracking_data_txt(
     for package in file_txt.readlines():
 
         # read gameclock and segment
-        gameclock, segment, _, _ = _read_full_tracking_data_txt_single_line(package)
+        gameclock, segment, _, _ = _read_tracking_data_txt_single_line(package)
 
         # update periods
         if segment not in startframes:
@@ -664,7 +633,7 @@ def _read_jersey_numbers_from_tracking_data_txt(
     for package in file_txt.readlines():
 
         # read line
-        _, _, positions, _ = _read_full_tracking_data_txt_single_line(package)
+        _, _, positions, _ = _read_tracking_data_txt_single_line(package)
 
         # extract jersey numbers
         home_jIDs |= set(positions["Home"].keys())
@@ -690,7 +659,7 @@ def create_links_from_statsperform_tracking_data_txt(
     Returns
     -------
     links: Dict[str, Dict[int, int]]
-        Link-dictionary of the form `links[team][jID] = xID`.
+        Link-dictionary of the form ``links[team][jID] = xID``.
     """
     homejrsy, awayjrsy = _read_jersey_numbers_from_tracking_data_txt(filepath_txt)
 
@@ -746,7 +715,7 @@ def read_event_data_xml(
         "qualifier",
     ]
     segments = [
-        f"HT{_get_and_convert(period.attrib, 'IdHalf', str)}"
+        f"HT{get_and_convert(period.attrib, 'IdHalf', str)}"
         for period in root.findall("Events/EventsHalf")
     ]
     teams = ["Home", "Away"]
@@ -771,25 +740,25 @@ def read_event_data_xml(
         for actor in teamsheet.findall("Actor"):
             if actor.attrib["Occupation"] != "Player":  # coaches etc.
                 continue
-            links_pID_to_tID[_get_and_convert(actor, "IdActor", int)] = team
-            links_pID_to_jID[
-                _get_and_convert(actor, "IdActor", int)
-            ] = _get_and_convert(actor, "JerseyNumber", int)
-            links_pID_to_name[
-                _get_and_convert(actor, "IdActor", int)
-            ] = _get_and_convert(actor, "NickName", str)
+            links_pID_to_tID[get_and_convert(actor, "IdActor", int)] = team
+            links_pID_to_jID[get_and_convert(actor, "IdActor", int)] = get_and_convert(
+                actor, "JerseyNumber", int
+            )
+            links_pID_to_name[get_and_convert(actor, "IdActor", int)] = get_and_convert(
+                actor, "NickName", str
+            )
 
     # loop over events
     for half in root.findall("Events/EventsHalf"):
         # get segment information
-        period = _get_and_convert(half.attrib, "IdHalf", str)
+        period = get_and_convert(half.attrib, "IdHalf", str)
         segment = "HT" + str(period)
         for event in half.findall("Event"):
             # read pID
-            pID = _get_and_convert(event.attrib, "IdActor1", int)
+            pID = get_and_convert(event.attrib, "IdActor1", int)
 
             # assign team
-            team = _get_and_convert(links_pID_to_tID, pID, str)
+            team = get_and_convert(links_pID_to_tID, pID, str)
 
             # create list of either a single team or both teams if no clear assignment
             if team == "None":
@@ -798,15 +767,15 @@ def read_event_data_xml(
                 teams_assigned = [team]  # only add to one team
 
             # identifier
-            eID = _get_and_convert(event.attrib, "EventName", str)
-            jID = _get_and_convert(links_pID_to_jID, pID, int)
+            eID = get_and_convert(event.attrib, "EventName", str)
+            jID = get_and_convert(links_pID_to_jID, pID, int)
             for team in teams_assigned:
                 event_lists[team][segment]["eID"].append(eID)
                 event_lists[team][segment]["pID"].append(pID)
                 event_lists[team][segment]["jID"].append(jID)
 
             # relative time
-            gameclock = _get_and_convert(event.attrib, "Time", int)
+            gameclock = get_and_convert(event.attrib, "Time", int)
             minute = np.floor(gameclock / 60)
             second = np.floor(gameclock - minute * 60)
             for team in teams_assigned:
@@ -815,10 +784,10 @@ def read_event_data_xml(
                 event_lists[team][segment]["second"].append(second)
 
             # location
-            at_x = _get_and_convert(event.attrib, "LocationX", float)
-            at_y = _get_and_convert(event.attrib, "LocationY", float)
-            to_x = _get_and_convert(event.attrib, "TargetX", float)
-            to_y = _get_and_convert(event.attrib, "TargetY", float)
+            at_x = get_and_convert(event.attrib, "LocationX", float)
+            at_y = get_and_convert(event.attrib, "LocationY", float)
+            to_x = get_and_convert(event.attrib, "TargetX", float)
+            to_y = get_and_convert(event.attrib, "TargetY", float)
             for team in teams_assigned:
                 event_lists[team][segment]["at_x"].append(at_x)
                 event_lists[team][segment]["at_y"].append(at_y)
@@ -834,8 +803,8 @@ def read_event_data_xml(
                 event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
     # create pitch
-    length = _get_and_convert(root.attrib, "FieldLength", int)
-    width = _get_and_convert(root.attrib, "FieldWidth", int)
+    length = get_and_convert(root.attrib, "FieldLength", int)
+    width = get_and_convert(root.attrib, "FieldWidth", int)
     pitch = Pitch.from_template(
         "statsperform_internal",
         length=length,
@@ -950,7 +919,7 @@ def read_tracking_data_txt(
             segment,
             positions,
             ball,
-        ) = _read_full_tracking_data_txt_single_line(package)
+        ) = _read_tracking_data_txt_single_line(package)
 
         # check if frame is in any segment
         if segment is None:
@@ -1003,8 +972,9 @@ def read_event_data_from_url(
         is (home_ht1, home_ht2, away_ht1, away_ht2, pitch).
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
-    temp_file = "events_temp.xml"
-    download_event_data_from_url(url_events=url_events, filename_xml=temp_file)
+    temp_file = os.path.join(data_dir, "events_temp.xml")
+    with open(temp_file, "wb") as binary_file:
+        binary_file.write(download_from_url(url_events))
     data_objects = read_event_data_xml(filepath_xml=os.path.join(data_dir, temp_file))
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
@@ -1038,77 +1008,12 @@ def read_tracking_data_from_url(
         (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2, pitch)
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
-    temp_file = "tracking_temp.txt"
-    download_tracking_data_from_url(url_tracking=url_tracking, filename_txt=temp_file)
+    temp_file = os.path.join(data_dir, "tracking_temp.txt")
+    with open(temp_file, "wb") as binary_file:
+        binary_file.write(download_from_url(url_tracking))
     data_objects = read_tracking_data_txt(
         filepath_txt=os.path.join(data_dir, temp_file),
         links=links,
     )
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
-
-
-def download_event_data_from_url(
-    url_events: str, filename_xml: Union[str, Path] = None
-):
-    """Downloads an event data xml file stored at the given URL into a sub folder
-    ``statsperform`` within the repository's root ``.data``-folder.
-
-    Parameters
-    ----------
-    url_events: str
-        URL to the xml file containing the event data.
-    filename_xml: str or pathlib.Path
-        The target filename. If None (default), the name is chosen according to URL
-        after the final '/'.
-    """
-    # setup paths
-    data_dir = os.path.join(DATA_DIR, "statsperform")
-    if not os.path.isdir(data_dir):
-        os.makedirs(data_dir, exist_ok=True)
-    if filename_xml is None:
-        filename_xml = url_events.split("/")[-1]
-    if filename_xml[-4:].lower() != ".xml":
-        filename_xml += ".xml"
-
-    # write url stream to file
-    with urllib.request.urlopen(url_events) as url_stream:
-        with open(os.path.join(data_dir, filename_xml), "wb") as file_xml:
-            while True:
-                line = url_stream.read()
-                if len(line) == 0:
-                    break
-                file_xml.write(line)
-
-
-def download_tracking_data_from_url(
-    url_tracking: str, filename_txt: Union[str, Path] = None
-):
-    """Downloads a tracking data txt file stored at the given URL into a sub folder
-    ``statsperform`` within the repository's root ``.data``-folder.
-
-    Parameters
-    ----------
-    url_tracking: str
-        URL to the txt file containing the tracking data.
-    filename_txt: str or pathlib.Path
-        The target filename. If None (default), the name is chosen according to URL
-        after the final '/'.
-    """
-    # setup paths
-    data_dir = os.path.join(DATA_DIR, "statsperform")
-    if not os.path.isdir(data_dir):
-        os.makedirs(data_dir, exist_ok=True)
-    if filename_txt is None:
-        filename_txt = url_tracking.split("/")[-1]
-    if filename_txt[-4:].lower() != ".txt":
-        filename_txt += ".txt"
-
-    # write url stream to file
-    with urllib.request.urlopen(url_tracking) as url_stream:
-        with open(os.path.join(data_dir, filename_txt), "wb") as file_txt:
-            while True:
-                line = url_stream.read()
-                if len(line) == 0:
-                    break
-                file_txt.write(line)
