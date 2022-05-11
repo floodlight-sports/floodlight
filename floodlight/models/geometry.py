@@ -5,7 +5,7 @@ from scipy.spatial.distance import cdist
 
 from floodlight import XY
 from floodlight.core.property import TeamProperty, PlayerProperty
-from floodlight.models.base import BaseModel
+from floodlight.models.base import BaseModel, requires_fit
 
 
 class CentroidModel(BaseModel):
@@ -107,6 +107,7 @@ class CentroidModel(BaseModel):
             xy=centroids, framerate=xy.framerate, direction=xy.direction
         )
 
+    @requires_fit
     def centroid(self) -> XY:
         """Returns the team centroid positions as computed by the fit method.
 
@@ -118,6 +119,7 @@ class CentroidModel(BaseModel):
         """
         return self._centroid_
 
+    @requires_fit
     def centroid_distance(self, xy: XY, axis: str = None) -> PlayerProperty:
         """Calculates the Euclidean distance of each player to the fitted centroids.
 
@@ -177,6 +179,7 @@ class CentroidModel(BaseModel):
 
         return centroid_distance
 
+    @requires_fit
     def stretch_index(self, xy: XY, axis: str = None) -> TeamProperty:
         """Calculates the *Stretch Index*, i.e., the mean distance of all players to the
         team centroid.
