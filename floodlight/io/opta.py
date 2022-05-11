@@ -71,6 +71,8 @@ def get_and_convert(dic: dict, key: Any, value_type: type, default: Any = None) 
         value = value_type(value)
     except TypeError:
         pass
+    except ValueError:
+        pass
 
     return value
 
