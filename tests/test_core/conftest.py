@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
+from floodlight.core.xy import XY
 from floodlight.core.code import Code
 from floodlight.core.pitch import Pitch
 
