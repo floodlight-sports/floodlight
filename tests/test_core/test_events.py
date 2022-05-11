@@ -365,6 +365,7 @@ def test_slice_new_object(
     data_minimal = Events(example_events_data_minimal)
 
     # Act
+    data_minimal_empty = data_minimal.slice(start=0.1, end=0.9, inplace=False)
     data_minimal_full = data_minimal.slice(inplace=False)
     data_minimal_full_arguments = data_minimal.slice(start=1.1, end=2.3, inplace=False)
     data_minimal_end_sliced = data_minimal.slice(end=2.2, inplace=False)
@@ -389,11 +390,10 @@ def test_slice_new_object(
             "gameclock": [2.2],
         }
     )
+    assert len(data_minimal_empty.events) == 0
     assert all(data_minimal_full.events == full_events)
     assert all(data_minimal_full_arguments.events == full_events)
-
     assert all(data_minimal_end_sliced.events == start_events)
-
     assert all(data_minimal_start_sliced.events == end_events)
 
 
@@ -405,12 +405,12 @@ def test_slice_inplace(
 ) -> None:
 
     # Arrange
-    data_minimal = Events(example_events_data_minimal)
-    data_frameclock = Events(example_events_data_frameclock)
+    data_minimal_empty = Events(example_events_data_minimal)
+    data_minimal_end = Events(example_events_data_frameclock)
 
     # Act
-    data_minimal.slice(start=10, inplace=True)
-    data_frameclock.slice(start=15, slice_by="frameclock", inplace=True)
+    data_minimal_empty.slice(start=2.5, inplace=True)
+    data_minimal_end.slice(start=0.15, inplace=True)
 
     # Assert
     frameclock_end_events = pd.DataFrame(
@@ -420,8 +420,8 @@ def test_slice_inplace(
             "frameclock": [16.7],
         }
     )
-    assert len(data_minimal.events) == 0
-    assert all(data_frameclock.events == frameclock_end_events)
+    assert len(data_minimal_empty.events) == 0
+    assert all(data_minimal_end.events == frameclock_end_events)
 
 
 # tests slice using the frameclock column
@@ -482,16 +482,14 @@ def test_get_event_stream_frameclock(
     data_frameclock = Events(example_events_data_frameclock)
 
     # Act
-    try:
-        event_stream_minimal = data_minimal.get_event_stream()
-    except ValueError:
-        event_stream_minimal = None
+    with pytest.raises(ValueError):
+        data_minimal.get_event_stream()
+
     event_stream_frameclock = data_frameclock.get_event_stream()
     # replace all NaNs to simplify comparison
     event_stream_frameclock[np.isnan(event_stream_frameclock)] = -1
 
     # Assert
-    assert event_stream_minimal is None
     assert all(
         np.equal(
             event_stream_frameclock.code,
@@ -531,26 +529,8 @@ def test_get_event_stream_frameclock_unsorted(
     event_stream_unsorted[np.isnan(event_stream_unsorted)] = -1
 
     # Assert
-    assert all(
-        np.equal(
-            event_stream_unsorted.code,
-            np.array(
-                [
-                    2,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    3,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    1,
-                ]
-            ),
-        )
-    )
+    target_values = np.array([2, -1, -1, -1, -1, 3, -1, -1, -1, -1, 1])
+    assert all(np.equal(event_stream_unsorted.code, target_values))
 
 
 # tests get_event_stream for different fade arguments
@@ -566,10 +546,9 @@ def test_get_event_stream_fade(
     event_stream_zero = data_frameclock.get_event_stream(fade=0)
     event_stream_one = data_frameclock.get_event_stream(fade=1)
     event_stream_ten = data_frameclock.get_event_stream(fade=10)
-    try:
-        event_stream_minusfive = data_frameclock.get_event_stream(fade=-5)
-    except ValueError:
-        event_stream_minusfive = None
+    with pytest.raises(ValueError):
+        data_frameclock.get_event_stream(fade=-5)
+
     # replace all NaNs to simplify comparison
     event_stream_none[np.isnan(event_stream_none)] = -1
     event_stream_zero[np.isnan(event_stream_zero)] = -1
@@ -581,4 +560,3 @@ def test_get_event_stream_fade(
     assert all(np.equal(event_stream_zero.code, np.array([1, -1, -1, -1, -1, 2])))
     assert all(np.equal(event_stream_one.code, np.array([1, 1, -1, -1, -1, 2])))
     assert all(np.equal(event_stream_ten.code, np.array([1, 1, 1, 1, 1, 2])))
-    assert event_stream_minusfive is None
