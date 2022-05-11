@@ -55,6 +55,12 @@ protected_columns = {
         "dtypes": [str, int],
         "value_range": None
     },
+    "frameclock": {
+        "definition": "Elapsed time relative to segment start in frames given a certain"
+                      "framerate.",
+        "dtypes": [int],
+        "value_range": [0, np.inf]
+    },
     "timestamp": {
         "definition": "Datetime timestamp. Should be aware and carry a pytz timezone",
         "dtypes": [datetime.datetime],
