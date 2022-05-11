@@ -38,6 +38,20 @@ def example_xy_data_float() -> np.ndarray:
 
 
 @pytest.fixture()
+def example_xy_object() -> XY:
+    pos = np.array(
+        [
+            [35, 5, 35, 63, 25, 25, 25, 50],
+            [45, 10, 45, 55, 35, 20, 35, 45],
+            [55, 10, 55, 55, 45, 20, 45, 45],
+            [88.5, 20, 88.5, 30, 88.5, 40, 88.5, 50],
+        ]
+    )
+
+    return XY(pos)
+
+
+@pytest.fixture()
 def example_xy_data_string() -> np.ndarray:
     positions = np.array([["1", "2", "3", "4"], ["5", "6", "7", "8"]])
     return positions
