@@ -54,9 +54,9 @@ def test_template_statsperform_open() -> None:
 
 
 @pytest.mark.unit
-def test_template_statsperform_internal() -> None:
+def test_template_statsperform() -> None:
     # Arrange
-    pitch = Pitch.from_template("statsperform_internal", length=11000, width=6800)
+    pitch = Pitch.from_template("statsperform", length=11000, width=6800)
 
     # Assert
     assert pitch.xlim == (-5500, 5500)
