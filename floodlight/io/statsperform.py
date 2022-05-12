@@ -806,7 +806,7 @@ def read_event_data_xml(
     length = get_and_convert(root.attrib, "FieldLength", int)
     width = get_and_convert(root.attrib, "FieldWidth", int)
     pitch = Pitch.from_template(
-        "statsperform_internal",
+        "statsperform",
         length=length,
         width=width,
         sport="football",
@@ -955,14 +955,17 @@ def read_tracking_data_txt(
 
 
 def read_event_data_from_url(
-    url_events: str,
+    url: str,
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing an events csv
     file and extracts the stored event data and pitch information.
 
+    The event data from the URL is downloaded into a temporary file stored in the
+    repository's internal root ``.data``-folder and is removed afterwards.
+
     Parameters
     ----------
-    url_events: str
+    url: str
         URL to the xml file containing the event data.
 
     Returns
@@ -974,25 +977,25 @@ def read_event_data_from_url(
     data_dir = os.path.join(DATA_DIR, "statsperform")
     temp_file = os.path.join(data_dir, "events_temp.xml")
     with open(temp_file, "wb") as binary_file:
-        binary_file.write(download_from_url(url_events))
+        binary_file.write(download_from_url(url))
     data_objects = read_event_data_xml(filepath_xml=os.path.join(data_dir, temp_file))
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
 
 
 def read_tracking_data_from_url(
-    url_tracking: str,
+    url: str,
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY]:
     """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a tracking
     data txt file and extracts position data.
 
-    The tracking from the URL is downloaded into a temporary file stored in the
-    repository's internal root ``.data``-folder that is removed afterwards.
+    The tracking data from the URL is downloaded into a temporary file stored in the
+    repository's internal root ``.data``-folder and is removed afterwards.
 
     Parameters
     ----------
-    url_tracking: str or pathlib.Path
+    url: str or pathlib.Path
         URL to the txt file containing the tracking data.
     links: Dict[str, Dict[int, int]], optional
         A link dictionary of the form ``links[team][jID] = xID``. Player's are
@@ -1010,7 +1013,7 @@ def read_tracking_data_from_url(
     data_dir = os.path.join(DATA_DIR, "statsperform")
     temp_file = os.path.join(data_dir, "tracking_temp.txt")
     with open(temp_file, "wb") as binary_file:
-        binary_file.write(download_from_url(url_tracking))
+        binary_file.write(download_from_url(url))
     data_objects = read_tracking_data_txt(
         filepath_txt=os.path.join(data_dir, temp_file),
         links=links,
