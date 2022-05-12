@@ -165,7 +165,13 @@ def butterworth_lowpass(
 
         # loop through filterable sequences
         for start, end, _ in sequences[
-            (sequences[:, 2] == 1) & (np.diff(sequences[0:2]) >= min_signal_len)
+            np.all(
+                (
+                    sequences[:, 2] == 1,
+                    np.squeeze(np.diff(sequences[:, 0:2]) >= min_signal_len),
+                ),
+                axis=0,
+            )
         ]:
             # apply filter to the sequence and enter filtered data to their
             # respective indices in the data
@@ -176,7 +182,13 @@ def butterworth_lowpass(
         if remove_short_seqs is False:
             # enter short sequences unfiltered to their respective indices in the data
             for start, end, _ in sequences[
-                (sequences[:, 2] == 1) & (np.diff(sequences[0:2]) < min_signal_len)
+                np.all(
+                    (
+                        sequences[:, 2] == 1,
+                        np.squeeze(np.diff(sequences[:, 0:2]) < min_signal_len),
+                    ),
+                    axis=0,
+                )
             ]:
                 col_filt[start:end] = column[start:end]
 
@@ -255,7 +267,13 @@ def savgol_lowpass(
 
         # loop through filterable sequences
         for start, end, _ in sequences[
-            (sequences[:, 2] == 1) & (np.diff(sequences[0:2]) >= min_signal_len)
+            np.all(
+                (
+                    sequences[:, 2] == 1,
+                    np.squeeze(np.diff(sequences[:, 0:2]) >= min_signal_len),
+                ),
+                axis=0,
+            )
         ]:
             # apply filter to the sequence and enter filtered data to their
             # respective indices in the data
@@ -266,7 +284,13 @@ def savgol_lowpass(
         if remove_short_seqs is False:
             # enter short sequences unfiltered to their respective indices in the data
             for start, end, _ in sequences[
-                (sequences[:, 2] == 1) & (np.diff(sequences[0:2]) < min_signal_len)
+                np.all(
+                    (
+                        sequences[:, 2] == 1,
+                        np.squeeze(np.diff(sequences[:, 0:2]) < min_signal_len),
+                    ),
+                    axis=0,
+                )
             ]:
                 col_filt[start:end] = column[start:end]
 
