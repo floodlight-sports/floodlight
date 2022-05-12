@@ -4,6 +4,7 @@ import pandas as pd
 
 from floodlight.core.code import Code
 from floodlight.core.pitch import Pitch
+from floodlight.core.xy import XY
 
 
 # Sample data for easy creation of core objects
@@ -35,6 +36,20 @@ def example_xy_data_float() -> np.ndarray:
         ]
     )
     return positions
+
+
+@pytest.fixture()
+def example_xy_object() -> XY:
+    pos = np.array(
+        [
+            [35, 5, 35, 63, 25, 25, 25, 50],
+            [45, 10, 45, 55, 35, 20, 35, 45],
+            [55, 10, 55, 55, 45, 20, 45, 45],
+            [88.5, 20, 88.5, 30, 88.5, 40, 88.5, 50],
+        ]
+    )
+
+    return XY(pos)
 
 
 @pytest.fixture()
@@ -186,13 +201,18 @@ def example_events_data_frameclock_unsorted() -> pd.DataFrame:
 
 # Pitch
 @pytest.fixture()
-def example_football_pitch() -> Pitch:
-    return Pitch(
-        xlim=(0, 105),
-        ylim=(0, 68),
-        unit="meter",
-        boundaries="flexible",
-        length=105,
-        width=68,
-        sport="football",
+def example_pitch_football() -> Pitch:
+    football_pitch = Pitch(
+        xlim=(0, 105), ylim=(0, 68), unit="m", boundaries="fixed", sport="football"
     )
+
+    return football_pitch
+
+
+@pytest.fixture()
+def example_pitch_handball() -> Pitch:
+    handball_pitch = Pitch(
+        xlim=(0, 40), ylim=(0, 20), unit="m", boundaries="fixed", sport="handball"
+    )
+
+    return handball_pitch

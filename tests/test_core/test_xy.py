@@ -1,3 +1,5 @@
+import matplotlib
+import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 
@@ -210,3 +212,76 @@ def test_slice(example_xy_data_pos_int: np.array) -> None:
     # inplace
     xy.slice(endframe=1, inplace=True)
     assert np.array_equal(xy.xy, np.array([[1, 2, 3, 4]]))
+
+
+# Test def plot(t: Union[int, Tuple[int, int]],
+#         plot_type: str = "postions",
+#         ball: bool = False,
+#         ax: matplotlib.axes = None,
+#         **kwargs)
+
+
+# Test return
+@pytest.mark.plot
+def test_plot_return_for_position_arg_without_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+
+    # Act
+    ax = xy.plot(t=0, plot_type="positions")
+
+    # Assert
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_return_for_position_arg_with_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+    axes = plt.subplots()[1]
+
+    # Act
+    ax = xy.plot(t=0, plot_type="positions", ax=axes)
+
+    # Assert
+    assert ax == axes
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_return_for_trajectories_arg_without_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+
+    # Act
+    ax = xy.plot(t=(0, 4), plot_type="trajectories")
+
+    # Assert
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_return_for_trajectories_arg_with_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+    axes = plt.subplots()[1]
+
+    # Act
+    ax = xy.plot(t=(0, 4), plot_type="trajectories", ax=axes)
+
+    # Assert
+    assert ax == axes
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_value_error_for_unknown_plot_type(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+
+    # Assert
+    with pytest.raises(ValueError):
+        xy.plot(t=(0, 4), plot_type="unkown plot type")
+    plt.close()
