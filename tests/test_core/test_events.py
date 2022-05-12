@@ -96,7 +96,7 @@ def test_protected_missing(
     missing_protected_columns = data.protected_missing
 
     # Assert
-    assert len(missing_protected_columns) == 14
+    assert len(missing_protected_columns) == 15
 
 
 @pytest.mark.unit
@@ -161,10 +161,10 @@ def test_add_frameclock_with_values(example_events_data_minimal: pd.DataFrame) -
 
 @pytest.mark.unit
 def test_add_frameclock_with_none(
-    example_events_data_minimal_with_none: pd.DataFrame,
+    example_events_data_minimal_none,
 ) -> None:
     # Arrange
-    data = Events(example_events_data_minimal_with_none)
+    data = Events(example_events_data_minimal_none)
     framerate = 25
 
     # Act
@@ -353,3 +353,210 @@ def test_rotate(
 
     data_minimal_rotated.rotate(0)
     assert data_minimal.events.equals(data_minimal_rotated.events)
+
+
+# tests for slice with inplace=False
+@pytest.mark.unit
+def test_slice_new_object(
+    example_events_data_minimal,
+) -> None:
+
+    # Arrange
+    data_minimal = Events(example_events_data_minimal)
+
+    # Act
+    data_minimal_empty = data_minimal.slice(start=0.1, end=0.9, inplace=False)
+    data_minimal_full = data_minimal.slice(inplace=False)
+    data_minimal_full_arguments = data_minimal.slice(start=1.1, end=2.3, inplace=False)
+    data_minimal_end_sliced = data_minimal.slice(end=2.2, inplace=False)
+    data_minimal_start_sliced = data_minimal.slice(start=1.2, inplace=False)
+
+    # Assert
+    full_events = pd.DataFrame(
+        {
+            "eID": [1, 2],
+            "gameclock": [1.1, 2.2],
+        }
+    )
+    start_events = pd.DataFrame(
+        {
+            "eID": [1],
+            "gameclock": [1.1],
+        }
+    )
+    end_events = pd.DataFrame(
+        {
+            "eID": [2],
+            "gameclock": [2.2],
+        }
+    )
+    assert len(data_minimal_empty.events) == 0
+    assert all(data_minimal_full.events == full_events)
+    assert all(data_minimal_full_arguments.events == full_events)
+    assert all(data_minimal_end_sliced.events == start_events)
+    assert all(data_minimal_start_sliced.events == end_events)
+
+
+# tests for slice with inplace=True
+@pytest.mark.unit
+def test_slice_inplace(
+    example_events_data_minimal,
+    example_events_data_frameclock,
+) -> None:
+
+    # Arrange
+    data_minimal_empty = Events(example_events_data_minimal)
+    data_minimal_end = Events(example_events_data_frameclock)
+
+    # Act
+    data_minimal_empty.slice(start=2.5, inplace=True)
+    data_minimal_end.slice(start=0.15, inplace=True)
+
+    # Assert
+    frameclock_end_events = pd.DataFrame(
+        {
+            "eID": [2],
+            "gameclock": [0.2],
+            "frameclock": [16.7],
+        }
+    )
+    assert len(data_minimal_empty.events) == 0
+    assert all(data_minimal_end.events == frameclock_end_events)
+
+
+# tests slice using the frameclock column
+@pytest.mark.unit
+def test_slice_frameclock(
+    example_events_data_frameclock,
+):
+    # Arrange
+    data_frameclock = Events(example_events_data_frameclock)
+
+    # Act
+    data_frameclock_sliced = data_frameclock.slice(
+        end=15, slice_by="frameclock", inplace=False
+    )
+
+    # Assert
+    frameclock_start_events = pd.DataFrame(
+        {
+            "eID": [1],
+            "gameclock": [0.1],
+            "frameclock": [12.4],
+        }
+    )
+    assert all(data_frameclock_sliced.events == frameclock_start_events)
+
+
+# tests slice for objects containing None
+@pytest.mark.unit
+def test_slice_none(
+    example_events_data_minimal_none,
+):
+    # Arrange
+    data_none = Events(example_events_data_minimal_none)
+
+    # Act
+    data_none_sliced = data_none.slice(start=0, end=10, inplace=False)
+    data_none.slice(start=1.1, end=1.2, inplace=True)
+
+    # Assert
+    data_none_events = pd.DataFrame(
+        {
+            "eID": [None],
+            "gameclock": [1.1],
+        }
+    )
+    assert all(data_none_sliced.events == data_none_events)
+    assert all(data_none.events == data_none_events)
+
+
+# tests get_event_stream with and without frameclock (latter should fail)
+@pytest.mark.unit
+def test_get_event_stream_frameclock(
+    example_events_data_minimal,
+    example_events_data_frameclock,
+):
+    # Arrange
+    data_minimal = Events(example_events_data_minimal)
+    data_frameclock = Events(example_events_data_frameclock)
+
+    # Act
+    with pytest.raises(ValueError):
+        data_minimal.get_event_stream()
+
+    event_stream_frameclock = data_frameclock.get_event_stream()
+    # replace all NaNs to simplify comparison
+    event_stream_frameclock[np.isnan(event_stream_frameclock)] = -1
+
+    # Assert
+    assert all(
+        np.equal(
+            event_stream_frameclock.code,
+            np.array([1, -1, -1, -1, -1, 2]),
+        )
+    )
+
+
+# tests that get_event_stream excludes entries containing None
+@pytest.mark.unit
+def test_get_event_stream_frameclock_none(
+    example_events_data_frameclock_none,
+):
+    # Arrange
+    data_frameclock_none = Events(example_events_data_frameclock_none)
+
+    # Act
+    event_stream_frameclock_none = data_frameclock_none.get_event_stream()
+
+    # Assert
+    assert all(event_stream_frameclock_none == np.array(["2"]))
+
+
+# tests get_event_stream for objects where frameclock values are non-ascending
+@pytest.mark.unit
+def test_get_event_stream_frameclock_unsorted(
+    example_events_data_frameclock_unsorted,
+):
+    # Arrange
+    data_frameclock_unsorted = Events(example_events_data_frameclock_unsorted)
+
+    # Act
+    event_stream_unsorted = data_frameclock_unsorted.get_event_stream(
+        name="possession",
+    )
+    # replace all NaNs to simplify comparison
+    event_stream_unsorted[np.isnan(event_stream_unsorted)] = -1
+
+    # Assert
+    target_values = np.array([2, -1, -1, -1, -1, 3, -1, -1, -1, -1, 1])
+    assert all(np.equal(event_stream_unsorted.code, target_values))
+
+
+# tests get_event_stream for different fade arguments
+@pytest.mark.unit
+def test_get_event_stream_fade(
+    example_events_data_frameclock,
+):
+    # Arrange
+    data_frameclock = Events(example_events_data_frameclock)
+
+    # Act
+    event_stream_none = data_frameclock.get_event_stream(fade=None)
+    event_stream_zero = data_frameclock.get_event_stream(fade=0)
+    event_stream_one = data_frameclock.get_event_stream(fade=1)
+    event_stream_ten = data_frameclock.get_event_stream(fade=10)
+    with pytest.raises(ValueError):
+        data_frameclock.get_event_stream(fade=-5)
+
+    # replace all NaNs to simplify comparison
+    event_stream_none[np.isnan(event_stream_none)] = -1
+    event_stream_zero[np.isnan(event_stream_zero)] = -1
+    event_stream_one[np.isnan(event_stream_one)] = -1
+    event_stream_ten[np.isnan(event_stream_ten)] = -1
+
+    # Assert
+    assert all(np.equal(event_stream_none.code, np.array([1, 1, 1, 1, 1, 2])))
+    assert all(np.equal(event_stream_zero.code, np.array([1, -1, -1, -1, -1, 2])))
+    assert all(np.equal(event_stream_one.code, np.array([1, 1, -1, -1, -1, 2])))
+    assert all(np.equal(event_stream_ten.code, np.array([1, 1, 1, 1, 1, 2])))

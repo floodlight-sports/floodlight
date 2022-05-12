@@ -2,7 +2,9 @@ import pytest
 import numpy as np
 import pandas as pd
 
+from floodlight.core.xy import XY
 from floodlight.core.code import Code
+from floodlight.core.pitch import Pitch
 
 
 # Sample data for easy creation of core objects
@@ -34,6 +36,20 @@ def example_xy_data_float() -> np.ndarray:
         ]
     )
     return positions
+
+
+@pytest.fixture()
+def example_xy_object() -> XY:
+    pos = np.array(
+        [
+            [35, 5, 35, 63, 25, 25, 25, 50],
+            [45, 10, 45, 55, 35, 20, 35, 45],
+            [55, 10, 55, 55, 45, 20, 45, 45],
+            [88.5, 20, 88.5, 30, 88.5, 40, 88.5, 50],
+        ]
+    )
+
+    return XY(pos)
 
 
 @pytest.fixture()
@@ -85,7 +101,7 @@ def example_events_data_minimal() -> pd.DataFrame:
 
 
 @pytest.fixture()
-def example_events_data_minimal_with_none() -> pd.DataFrame:
+def example_events_data_minimal_none() -> pd.DataFrame:
     data = {
         "eID": [None, 2],
         "gameclock": [1.1, None],
@@ -151,3 +167,47 @@ def example_events_data_xy_none() -> pd.DataFrame:
         "at_y": [np.NAN, np.NAN],
     }
     return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [0.1, 0.2],
+        "frameclock": [12.4, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_none() -> pd.DataFrame:
+    data = {
+        "eID": ["1", "2"],
+        "gameclock": [0.1, 0.2],
+        "frameclock": [None, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_unsorted() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2, 3],
+        "gameclock": [1.3, 0.1, 0.2],
+        "frameclock": [21.6, 12.4, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+# Pitch
+@pytest.fixture()
+def example_football_pitch() -> Pitch:
+    return Pitch(
+        xlim=(0, 105),
+        ylim=(0, 68),
+        unit="meter",
+        boundaries="flexible",
+        length=105,
+        width=68,
+        sport="football",
+    )

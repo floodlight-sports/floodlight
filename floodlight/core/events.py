@@ -1,5 +1,6 @@
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Union
 import warnings
 
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 
 from floodlight.utils.types import Numeric
 from floodlight.core.definitions import essential_events_columns, protected_columns
+from floodlight.core.code import Code
 
 
 @dataclass
@@ -389,3 +391,126 @@ class Events:
                 self.events[["to_x", "to_y"]] = pd.DataFrame(
                     np.round(np.dot(self.events[["to_x", "to_y"]], r), 3)
                 )
+
+    def slice(
+        self,
+        start: float = None,
+        end: float = None,
+        slice_by="gameclock",
+        inplace: bool = False,
+    ):
+        """Return copy of object with events sliced in a time interval.
+
+        Intended columns for using this function are ``gameclock`` (total seconds) or
+        ``frameclock``. However, also allows slicing by any other column that manifests
+        a  temporal relation between events (e.g. ``minute``). Excludes all entries
+        without a valid entry in the specified column (e.g. None).
+
+        Parameters
+        ----------
+        start : float, optional
+            Start frame or second of slice. Defaults to beginning of segment.
+        end : float, optional
+            End frame or second of slice (endframe is excluded). Defaults to last event
+            of segment (including).
+        slice_by: {'gameclock', 'frameclock'}, optional
+            Column used to slice the events. Defaults to ``gameclock``.
+        inplace: bool, optional
+            If set to ``False`` (default), a new object is returned, otherwise the
+            operation is performed in place on the called object.
+
+        Returns
+        -------
+        events_sliced: Union[Event, None]
+        """
+        if slice_by not in self.events:
+            ValueError(f"Events object does not contain column {slice_by}!")
+        if start is None:
+            start = 0
+        if end is None:
+            end = np.nanmax(self.events[slice_by].values) + 1
+
+        sliced_data = self.events[self.events[slice_by] >= start].copy()
+        sliced_data = sliced_data[sliced_data[slice_by] < end]
+        sliced_data.reset_index(drop=True, inplace=True)
+
+        events_sliced = None
+        if inplace:
+            self.events = sliced_data
+        else:
+            events_sliced = Events(
+                events=sliced_data,
+                direction=deepcopy(self.direction),
+            )
+
+        return events_sliced
+
+    def get_event_stream(
+        self,
+        fade: Union[int, None] = 0,
+        **kwargs,
+    ) -> Code:
+        """Generates a Code object containing the eIDs of all events at the
+        respective frame and optionally subsequent frames as defined by the fade
+        argument.
+
+        This function translates the object's DataFrame of temporally irregular events
+        to a continuous frame-wise representation. This can be especially helpful to
+        connect event data with spatiotemporal data, e.g., for filtering the latter
+        based on the former. Events overwrite preceding event's fade, and unfilled
+        values are set to np.nan.
+
+        Notes
+        ------
+        Requires the DataFrame to contain the protected ``frameclock`` column.
+
+        Parameters
+        ----------
+        fade: int, optional
+            Number of additional frames for which the Code object should stay at a
+            value after the event occurred. The value is overwritten if another event
+            occurs within the fade duration. If chosen to zero, the value is maintained
+            only for a single frame. If chosen to None, the value is maintained until
+            either the next event or until the end of the sequence. Defaults to 0.
+        kwargs:
+            Keyword arguments of the Code object ("name", "definitions", "framerate")
+            that are passed down to instantiate the returned event_stream.
+
+        Returns
+        -------
+        event_stream: Code
+            Generated continuous event stream describing the designated game state.
+        """
+        if "frameclock" in self.protected_missing:
+            raise ValueError(
+                "Cannot create event stream from Events object missing "
+                "the protected column 'frameclock'. Consider calling "
+                "add_frameclock to the Events object first!"
+            )
+        if fade is not None and fade < 0:
+            raise ValueError(
+                f"Expected fade to be a positive integer or None, got {fade} instead."
+            )
+
+        sorted_events = self.events.sort_values("frameclock")
+        start = int(np.round(np.nanmin(sorted_events["frameclock"].values)))
+        end = int(np.round(np.nanmax(sorted_events["frameclock"].values))) + 1
+
+        code = np.full((end - start,), np.nan, dtype=object)
+        for _, event in sorted_events.iterrows():
+            if pd.isna(event["frameclock"]):
+                continue
+            frame = int(np.round(event["frameclock"]))
+            if fade is None:
+                code[frame - start :] = event["eID"]
+            else:
+                code[frame - start : frame - start + fade + 1] = event["eID"]
+
+        event_stream = Code(
+            code=code,
+            name=kwargs.get("name"),
+            definitions=kwargs.get("definitions"),
+            framerate=kwargs.get("framerate"),
+        )
+
+        return event_stream
