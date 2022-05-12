@@ -12,6 +12,7 @@ datasets.
    dfl
    kinexon
    opta
+   statsbomb
    statsperform
    tracab
 

@@ -263,7 +263,7 @@ class ToyDataset:
 
 
 class StatsBombOpenDataset:
-    """This dataset loads the open StatsBomb data that is provided on the `official
+    """This dataset loads the StatsBomb open data provided the `official
     data repository <https://github.com/statsbomb/open-data>`_.
 
     Due to the size of the full dataset (~5GB), only metadata (~2MB) are downloaded
@@ -273,17 +273,20 @@ class StatsBombOpenDataset:
 
     Notes
     -----
-    The dataset contains result, lineup, and event data for a variety of matches from a
-    total of eight different competitions (Women's World Cup, FIFA World Cup, UEFA Euro,
-    Champions League, FA Women's Super League, NWSL, Premier League, and La Liga). For
-    the Champions League all Finals from 2003/2004 to 2018/2019 are contained. The
-    competition with the most matches is La Liga where StatsBomb provides data for every
-    one of the 520 matches ever played by Lionel Messi for FC Barcelona. In addition,
-    for 51 matches from the UEFA Euro 2020 additional StatsBomb360 data is available.
-    This data contains the tracked positions of (some) players at the captured events of
-    these matches. As the data is constantly updated, we provide an overview over the
-    stats here but refer to the official repository for up-to-date information (last
-    modified 06.05.2022)::
+    The dataset contains results, lineups, event data, and (partly) `StatsBomb360 data
+    <https://statsbomb.com/articles/soccer/
+    statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_ for a variety
+    of matches from a total of eight different competitions (Women's World Cup,
+    FIFA World Cup, UEFA Euro, Champions League, FA Women's Super League, NWSL,
+    Premier League, and La Liga).
+    The Champions League data for example contains all Finals from 2003/2004 to
+    2018/2019.
+    The La Liga data contains every one of the 520 matches ever played by Lionel Messi
+    for FC Barcelona.
+    The UEFA Euro data contains 51 matches where StatsBomb360 data is available.
+    As the data is constantly updated, we provide an overview over the stats here but
+    refer to the official repository for up-to-date information (last
+    modified 12.05.2022)::
 
         number_of_matches = {
             "Champions League": {
@@ -322,17 +325,20 @@ class StatsBombOpenDataset:
     Examples
     --------
     >>> from floodlight.io.datasets import StatsBombOpenDataset
-
     >>> dataset = StatsBombOpenDataset()
-    # get one sample of event data with StatsBomb360 data stored in ``qualifier``
+    # get one sample of event data with StatsBomb360 data
     >>> events = dataset.get("UEFA Euro", "2020", "England vs. Germany")
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
     # get a summary of available matches in the dataset
     >>> matches = dataset.available_matches
-    # read events for every La Liga Clásico played in Camp Nou by Lionel Messi
-    >>> clasico_events = []
+    # extract every La Liga Clásico played in Camp Nou by Lionel Messi
     >>> clasicos = matches[matches["match_name"] == "Barcelona vs. Real Madrid"]
+    # print outcomes
+    >>> for _, match in clasicos.iterrows():
+    >>>     print(f"Season {match['season_name']} - Barcelona {match['score']} Real'")
+    # read events to list
+    >>> clasico_events = []
     >>> for _, clasico in clasicos.iterrows():
     >>>     data = dataset.get("La Liga", clasico["season_name"], clasico["match_name"])
     >>>     clasico_events.append(data)
@@ -391,11 +397,17 @@ class StatsBombOpenDataset:
 
     @property
     def available_matches(self) -> pd.DataFrame:
-        """Creates a table of all available matches in the dataset.
+        """Creates and Returns a Table with information for all available matches from
+        the metadata that is downloaded upon instantiation.
 
         Returns
         -------
         summary: pd.DataFrame
+            Table where the rows contain meta information of individual games such as
+            ``competition_name``, ``season_name``, and ``match_name`` (in the format
+            Home vs. Away), location of the match (``stadium`` and ``country``),
+            ``gender`` of the players (female or male), the ``StatsBomb360_status``  and
+            the final ``score``.
         """
         summary = pd.DataFrame()
 
@@ -442,10 +454,12 @@ class StatsBombOpenDataset:
         season_name: str = "2020/2021",
         match_name: str = None,
     ) -> Tuple[Events, Events, Events, Events]:
-        """Get events from one match of the StatsBomb open dataset. If StatsBomb360 data
-        ("freeze frames") are available, they are stored in the  ``qualifier`` column.
-        If the files are not contained in the repository's root ``data`` folder they are
-        downloaded to the folder and will be stored until removed by hand.
+        """Get events from one match of the StatsBomb open dataset. If `StatsBomb360
+        data <https://statsbomb.com/articles/soccer/
+        statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_  are
+        available, they are stored in the  ``qualifier`` column.
+        If the files are not contained in the repository's root ``.data`` folder they
+        are downloaded to the folder and will be stored until removed by hand.
 
         Parameters
         ----------
@@ -459,16 +473,14 @@ class StatsBombOpenDataset:
             Defaults to "2020/2021".
         match_name
             Match name relating to the available matches in the chosen competition and
-            season. If chosen to None (default), the first available match of the
-            chosen competition and season is chosen.
+            season. If equal to None (default), the first available match of the
+            given competition and season is chosen.
 
         Returns
         -------
         data_objects: Tuple[Events, Events, Events, Events]
             Returns four Events objects of the form (events_home_ht1, events_home_ht2,
-            events_away_ht1, events_away_ht2) for the requested sample. If available
-            StatsBomb360 data and "classical" event data are fused in the ``qualifier``
-            column.
+            events_away_ht1, events_away_ht2) for the requested sample.
         """
         # get identifiers from links
         cID = self._links_competition_to_cID[competition_name]
@@ -549,7 +561,7 @@ class StatsBombOpenDataset:
         )
 
     def _read_season_match_links_for_competition_from_files(self, competition_name):
-        """Writes the data links between the seasons and matches to the resective sIDs
+        """Writes data links between the seasons and matches to the respective sIDs
         and mIDs for a given competition to the class level dictionaries.
         """
         # read competition file
@@ -591,9 +603,7 @@ class StatsBombOpenDataset:
                 )
 
     def _download_competition_info(self) -> None:
-        """Downloads the json file containing competition information into the file
-        system.
-        """
+        """Downloads json file with competition information into the file system."""
         competitions_host_url = (
             f"{self._STATSBOMB_SCHEMA}://"
             f"{self._STATSBOMB_BASE_URL}/"

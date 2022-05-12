@@ -14,14 +14,17 @@ def read_open_statsbomb_event_data_json(
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
 ) -> Tuple[Events, Events, Events, Events]:
-    """Parses a StatsPerform Match Event json file and extracts the event data.
+    """Parses files for a single match from the StatsBomb open dataset and extracts the
+    event data.
 
     This function provides a high-level access to an events json file from the openly
     published StatsBomb open data and returns Event objects for both teams for the first
     two periods. A StatsBomb360 json file can be passed to the function to include
-    information about the tracked position of (some) players at certain events to the
+    `StatsBomb360 data <https://statsbomb.com/articles/soccer/
+    statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_ to the
     ``qualifier`` column. Requires the parsed files from the dataset to maintain their
-    original names from <https://github.com/statsbomb/open-data>`_.
+    original names from the `official data repository
+    <https://github.com/statsbomb/open-data>`_
 
     Parameters
     ----------
@@ -47,7 +50,9 @@ def read_open_statsbomb_event_data_json(
     StatsBomb's open format of handling provides certain additional event attributes,
     which attach additional information to certain events. As of now, these information
     are parsed as a string in the ``qualifier`` column of the returned DataFrame and can
-    be transformed to a dict of form ``{attribute: value}``.
+    be transformed to a dict of form ``{attribute: value}``. This includes the
+    information about the tracked position of (some) players and the visible area
+    that is included in the StatsBomb360 data.
     """
 
     # load json files into memory
