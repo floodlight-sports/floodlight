@@ -70,6 +70,26 @@ def example_code() -> Code:
     return code
 
 
+@pytest.fixture()
+def example_code_int() -> Code:
+    array = np.array([0, 1, 2, 3])
+    name = "intensity"
+    definitions = {0: "None", 1: "Low", 2: "Medium", 3: "High"}
+    framerate = 4
+    code = Code(code=array, name=name, definitions=definitions, framerate=framerate)
+
+    return code
+
+
+@pytest.fixture()
+def example_code_empty() -> Code:
+    array = np.array([])
+    name = "empty"
+    code = Code(code=array, name=name)
+
+    return code
+
+
 # Events
 @pytest.fixture()
 def example_events_data_minimal() -> pd.DataFrame:
@@ -81,7 +101,44 @@ def example_events_data_minimal() -> pd.DataFrame:
 
 
 @pytest.fixture()
-def example_events_data_with_outcome_and_none() -> pd.DataFrame:
+def example_events_data_minimal_none() -> pd.DataFrame:
+    data = {
+        "eID": [None, 2],
+        "gameclock": [1.1, None],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_minimal_missing_essential() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "outcome": [0, 1],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_minimal_invalid_essential() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [-1.1, 2.2],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_invalid_protected() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [1.1, 2.2],
+        "jID": [10, -11],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_with_outcome_none() -> pd.DataFrame:
     data = {
         "eID": [1, 2, 2, 4, 1],
         "gameclock": [1.1412, 2.4122, 5.213, 11.214, 21.12552],
@@ -90,6 +147,59 @@ def example_events_data_with_outcome_and_none() -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
+@pytest.fixture()
+def example_events_data_xy() -> pd.DataFrame:
+    data = {
+        "eID": [0, 0],
+        "gameclock": [0.1, 0.2],
+        "at_x": [1, 3],
+        "at_y": [2, 4],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_xy_none() -> pd.DataFrame:
+    data = {
+        "eID": [0, 0],
+        "gameclock": [0.1, 0.2],
+        "at_x": [np.NAN, np.NAN],
+        "at_y": [np.NAN, np.NAN],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2],
+        "gameclock": [0.1, 0.2],
+        "frameclock": [12.4, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_none() -> pd.DataFrame:
+    data = {
+        "eID": ["1", "2"],
+        "gameclock": [0.1, 0.2],
+        "frameclock": [None, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture()
+def example_events_data_frameclock_unsorted() -> pd.DataFrame:
+    data = {
+        "eID": [1, 2, 3],
+        "gameclock": [1.3, 0.1, 0.2],
+        "frameclock": [21.6, 12.4, 16.7],
+    }
+    return pd.DataFrame(data)
+
+
+# Pitch
 @pytest.fixture()
 def example_pitch_football() -> Pitch:
     football_pitch = Pitch(
