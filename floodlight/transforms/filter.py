@@ -36,7 +36,7 @@ def _get_filterable_and_short_sequences(
     """
     if data.ndim != 1:
         raise ValueError(
-            f"Expected input data to be one-dimensional. Got {data.ndim}-dimensional"
+            f"Expected input data to be one-dimensional. Got {data.ndim}-dimensional "
             f"data instead."
         )
 
