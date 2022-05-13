@@ -21,12 +21,13 @@ from settings import DATA_DIR
 def _create_metadata_from_open_csv_df(
     csv_df: pd.DataFrame,
 ) -> Tuple[Dict[int, tuple], Pitch]:
-    """Creates meta information from the CSV file as parsed by pd.read_csv().
+    """Creates meta information from a pd.DataFrame that results from parsing the open
+    StatsPerform event data csv file.
 
     Parameters
     ----------
-    csv_df: DataFrame
-        Containing all data from the positions CSV file as DataFrame.
+    csv_df: pd.DataFrame
+        Data Frame with the parsed event data csv file.
 
     Returns
     -------
@@ -65,13 +66,13 @@ def _create_metadata_from_open_csv_df(
 def _create_links_from_open_csv_df(
     csv_df: pd.DataFrame, team_ids: Dict[str, float]
 ) -> Dict[str, Dict[int, int]]:
-    """Checks the entire parsed StatsPerform CSV file for unique jIDs (jerseynumbers)
-    and creates a dictionary linking jIDs to xIDs in ascending order.
+    """Checks the entire parsed open StatsPerform event data csv file for unique jIDs
+    (jerseynumbers) and creates a dictionary linking jIDs to xIDs in ascending order.
 
     Parameters
     ----------
     csv_df: pd.DataFrame
-        Containing the parsed DataFrame from the positions CSV file
+        Data Frame with the parsed event data csv file.
     team_ids: Dict[str, float]
         Dictionary that stores the StatsPerform team id of the Home and Away team
 
@@ -83,7 +84,7 @@ def _create_links_from_open_csv_df(
     links = {}
     for team in team_ids:
         links[team] = {
-            jID: xID
+            int(jID): xID
             for xID, jID in enumerate(
                 csv_df[csv_df["team_id"] == team_ids[team]]["jersey_no"].unique()
             )
@@ -94,13 +95,13 @@ def _create_links_from_open_csv_df(
 def _read_open_event_csv_single_line(
     line: str,
 ) -> Tuple[Dict, str, str]:
-    """Extracts all relevant information from a single line of StatsPerform's Event CSV
+    """Extracts all relevant information from a single line of StatsPerform's Event csv
     file (i.e. one single event in the data).
 
     Parameters
     ----------
     line: str
-        One full line from StatsPerform's Event CSV file.
+        One full line from StatsPerform's Event csv file.
 
     Returns
     -------
@@ -158,17 +159,17 @@ def _read_open_event_csv_single_line(
 def create_links_from_open_tracking_data_csv(
     filepath_tracking: Union[str, Path]
 ) -> Dict[str, Dict[int, int]]:
-    """Parses the entire StatsPerform CSV file for unique jIDs (jerseynumbers) and team
-    Ids and creates a dictionary linking jIDs to xIDs in ascending order.
+    """Parses the entire open StatsPerform event data csv file for unique jIDs
+    (jerseynumbers) and creates a dictionary linking jIDs to xIDs in ascending order.
 
     Parameters
     ----------
     filepath_tracking: str or pathlib.Path
-        CSV file where the position data in StatsPerform format is saved.
+        csv file where the position data in StatsPerform format is saved.
 
     Returns
     -------
-    links: Dict[str, Dict[str, int]]
+    links: Dict[str, Dict[int, int]]
         A link dictionary of the form ``links[team][jID] = xID``.
     """
     # read dat-file into pd.DataFrame
@@ -189,16 +190,16 @@ def create_links_from_open_tracking_data_csv(
 def read_open_event_data_csv(
     filepath_events: Union[str, Path],
 ) -> Tuple[Events, Events, Events, Events]:
-    """Parses an open StatsPerform Match Event CSV file and extracts the event data.
+    """Parses an open StatsPerform Match Event csv file and extracts the event data.
 
     This function provides a high-level access to the particular openly published
-    StatsPerform Match Events CSV file (e.g. for the Pro Forum '22) and returns Event
+    StatsPerform match events csv file (e.g. for the Pro Forum '22) and returns Event
     objects for both teams.
 
     Parameters
     ----------
     filepath_events: str or pathlib.Path
-        Full path to XML File where the Event data in StatsPerform CSV format is
+        Full path to xml File where the Event data in StatsPerform csv format is
         saved
     Returns
     -------
@@ -268,24 +269,24 @@ def read_open_tracking_data_csv(
     filepath_tracking: Union[str, Path],
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch]:
-    """Parses an open StatsPerform CSV file and extract position data and possession
+    """Parses an open StatsPerform csv file and extract position data and possession
     codes as well as pitch information.
 
      Openly published StatsPerform position data (e.g. for the Pro Forum '22) is stored
-     in a CSV file containing all position data (for both halves) as well as information
+     in a csv file containing all position data (for both halves) as well as information
      about players, the pitch, and the ball possession. This function provides a
-     high-level access to StatsPerform data by parsing the CSV file.
+     high-level access to StatsPerform data by parsing the csv file.
 
     Parameters
     ----------
     filepath_tracking: str or pathlib.Path
-        Full path to the CSV file.
+        Full path to the csv file.
     links: Dict[str, Dict[int, int]], optional
         A link dictionary of the form ``links[team][jID] = xID``. Player's are
         identified in StatsPerform files via jID, and this dictionary is used to map
         them to a specific xID in the respective XY objects. Should be supplied if that
         order matters. If None is given (default), the links are automatically extracted
-        from the CSV file at the cost of a second pass through the entire file.
+        from the csv file at the cost of a second pass through the entire file.
 
     Returns
     -------
@@ -294,7 +295,7 @@ def read_open_tracking_data_csv(
         (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
         possession_ht1, possession_ht2, pitch)
     """
-    # parse the CSV file into pd.DataFrame
+    # parse the csv file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath_tracking))
 
     # initialize team and ball ids
@@ -379,7 +380,7 @@ def read_open_tracking_data_csv(
                     continue
 
                 # insert player position to bin array
-                jrsy = pl_df["jersey_no"].values[0]
+                jrsy = int(pl_df["jersey_no"].values[0])
                 x_col = (links[team][jrsy] - 1) * 2
                 y_col = (links[team][jrsy] - 1) * 2 + 1
                 start = frames[appearance][0] - periods[segment][0]
@@ -439,31 +440,30 @@ def read_open_tracking_data_csv(
 
 
 def _read_tracking_data_txt_single_line(
-    package: str,
+    line: str,
 ) -> Tuple[
     int,
     int,
     Dict[str, Dict[str, Tuple[float, float, float]]],
     Dict[str, Union[str, tuple]],
 ]:
-    """Extracts all relevant information from a single line of StatsPerform's .txt file
-    (i.e. one frame of data).
+    """Extracts all relevant information from a single line of StatsPerform's tracking
+    data .txt file (i.e. one frame of data).
 
     Parameters
     ----------
-    package: str
-        One full line from StatsPerform's .txt-file, equals one "package" according
-        to the file-format documentation.
+    line: str
+        One full line from StatsPerform's .txt-file, equals one sample of data.
 
     Returns
     -------
     gameclock: int
         The gameclock of the current segment in milliseconds.
     segment: int
-        The segment ID.
+        The segment identifier.
     positions: Dict[str, Dict[str, Tuple[float, float, float]]]
         Nested dictionary that stores player position information for each team and
-        player. Has the form ``positions[team][jID] = (x, y, speed)``.
+        player. Has the form ``positions[team][jID] = (x, y)``.
     ball: Dict[str]
         Dictionary with ball information. Has keys 'position', 'possession' and
         'ballstatus'.
@@ -473,7 +473,7 @@ def _read_tracking_data_txt_single_line(
     ball = {}
 
     # read chunks
-    chunks = package.split(":")
+    chunks = line.split(":")
     time_chunk = chunks[0]
     player_chunks = chunks[1].split(";")
 
@@ -526,18 +526,15 @@ def _read_tracking_data_txt_single_line(
 
 def _read_time_information_from_tracking_data_txt(
     filepath_txt: Union[str, Path],
-    estimate_framerate: bool = None,
-) -> Tuple[Dict, int]:
+) -> Tuple[Dict, Union[int, None]]:
     """Reads StatsPerform's tracking .txt file and extracts information about the first
-    and final frame of periods. If specified, the framerate is estimated from the
-    gameclock difference between the samples.
+    and last frame of periods. Also, a framerate is estimated from the
+    gameclock difference between samples.
 
     Parameters
     ----------
     filepath_txt: str or pathlib.Path
         Full path to the txt file containing the tracking data.
-    estimate_framerate: bool
-        Whether the framerate should estimated. Returns None if set to False.
 
     Returns
     -------
@@ -545,8 +542,7 @@ def _read_time_information_from_tracking_data_txt(
         Dictionary with start and endframes:
         ``periods[segment] = [startframe, endframe]``.
     framerate_est: int or None
-        Estimated temporal resolution of data in frames per second/Hertz if specified
-        or None otherwise.
+        Estimated temporal resolution of data in frames per second/Hertz.
     """
 
     # bins
@@ -560,10 +556,10 @@ def _read_time_information_from_tracking_data_txt(
     # loop
     last_gameclock = None
     last_segment = None
-    for package in file_txt.readlines():
+    for line in file_txt.readlines():
 
         # read gameclock and segment
-        gameclock, segment, _, _ = _read_tracking_data_txt_single_line(package)
+        gameclock, segment, _, _ = _read_tracking_data_txt_single_line(line)
 
         # update periods
         if segment not in startframes:
@@ -572,7 +568,7 @@ def _read_time_information_from_tracking_data_txt(
                 endframes[last_segment] = last_gameclock
 
         # estimate framerate if desired
-        if estimate_framerate and last_gameclock is not None:
+        if last_gameclock is not None:
             delta = np.absolute(gameclock - last_gameclock)  # in milliseconds
             if framerate_est is None:
                 framerate_est = int(1000 / delta)
@@ -682,12 +678,12 @@ def read_event_data_xml(
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Parses a StatsPerform .xml file and extracts event data and pitch information.
 
-    This function provides a high-level access to the StatsPerform Match Events xml file
-    and returns Events objects for both teams.
+    This function provides a high-level access to the StatsPerform match events xml file
+    and returns Events objects for both teams and information about the pitch.
 
     Parameters
     ----------
-    filepath_xml: str
+    filepath_xml: str or pathlib.Path
         Full path to the xml file containing the event data.
 
     Returns
@@ -838,8 +834,10 @@ def read_tracking_data_txt(
     """Parses a StatsPerform .txt file and extracts position data.
 
      Internal StatsPerform position data is stored as a .txt file containing all
-     position data (for both halves) as well as information about the pitch. This
-     function provides a high-level access to StatsPerform data by parsing the txt file.
+     position data (for both halves). This function provides a high-level access to
+     StatsPerform data by parsing the txt file. Since no information about framerate is
+     delivered in the data itself, it is estimated from time difference between
+     individual frames.
 
     Parameters
     ----------
@@ -850,7 +848,7 @@ def read_tracking_data_txt(
         identified in StatsPerform files via jID, and this dictionary is used to map
         them to a specific xID in the respective XY objects. Should be supplied if that
         order matters. If None is given (default), the links are automatically extracted
-        from the CSV file at the cost of a second pass through the entire file.
+        from the csv file at the cost of a second pass through the entire file.
 
     Returns
     -------
@@ -858,19 +856,9 @@ def read_tracking_data_txt(
         XY-objects for both teams and both halves. The order is (home_ht1, home_ht2,
         away_ht1, away_ht2, ball_ht1, ball_ht2).
     """
-
-    # read framerate from txt description if stored as f"..._{framerate}FPS..."
-    framerate = None
-    for file_description in filepath_txt.split("_"):
-        if "FPS" in file_description:
-            framerate = int(file_description.split("FPS")[0])
-
     # parse txt file for periods and estimate framerate if not contained in filepath
-    periods, framerate_est = _read_time_information_from_tracking_data_txt(
-        filepath_txt, framerate is None
-    )
+    periods, framerate_est = _read_time_information_from_tracking_data_txt(filepath_txt)
     segments = list(periods.keys())
-    framerate = framerate_est if framerate is None else framerate
 
     # create or check links
     if links is None:
@@ -885,7 +873,7 @@ def read_tracking_data_txt(
     number_of_frames = {}
     for segment in segments:
         number_of_frames[segment] = (
-            int((periods[segment][1] - periods[segment][0]) / framerate) + 1
+            int((periods[segment][1] - periods[segment][0]) / framerate_est) + 1
         )
 
     # bins
@@ -927,7 +915,7 @@ def read_tracking_data_txt(
             continue
         else:
             # otherwise calculate relative frame (in respective segment)
-            frame_rel = int((gameclock - periods[segment][0]) / framerate)
+            frame_rel = int((gameclock - periods[segment][0]) / framerate_est)
 
         # insert (x,y)-data into np.array
         for team in ["Home", "Away"]:
@@ -942,12 +930,12 @@ def read_tracking_data_txt(
         xydata["Ball"][segment][frame_rel] = ball.get("position", np.nan)
 
     # create XY objects
-    home_ht1 = XY(xy=xydata["Home"][1], framerate=framerate)
-    home_ht2 = XY(xy=xydata["Home"][2], framerate=framerate)
-    away_ht1 = XY(xy=xydata["Away"][1], framerate=framerate)
-    away_ht2 = XY(xy=xydata["Away"][2], framerate=framerate)
-    ball_ht1 = XY(xy=xydata["Ball"][1], framerate=framerate)
-    ball_ht2 = XY(xy=xydata["Ball"][2], framerate=framerate)
+    home_ht1 = XY(xy=xydata["Home"][1], framerate=framerate_est)
+    home_ht2 = XY(xy=xydata["Home"][2], framerate=framerate_est)
+    away_ht1 = XY(xy=xydata["Away"][1], framerate=framerate_est)
+    away_ht2 = XY(xy=xydata["Away"][2], framerate=framerate_est)
+    ball_ht1 = XY(xy=xydata["Ball"][1], framerate=framerate_est)
+    ball_ht2 = XY(xy=xydata["Ball"][2], framerate=framerate_est)
 
     data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2)
 
@@ -957,11 +945,11 @@ def read_tracking_data_txt(
 def read_event_data_from_url(
     url: str,
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
-    """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing an events csv
-    file and extracts the stored event data and pitch information.
+    """Reads a URL containing a StatsPerform events csv file and extracts the stored
+    event data and pitch information.
 
     The event data from the URL is downloaded into a temporary file stored in the
-    repository's internal root ``.data``-folder and is removed afterwards.
+    repository's internal root ``.data``-folder and removed afterwards.
 
     Parameters
     ----------
@@ -975,6 +963,8 @@ def read_event_data_from_url(
         is (home_ht1, home_ht2, away_ht1, away_ht2, pitch).
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
+    if not os.path.isdir(data_dir):
+        os.makedirs(data_dir, exist_ok=True)
     temp_file = os.path.join(data_dir, "events_temp.xml")
     with open(temp_file, "wb") as binary_file:
         binary_file.write(download_from_url(url))
@@ -991,7 +981,7 @@ def read_tracking_data_from_url(
     data txt file and extracts position data.
 
     The tracking data from the URL is downloaded into a temporary file stored in the
-    repository's internal root ``.data``-folder and is removed afterwards.
+    repository's internal root ``.data``-folder and removed afterwards.
 
     Parameters
     ----------
@@ -1002,7 +992,7 @@ def read_tracking_data_from_url(
         identified in StatsPerform files via jID, and this dictionary is used to map
         them to a specific xID in the respective XY objects. Should be supplied if that
         order matters. If None is given (default), the links are automatically extracted
-        from the CSV file at the cost of a second pass through the entire file.
+        from the csv file at the cost of a second pass through the entire file.
 
     Returns
     -------
@@ -1011,6 +1001,8 @@ def read_tracking_data_from_url(
         (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2, pitch)
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
+    if not os.path.isdir(data_dir):
+        os.makedirs(data_dir, exist_ok=True)
     temp_file = os.path.join(data_dir, "tracking_temp.txt")
     with open(temp_file, "wb") as binary_file:
         binary_file.write(download_from_url(url))
