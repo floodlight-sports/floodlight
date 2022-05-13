@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import scipy.signal
 import numpy as np
 
@@ -5,22 +7,32 @@ from floodlight import XY
 from floodlight.utils.types import Numeric
 
 
-def _get_sequences_without_nans(data: np.ndarray) -> np.ndarray:
-    """Returns start and end indices of continuous non-NaN sequences.
+def _get_filterable_and_short_sequences(
+    data: np.ndarray, min_signal_len: int
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Returns start and end indices of continuous, filterable sequences and sequences
+    to short for filtering with the specified filter.
 
     Parameters
     ----------
     data: np.ndarray
-        Array of shape (T x 1) potentially containing NaNs.
+        Array of shape (T,) potentially containing NaNs.
+    min_signal_len: int
+        The minimum signal length that the specified filter can be applied on.
 
     Returns
     -------
-    sequences: np.ndarray
-        Two-dimensional array of shape (N x 3) and form
-        ``[[sequence_start_idx, sequence_end_idx, is_sequence_nan]]`` containing start
-        and end indices of N alternating sequences of NaN and non-NaN entries of the
-        original data, ordered ascendingly, along with a bool that indicates if that
-        sequence contains NaN (False) of non-NaN (True) values.
+    filterable_sequences: np.ndarray
+        Two-dimensional array of shape (N, 2) and form
+        ``[[sequence_start_idx, sequence_end_idx]]`` containing start and end indices of
+         N filterable sequences in the original data, ordered ascendingly. A sequence is
+         filterable when it doesn't contain NaNs and is at least as long as the minimum
+         window length of the specified filter.
+    short_sequences: np.ndarray
+        Two-dimensional array of shape (N, 2) and form
+        ``[[sequence_start_idx, sequence_end_idx]]`` containing start and end indices of
+         N sequences in the original data that don't contain NaNs but are to short to
+         apply the specified filter on.
     """
     if data.ndim != 1:
         raise ValueError(
@@ -33,7 +45,6 @@ def _get_sequences_without_nans(data: np.ndarray) -> np.ndarray:
 
     # indices where nans and numbers are next to each other
     change_points = np.where(np.diff(np.isnan(data), prepend=np.nan, append=np.nan))[0]
-    # sequences without nans
     sequences = np.array(
         [
             (change_points[i], change_points[i + 1])
@@ -41,14 +52,27 @@ def _get_sequences_without_nans(data: np.ndarray) -> np.ndarray:
         ]
     )
 
-    is_nan = np.where(np.isnan(data[sequences[:, 0]]), False, True).reshape((-1, 1))
-    labeled_sequences = np.hstack((sequences, is_nan))
+    # which sequences contain NaNs
+    seq_is_nan = np.where(np.isnan(data[sequences[:, 0]]), False, True)
+    # remove sequences containing NaNs
+    non_nan_sequences = sequences[seq_is_nan == 1]
+    # split remaining sequences into filterable and short
+    filterable_sequences = non_nan_sequences[
+        (non_nan_sequences[:, 1] - non_nan_sequences[:, 0]) >= min_signal_len
+    ]
+    short_sequences = non_nan_sequences[
+        (non_nan_sequences[:, 1] - non_nan_sequences[:, 0]) < min_signal_len
+    ]
 
-    return labeled_sequences
+    return filterable_sequences, short_sequences
 
 
 def _filter_sequence_butterworth_lowpass(
-    signal: np.ndarray, order: int = 3, cutoff: Numeric = 1, framerate: Numeric = None
+    signal: np.ndarray,
+    order: int = 3,
+    Wn: Numeric = 1,
+    framerate: Numeric = None,
+    **kwargs,
 ) -> np.ndarray:
     """Filters the incoming signal with a digital Butterworth lowpass filter.
 
@@ -68,7 +92,7 @@ def _filter_sequence_butterworth_lowpass(
         The order of the filter. Corresponds to the argument ``N`` from the `scipy.
         signal. butter <https://docs.scipy.org/doc/scipy/reference/generated/scipy.
         signal.butter.html>`_ function. Default is 3.
-    cutoff: Numeric, optional
+    Wn: Numeric, optional
         The critical cutoff frequency. Corresponds to the argument ``Wn`` from the
         `scipy.signal.butter <https://docs.scipy.org/doc/scipy/reference/generated/scipy
         .signal.butter.html>`_ function. Default is 1.
@@ -76,6 +100,10 @@ def _filter_sequence_butterworth_lowpass(
         The sampling frequency of the signal. Corresponds to the argument ``fs`` from
         the `scipy.signal.butter <https://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.butter.html>`_ function.
+    kwargs:
+        Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
+        to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.filtfilt.html>`_ function.
 
     Returns
     -------
@@ -85,24 +113,21 @@ def _filter_sequence_butterworth_lowpass(
     # Calculation of filter coefficients
     coeffs = scipy.signal.butter(
         order,
-        cutoff,
+        Wn,
         btype="lowpass",
         output="ba",
         fs=framerate,
     )
     # applying the filter to the data
     signal_filtered = scipy.signal.filtfilt(
-        coeffs[0], coeffs[1], signal, method="pad", axis=0
+        coeffs[0], coeffs[1], signal, axis=0, **kwargs
     )
 
     return signal_filtered
 
 
 def butterworth_lowpass(
-    xy: XY,
-    order: int = 3,
-    cutoff: Numeric = 1,
-    remove_short_seqs: bool = True,
+    xy: XY, order: int = 3, Wn: Numeric = 1, remove_short_seqs: bool = False, **kwargs
 ) -> XY:
     """Applies a digital Butterworth lowpass-filter [1]_ to a XY data object.
 
@@ -118,16 +143,19 @@ def butterworth_lowpass(
         Floodlight XY Data object.
     order: int, optional
         The order of the filter. Corresponds to the argument ``N`` from the `scipy.
-        signal.butter <https://docs.scipy.org/doc/scipy/reference/generated/ scipy.
+        signal.butter <https://docs.scipy.org/doc/scipy/reference/generated/scipy.
         signal.butter.html>`_ function. Default is 3
-    cutoff: Numeric, optional
+    Wn: Numeric, optional
         The critical cutoff frequency. Corresponds to the argument ``Wn`` from the
         `scipy.signal.butter <https://docs.scipy.org/doc/scipy/reference/generated/
         scipy.signal.butter.html>`_ function. Default is 1.
     remove_short_seqs: bool, optional
         If True, sequences that are to short for the filter with the specified settings
         are replaced with np.NaNs. If False, they are kept unfiltered. Default is True.
-
+    kwargs:
+        Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
+        to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.filtfilt.html>`_ function.
     Returns
     -------
     xy_filtered: XY
@@ -158,38 +186,24 @@ def butterworth_lowpass(
     xy_filt = np.empty(xy.xy.shape)
     # loop through the xy-object columns
     for i, column in enumerate(np.transpose(xy.xy)):
-        # extract indices of alternating NaN/non-NaN sequences
-        sequences = _get_sequences_without_nans(column)
+        # extract indices of filterable and short sequences
+        seqs_filt, seqs_short = _get_filterable_and_short_sequences(
+            column, min_signal_len
+        )
         # pre-allocate space for filtered column
         col_filt = np.full(column.shape, np.nan)
 
         # loop through filterable sequences
-        for start, end, _ in sequences[
-            np.all(
-                (
-                    sequences[:, 2] == 1,
-                    np.squeeze(np.diff(sequences[:, 0:2]) >= min_signal_len),
-                ),
-                axis=0,
-            )
-        ]:
+        for start, end in seqs_filt:
             # apply filter to the sequence and enter filtered data to their
             # respective indices in the data
             col_filt[start:end] = _filter_sequence_butterworth_lowpass(
-                column[start:end], order, cutoff, framerate
+                column[start:end], order, Wn, framerate, **kwargs
             )
         # check treatment of sequences that don't meet minimum signal length
         if remove_short_seqs is False:
             # enter short sequences unfiltered to their respective indices in the data
-            for start, end, _ in sequences[
-                np.all(
-                    (
-                        sequences[:, 2] == 1,
-                        np.squeeze(np.diff(sequences[:, 0:2]) < min_signal_len),
-                    ),
-                    axis=0,
-                )
-            ]:
+            for start, end in seqs_short:
                 col_filt[start:end] = column[start:end]
 
         # enter filtered data into respective column
@@ -205,7 +219,8 @@ def savgol_lowpass(
     xy: XY,
     window_length: int = 5,
     poly_order: Numeric = 3,
-    remove_short_seqs: bool = True,
+    remove_short_seqs: bool = False,
+    **kwargs,
 ) -> XY:
     """Applies a Savitzky-Golay lowpass-filter [2]_ to a XY data object.
 
@@ -222,7 +237,7 @@ def savgol_lowpass(
         The length of the filter window. Corresponds to the argument ``window_length``
         from the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.savgol_filter.html>`_ function. Default is 5.
-    poly_order: Numeric, optional
+    polyorder: Numeric, optional
         The order of the polynomial used to fit the samples. ``poly_order`` must be less
         than ``window_length``. Default is 3. Corresponds to the argument ``polyorder``
         from the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
@@ -230,7 +245,10 @@ def savgol_lowpass(
     remove_short_seqs: bool, optional
         If True, sequences that are to short for the Filter with the specified settings
         are removed from the data. If False, they are kept unfiltered. Default is True.
-
+    kwargs:
+        Optional arguments {'deriv', 'delta', 'mode', 'cval'} that can be passed to
+        the `scipy.signal.savgol <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.savgol_filter.html>`_ function.
     Returns
     -------
     xy_filtered: XY
@@ -261,37 +279,23 @@ def savgol_lowpass(
     # loop through the xy-object columns
     for i, column in enumerate(np.transpose(xy.xy)):
         # extract indices of alternating NaN/non-NaN sequences
-        sequences = _get_sequences_without_nans(column)
+        seqs_filt, seqs_short = _get_filterable_and_short_sequences(
+            column, min_signal_len
+        )
         # pre-allocate space for filtered column
         col_filt = np.full(column.shape, np.nan)
 
         # loop through filterable sequences
-        for start, end, _ in sequences[
-            np.all(
-                (
-                    sequences[:, 2] == 1,
-                    np.squeeze(np.diff(sequences[:, 0:2]) >= min_signal_len),
-                ),
-                axis=0,
-            )
-        ]:
+        for start, end in seqs_filt:
             # apply filter to the sequence and enter filtered data to their
             # respective indices in the data
             col_filt[start:end] = scipy.signal.savgol_filter(
-                column[start:end], window_length, poly_order
+                column[start:end], window_length, poly_order, **kwargs
             )
         # check treatment of sequences that don't meet minimum signal length
         if remove_short_seqs is False:
             # enter short sequences unfiltered to their respective indices in the data
-            for start, end, _ in sequences[
-                np.all(
-                    (
-                        sequences[:, 2] == 1,
-                        np.squeeze(np.diff(sequences[:, 0:2]) < min_signal_len),
-                    ),
-                    axis=0,
-                )
-            ]:
+            for start, end in seqs_short:
                 col_filt[start:end] = column[start:end]
 
         # enter filtered data into respective column
