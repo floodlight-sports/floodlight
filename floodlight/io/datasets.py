@@ -397,8 +397,8 @@ class StatsBombOpenDataset:
 
     @property
     def available_matches(self) -> pd.DataFrame:
-        """Creates and Returns a Table with information for all available matches from
-        the metadata that is downloaded upon instantiation.
+        """Creates and returns a DataFrame with information for all available matches
+        from the metadata that is downloaded upon instantiation.
 
         Returns
         -------
@@ -406,7 +406,7 @@ class StatsBombOpenDataset:
             Table where the rows contain meta information of individual games such as
             ``competition_name``, ``season_name``, and ``match_name`` (in the format
             Home vs. Away), location of the match (``stadium`` and ``country``),
-            ``gender`` of the players (female or male), the ``StatsBomb360_status``  and
+            ``sex`` of the players (female or male), the ``StatsBomb360_status``  and
             the final ``score``.
         """
         summary = pd.DataFrame()
@@ -436,7 +436,7 @@ class StatsBombOpenDataset:
                         "score": f"{info['home_score']}:{info['away_score']}",
                         "stadium": info["stadium"]["name"],
                         "country": info["stadium"]["country"]["name"],
-                        "gender": "f"
+                        "sex": "f"
                         if competition
                         in ["FA Women's Super League", "NWSL", "Women's World Cup"]
                         else "m",
@@ -454,10 +454,11 @@ class StatsBombOpenDataset:
         season_name: str = "2020/2021",
         match_name: str = None,
     ) -> Tuple[Events, Events, Events, Events]:
-        """Get events from one match of the StatsBomb open dataset. If `StatsBomb360
-        data <https://statsbomb.com/articles/soccer/
+        """Get events from one match of the StatsBomb open dataset.
+
+        If `StatsBomb360data <https://statsbomb.com/articles/soccer/
         statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_  are
-        available, they are stored in the  ``qualifier`` column.
+        available, they are stored in the  ``qualifier`` column of the Events object.
         If the files are not contained in the repository's root ``.data`` folder they
         are downloaded to the folder and will be stored until removed by hand.
 
@@ -471,7 +472,7 @@ class StatsBombOpenDataset:
             format YYYY/YYYY and for international cup matches the format YYYY.
             Check Notes for available seasons of every competition.
             Defaults to "2020/2021".
-        match_name
+        match_name: str, optional
             Match name relating to the available matches in the chosen competition and
             season. If equal to None (default), the first available match of the
             given competition and season is chosen.
