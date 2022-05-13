@@ -151,7 +151,7 @@ def butterworth_lowpass(
         scipy.signal.butter.html>`_ function. Default is 1.
     remove_short_seqs: bool, optional
         If True, sequences that are to short for the filter with the specified settings
-        are replaced with np.NaNs. If False, they are kept unfiltered. Default is True.
+        are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
     kwargs:
         Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
         to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
@@ -171,6 +171,53 @@ def butterworth_lowpass(
     signal length are specified with the ``remove_short_sequence``-argument, where True
     will replace these sequences with np.NaNs ond False will keep the sequences in the
     data unfiltered.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight import XY
+    >>> from floodlight.transforms.filter import butterworth_lowpass
+
+    We first generate a noisy XY-object to smooth.
+
+    >>> t = np.linspace(-5, 5, 1000)
+    >>> player_x = np.sin(t) * t + np.random.rand(1000)
+    >>> player_x[450:495] = np.NaN
+    >>> player_x[505:550] = np.NaN
+    >>> player_y = t + np.random.randn()
+    >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
+
+    Apply the Butterworth lowpass filter with its default settings.
+
+    >>> xy_filt = butterworth_lowpass(xy)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/butterworth_default_example.png
+
+
+    Apply the same filter but remove the sequence that is to short to filter.
+
+    >>> xy_filt = butterworth_lowpass(xy, remove_short_seqs=True)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/butterworth_removed_short_example.png
+
+    Apply the filter with different specifications.
+
+    >>> xy_filt = butterworth_lowpass(xy, order=5, Wn=4)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/butterworth_adjusted_example.png
 
     References
     ----------
@@ -244,15 +291,66 @@ def savgol_lowpass(
         generated/scipy.signal.savgol_filter.html>`_ function. Default is 5.
     remove_short_seqs: bool, optional
         If True, sequences that are to short for the Filter with the specified settings
-        are removed from the data. If False, they are kept unfiltered. Default is True.
+        are removed from the data. If False, they are kept unfiltered. Default is False.
     kwargs:
         Optional arguments {'deriv', 'delta', 'mode', 'cval'} that can be passed to
         the `scipy.signal.savgol <https://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.savgol_filter.html>`_ function.
+
     Returns
     -------
     xy_filtered: XY
         XY object with position data filtered by designed Butterworth low pass filter.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight import XY
+    >>> from floodlight.transforms.filter import savgol_lowpass
+
+    We first generate a noisy XY-object to smooth.
+
+    >>> t = np.linspace(-5, 5, 1000)
+    >>> player_x = np.sin(t) * t + np.random.rand(1000)
+    >>> player_x[450:495] = np.NaN
+    >>> player_x[505:550] = np.NaN
+    >>> player_y = t + np.random.randn()
+    >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
+
+    Apply the Savgol lowpass filter with its default settings.
+
+    >>> xy_filt = savgol_lowpass(xy)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/savgol_default_example.png
+
+
+    Apply the filter with a longer window lengh and remove the sequence that is to short
+    to filter.
+
+    >>> xy_filt = savgol_lowpass(xy, window_length=12, remove_short_seqs=True)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/savgol_removed_short_example.png
+
+
+    Apply the filter with different specifications.
+
+    >>> xy_filt = savgol_lowpass(xy, window_length=50, poly_order=5)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/savgol_adjusted_example.png
+
 
     Notes
     -----
