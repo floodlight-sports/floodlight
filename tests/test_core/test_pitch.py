@@ -42,14 +42,26 @@ def test_template_dfl() -> None:
 
 
 @pytest.mark.unit
-def test_template_statsperform() -> None:
+def test_template_statsperform_open() -> None:
     # Arrange
-    pitch = Pitch.from_template("statsperform", length=110, width=68)
+    pitch = Pitch.from_template("statsperform_open", length=110, width=68)
 
     # Assert
     assert pitch.xlim == (-55, 55)
     assert pitch.ylim == (-34, 34)
     assert pitch.unit == "m"
+    assert pitch.boundaries == "flexible"
+
+
+@pytest.mark.unit
+def test_template_statsperform() -> None:
+    # Arrange
+    pitch = Pitch.from_template("statsperform", length=11000, width=6800)
+
+    # Assert
+    assert pitch.xlim == (-5500, 5500)
+    assert pitch.ylim == (-3400, 3400)
+    assert pitch.unit == "cm"
     assert pitch.boundaries == "flexible"
 
 
