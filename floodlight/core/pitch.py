@@ -61,12 +61,13 @@ class Pitch:
         ----------
         template_name: str
             The name of the template the pitch should follow. Currently supported are
-            {'dfl', 'opta', 'statsperform', 'tracab'}.
+            {'dfl', 'eigd', 'opta', 'statsbomb', 'statsperform', 'statsperform_open',
+            'tracab'}.
         kwargs:
             You may pass optional arguments (`length`, `width`, `sport`) used for class
             instantiation. For some data providers, additional kwargs are needed to
             represent their format correctly. For example, pass the `length` and `width`
-            argument to create a Pitch object in the 'chyronhego_international' format.
+            argument to create a Pitch object in the 'tracab' format.
 
         Returns
         -------
@@ -136,7 +137,6 @@ class Pitch:
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
             )
-
         elif template_name == "tracab":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
