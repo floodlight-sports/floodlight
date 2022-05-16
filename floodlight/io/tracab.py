@@ -210,8 +210,8 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
     awayjrsy.sort()
 
     links = {
-        "Home": {jID: xID + 1 for xID, jID in enumerate(homejrsy)},
-        "Away": {jID: xID + 1 for xID, jID in enumerate(awayjrsy)},
+        "Home": {jID: xID for xID, jID in enumerate(homejrsy)},
+        "Away": {jID: xID for xID, jID in enumerate(awayjrsy)},
     }
 
     return links
@@ -262,8 +262,8 @@ def read_tracab_files(
         # potential check vs jerseys in dat file
 
     # infer data array shapes
-    number_of_home_players = max(links["Home"].values())
-    number_of_away_players = max(links["Away"].values())
+    number_of_home_players = max(links["Home"].values()) + 1
+    number_of_away_players = max(links["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -311,12 +311,12 @@ def read_tracab_files(
                 # otherwise calculate relative frame (in respective segment)
                 frame_rel = frame_abs - periods[segment][0]
 
-            # insert (x,y)-data into correct np.arary, at correct place (t, xID)
+            # insert (x,y)-data into correct np.array, at correct place (t, xID)
             for team in ["Home", "Away"]:
                 for jID in positions[team].keys():
                     # map jersey number to array index and infer respective columns
-                    x_col = (links[team][jID] - 1) * 2
-                    y_col = (links[team][jID] - 1) * 2 + 1
+                    x_col = (links[team][jID]) * 2
+                    y_col = (links[team][jID]) * 2 + 1
                     xydata[team][segment][frame_rel, x_col] = positions[team][jID][0]
                     xydata[team][segment][frame_rel, y_col] = positions[team][jID][1]
 
