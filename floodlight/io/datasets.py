@@ -37,7 +37,7 @@ class EIGDDataset:
             'ad969d': ['00-00-30', '00-15-00', '00-43-00', '01-11-00', '01-35-00'],
             'e0e547': ['00-00-00', '00-08-00', '00-15-00', '00-50-00', '01-00-00'],
             'e8a35a': ['00-02-00', '00-07-00', '00-14-00', '01-05-00', '01-14-00'],
-            'ec7a6a': ['01-04-00', '01-30-00', '01-19-00', '00-53-00', '00-30-00'],
+            'ec7a6a': ['00-30-00', '00-53-00', '01-19-00', '01-30-00', '01-40-00'],
             }
 
     Examples
@@ -71,7 +71,7 @@ class EIGDDataset:
             f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
         )
         self._EIGD_FILE_EXT = "h5"
-        self._EIGD_FRAMERATE = 20
+        self._EIGD_FRAMERATE = 30
 
         self._data_dir = os.path.join(DATA_DIR, dataset_path)
 
@@ -96,7 +96,7 @@ class EIGDDataset:
 
         Returns
         -------
-        eigd_dataset: Tuple[XY, XY, XY]
+        sample: Tuple[XY, XY, XY]
             Returns three XY objects of the form (teamA, teamB, ball)
             for the requested sample.
         """
@@ -110,18 +110,45 @@ class EIGDDataset:
                 f"and segment values ({file_name})."
             )
 
+        # extract from file
         with h5py.File(file_name) as h5f:
             pos_dict = {pos_set: positions[()] for pos_set, positions in h5f.items()}
-        return (
-            XY(xy=pos_dict["team_a"], framerate=self._EIGD_FRAMERATE),
-            XY(xy=pos_dict["team_b"], framerate=self._EIGD_FRAMERATE),
-            XY(xy=pos_dict["balls"], framerate=self._EIGD_FRAMERATE),
+
+        # assemble
+        sample = (
+            XY(xy=self._transform(pos_dict["team_a"]), framerate=self._EIGD_FRAMERATE),
+            XY(xy=self._transform(pos_dict["team_b"]), framerate=self._EIGD_FRAMERATE),
+            XY(xy=self._transform(pos_dict["balls"]), framerate=self._EIGD_FRAMERATE),
         )
+
+        return sample
 
     @staticmethod
     def get_pitch() -> Pitch:
         """Returns a Pitch object corresponding to the EIGD-data."""
-        return Pitch.from_template("eidg")
+        return Pitch.from_template("eigd")
+
+    @staticmethod
+    def _transform(data: np.ndarray) -> np.ndarray:
+        """Transforms spatiotemporal data from EIGD-format to floodlight format.
+
+        Parameters
+        ----------
+        data: np.ndarray
+            Array of shape (T, N, xydim), with T time dimension, N the number of players
+            and xydim a separate dimension for x-, y-, and z-coordinates (ball only).
+
+        Returns
+        -------
+        data_transformed: np.ndarray
+            Array of shape (T, N*2), with T time dimension and N the number of players.
+            All z-coordinates are omitted to match typical floodlight format.
+        """
+        # EIDG data is stored in 3-dimensional array, extract size and reshape
+        T, N, _ = data.shape
+        data_transformed = data[:, :, :2].reshape((T, N * 2))
+
+        return data_transformed
 
     def _download_and_extract(self) -> None:
         """Downloads an archive file into temporary storage and
