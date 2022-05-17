@@ -115,11 +115,11 @@ def create_links_from_mat_info(
 
     links_jID_to_xID = {
         "Home": {
-            int(links_pID_to_jID["Home"][pID]): xID + 1
+            int(links_pID_to_jID["Home"][pID]): xID
             for xID, pID in enumerate(links_pID_to_jID["Home"])
         },
         "Away": {
-            int(links_pID_to_jID["Away"][pID]): xID + 1
+            int(links_pID_to_jID["Away"][pID]): xID
             for xID, pID in enumerate(links_pID_to_jID["Away"])
         },
     }
@@ -570,8 +570,8 @@ def read_position_data_xml(
     segments = list(periods.keys())
 
     # infer data array shapes
-    number_of_home_players = max(links_jID_to_xID["Home"].values())
-    number_of_away_players = max(links_jID_to_xID["Away"].values())
+    number_of_home_players = max(links_jID_to_xID["Home"].values()) + 1
+    number_of_away_players = max(links_jID_to_xID["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -642,8 +642,8 @@ def read_position_data_xml(
             # insert (x,y) data to correct place in bin
             start = int(frames[0].get("N")) - periods[segment][0]
             end = int(frames[-1].get("N")) - periods[segment][0] + 1
-            x_col = (links_jID_to_xID[team][jrsy] - 1) * 2
-            y_col = (links_jID_to_xID[team][jrsy] - 1) * 2 + 1
+            x_col = (links_jID_to_xID[team][jrsy]) * 2
+            y_col = (links_jID_to_xID[team][jrsy]) * 2 + 1
             xydata[team][segment][start:end, x_col] = np.array(
                 [float(frame.get("X")) for frame in frames]
             )
