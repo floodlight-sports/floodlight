@@ -302,6 +302,17 @@ def savgol_lowpass(
     xy_filtered: XY
         XY object with position data filtered by designed Butterworth low pass filter.
 
+    Notes
+    -----
+    The values of the input data are assumed to be numerical. Missing data is assumed
+    to be either np.NaN or None. The Savitzky-Golay-filter requires a minimum signal
+    length depending on the settings. A signal is a sequence of data in the XY-object
+    that is not interrupted by missing values. The minimum signal length is defined as
+    the ``window_length``. The treatment of signals shorter than the minimum signal
+    length are specified with the ``remove_short_sequence``-argument, where True will
+    replace these sequences with np.NaNs ond False will keep the sequences in the data
+    unfiltered.
+
     Examples
     --------
     >>> import numpy as np
@@ -350,18 +361,6 @@ def savgol_lowpass(
     >>> plt.show()
 
     .. image:: ../../_img/savgol_adjusted_example.png
-
-
-    Notes
-    -----
-    The values of the input data are assumed to be numerical. Missing data is assumed
-    to be either np.NaN or None. The Savitzky-Golay-filter requires a minimum signal
-    length depending on the settings. A signal is a sequence of data in the XY-object
-    that is not interrupted by missing values. The minimum signal length is defined as
-    the ``window_length``. The treatment of signals shorter than the minimum signal
-    length are specified with the ``remove_short_sequence``-argument, where True will
-    replace these sequences with np.NaNs ond False will keep the sequences in the data
-    unfiltered.
 
     References
     ----------

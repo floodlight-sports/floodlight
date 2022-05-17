@@ -28,8 +28,12 @@ def test_get_sequences_empty(example_sequence_empty: np.ndarray) -> None:
     sequence = example_sequence_empty
 
     # Act
-    with pytest.raises(ValueError):
-        seq_filt, seq_short = filter._get_filterable_and_short_sequences(sequence, 2)
+    with pytest.raises(
+        ValueError,
+        match="Expected input data to be one-dimensional. Got 0-dimensional data "
+        "instead.",
+    ):
+        filter._get_filterable_and_short_sequences(sequence, 2)
 
 
 @pytest.mark.unit
@@ -40,8 +44,12 @@ def test_get_sequences_two_dimensional(
     sequence = example_sequence_two_dimensional
 
     # Act
-    with pytest.raises(ValueError):
-        seq_filt, seq_short = filter._get_filterable_and_short_sequences(sequence, 2)
+    with pytest.raises(
+        ValueError,
+        match="Expected input data to be one-dimensional. Got 2-dimensional "
+        "data instead.",
+    ):
+        filter._get_filterable_and_short_sequences(sequence, 2)
 
 
 @pytest.mark.unit
