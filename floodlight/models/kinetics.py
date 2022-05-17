@@ -343,7 +343,7 @@ equivalent_distance`
         em: np.array
             Equivalent mass
         eccr: Numeric
-            Energy cost of constant running. Standard is set to 3.6
+            Energy cost of constant running. Default is set to 3.6
             :math:`\\frac{J}{kg \\cdot m}` according to di Prampero (2018). Can differ
             for different turfs.
 
