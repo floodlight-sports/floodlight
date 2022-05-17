@@ -72,25 +72,32 @@ As provider data is usually proprietary, you might find yourself without any dat
 
 .. code-block:: python
 
-    from floodlight.io.sample_data import sample_data
+    from floodlight.io.datasets import ToyDataset
+
+    dataset = ToyDataset()
 
     (
         xy_home_ht1,
-        xy_home_ht2,
         xy_away_ht1,
-        xy_away_ht2,
         xy_ball_ht1,
-        xy_ball_ht2,
         events_home_ht1,
-        events_home_ht2,
         events_away_ht1,
-        events_away_ht2,
         possession_ht1,
-        possession_ht2,
         ballstatus_ht1,
+    ) = dataset.get(segment="HT1")
+
+    (
+        xy_home_ht2,
+        xy_away_ht2,
+        xy_ball_ht2,
+        events_home_ht2,
+        events_away_ht2,
+        possession_ht2,
         ballstatus_ht2,
-        pitch,
-    ) = sample_data()
+    ) = dataset.get(segment="HT2")
+
+    pitch = dataset.get_pitch
+
 
 Note that the sample data is already projected to the same pitch, so there are no separate objects for tracking data and events.
 

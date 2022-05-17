@@ -66,9 +66,10 @@ class Pitch:
         ----------
         template_name: str
             The name of the template the pitch should follow. Currently supported are
-            {'dfl', 'opta', 'statsperform', 'tracab'}.
+            {'dfl', 'eigd', 'opta', 'statsbomb', 'statsperform', 'statsperform_open',
+            'tracab'}.
         kwargs:
-            You may pass optional arguments (`length`, `width`, `sport`} used for class
+            You may pass optional arguments (`length`, `width`, `sport`) used for class
             instantiation. For some data providers, additional kwargs are needed to
             represent their format correctly. For example, pass the `length` and `width`
             argument to create a Pitch object in the 'tracab' format.
@@ -106,7 +107,7 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
-        elif template_name == "statsperform":
+        elif template_name == "statsperform_open":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
                     "For an exact StatsPerform Pitch object, "
@@ -123,6 +124,23 @@ class Pitch:
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
+            )
+        elif template_name == "statsperform":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact StatsPerform Pitch object, "
+                    "`length` and `width` of the pitch need "
+                    "to be passed as keyworded arguments"
+                )
+            x_half = round(kwargs["length"] / 2, 3)
+            y_half = round(kwargs["width"] / 2, 3)
+            return cls(
+                xlim=(-x_half, x_half),
+                ylim=(-y_half, y_half),
+                unit="cm",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
             )
         elif template_name == "tracab":
             if "length" not in kwargs or "width" not in kwargs:
@@ -141,6 +159,24 @@ class Pitch:
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
+            )
+        elif template_name == "eigd":
+            return cls(
+                xlim=(0, 40),
+                ylim=(0, 20),
+                unit="m",
+                boundaries="fixed",
+                length=40,
+                width=20,
+                sport="handball",
+            )
+        elif template_name == "statsbomb":
+            return cls(
+                xlim=(0.0, 120.0),
+                ylim=(0.0, 80.0),
+                unit="normed",
+                boundaries="flexible",
+                sport="football",
             )
         else:
             raise ValueError(f"Unsupported template name '{template_name}'")
