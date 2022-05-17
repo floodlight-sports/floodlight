@@ -20,6 +20,7 @@ release = f"{__version__}"
 # -- General configuration ---------------------------------------------------
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -51,4 +52,4 @@ html_theme_options = {
 }
 
 html_static_path = ["_static"]
-# html_css_files = ['css/custom.css']
+html_css_files = ["css/custom.css"]

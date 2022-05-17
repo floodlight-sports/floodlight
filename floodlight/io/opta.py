@@ -81,11 +81,11 @@ def read_f24(
     filepath: Union[str, Path]
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Parse Opta's f24 feed (containing match events) and extract event data and pitch
-     information.
+    information.
 
-     This function provides a high-level access to the particular f24 feed and will
-     return event objects for both teams. The number of segments is inferred from the
-     data, yet data for each segment is stored in a separate object.
+    This function provides a high-level access to the particular f24 feed and will
+    return event objects for both teams. The number of segments is inferred from the
+    data, yet data for each segment is stored in a separate object.
 
     Parameters
     ----------

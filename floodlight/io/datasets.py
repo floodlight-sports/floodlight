@@ -15,7 +15,7 @@ from settings import DATA_DIR
 
 class EIGDDataset:
     """This dataset loads the EIGD-H data from the *A Unified Taxonomy and Multimodal
-    Dataset for Events in Invasion Games* paper [1]_.
+    Dataset for Events in Invasion Games* paper. [1]_
 
     Upon instantiation, the class checks if the data already exists in the repository's
     root ``.data``-folder, and will download the files (~120MB) to this folder if not.
@@ -162,8 +162,10 @@ class EIGDDataset:
 
 
 class ToyDataset:
-    """This dataset loads a small set of artifical data for a sample football match
-    which are stored in the project repository's root ``.data``-folder.
+    """This dataset loads synthetic data for a (very) short artificial football match.
+
+    The data can be used for testing or trying out features. They come shipped with the
+    package and are stored in the repository's root ``.data``-folder.
 
     Examples
     --------
@@ -290,7 +292,7 @@ class ToyDataset:
 
 
 class StatsBombOpenDataset:
-    """This dataset loads the StatsBomb open data provided the `official
+    """This dataset loads the StatsBomb open data provided by the `official
     data repository <https://github.com/statsbomb/open-data>`_.
 
     Due to the size of the full dataset (~5GB), only metadata (~2MB) are downloaded

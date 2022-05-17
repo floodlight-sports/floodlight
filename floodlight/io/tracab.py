@@ -223,12 +223,12 @@ def read_tracab_files(
     links: Dict[str, Dict[int, int]] = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
     """Parse TRACAB files and extract position data, possession and ballstatus codes as
-     well as pitch information.
+    well as pitch information.
 
-     ChyronHego's TRACAB system delivers two separate files, a .dat file containing the
-     actual data as well as a metadata.xml containing information about pitch size,
-     framerate and start- and endframes of match periods. This function provides a
-     high-level access to TRACAB data by parsing "the full match" given both files.
+    ChyronHego's TRACAB system delivers two separate files, a .dat file containing the
+    actual data as well as a metadata.xml containing information about pitch size,
+    framerate and start- and endframes of match periods. This function provides a
+    high-level access to TRACAB data by parsing "the full match" given both files.
 
     Parameters
     ----------
