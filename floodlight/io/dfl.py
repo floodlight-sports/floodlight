@@ -449,8 +449,6 @@ def read_event_data_xml(
         event["pID"] = pID
 
         # insert to bin
-        if tID is None:
-            pass
         if tID not in team_events[segment]:
             team_events[segment][tID] = []
         if event["eID"] == "Substitution":  # split for the special case substitution
@@ -475,7 +473,7 @@ def read_event_data_xml(
         # loop over teams
         for tID in teams:
 
-            # append None events
+            # assign events with tID None to both teams
             team_events[segment][tID] += team_events[segment][None]
 
             # transform to data DataFrame
