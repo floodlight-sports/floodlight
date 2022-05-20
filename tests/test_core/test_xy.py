@@ -1,3 +1,5 @@
+import matplotlib
+import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 
@@ -69,6 +71,19 @@ def test_x_string(example_xy_data_string: np.ndarray) -> None:
     assert np.array_equal(x_position, np.array([["1", "3"], ["5", "7"]]))
 
 
+# Test def N(self) property
+@pytest.mark.unit
+def test_N(example_xy_data_pos_int: np.ndarray) -> None:
+    uneven_array = np.array([[1, 2, 3], [5, 6, 7]])
+
+    xy1 = XY(example_xy_data_pos_int)
+    xy2 = XY(uneven_array)
+
+    assert xy1.N == 2
+    with pytest.raises(ValueError):
+        print(xy2.N)
+
+
 # Test def frame(self, t)
 @pytest.mark.unit
 def test_frame(example_xy_data_pos_int: np.ndarray) -> None:
@@ -121,12 +136,12 @@ def test_scale_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     # Act + Assert
     data.scale(factor=2)
     assert np.array_equal(data.xy, np.array([[2, 4, 6, 8], [10, 12, 14, 16]]))
-    data.scale(factor=-1, axis=0)
+    data.scale(factor=-1, axis="x")
     assert np.array_equal(data.xy, np.array([[-2, 4, -6, 8], [-10, 12, -14, 16]]))
-    data.scale(factor=0, axis=1)
+    data.scale(factor=0, axis="y")
     assert np.array_equal(data.xy, np.array([[-2, 0, -6, 0], [-10, 0, -14, 0]]))
     with pytest.raises(ValueError):
-        data.scale(factor=1, axis=2)
+        data.scale(factor=1, axis="z")
 
 
 # Test def reflect(self, factor, axis)
@@ -136,12 +151,12 @@ def test_reflect_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     data = XY(example_xy_data_pos_int)
 
     # Act + Assert
-    data.reflect(axis=1)
+    data.reflect(axis="y")
     assert np.array_equal(data.xy, np.array([[-1, 2, -3, 4], [-5, 6, -7, 8]]))
-    data.reflect(axis=0)
+    data.reflect(axis="x")
     assert np.array_equal(data.xy, np.array([[-1, -2, -3, -4], [-5, -6, -7, -8]]))
     with pytest.raises(ValueError):
-        data.reflect(axis=2)
+        data.reflect(axis="z")
 
 
 @pytest.mark.unit
@@ -197,3 +212,76 @@ def test_slice(example_xy_data_pos_int: np.array) -> None:
     # inplace
     xy.slice(endframe=1, inplace=True)
     assert np.array_equal(xy.xy, np.array([[1, 2, 3, 4]]))
+
+
+# Test def plot(t: Union[int, Tuple[int, int]],
+#         plot_type: str = "postions",
+#         ball: bool = False,
+#         ax: matplotlib.axes = None,
+#         **kwargs)
+
+
+# Test return
+@pytest.mark.plot
+def test_plot_return_for_position_arg_without_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+
+    # Act
+    ax = xy.plot(t=0, plot_type="positions")
+
+    # Assert
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_return_for_position_arg_with_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+    axes = plt.subplots()[1]
+
+    # Act
+    ax = xy.plot(t=0, plot_type="positions", ax=axes)
+
+    # Assert
+    assert ax == axes
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_return_for_trajectories_arg_without_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+
+    # Act
+    ax = xy.plot(t=(0, 4), plot_type="trajectories")
+
+    # Assert
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_return_for_trajectories_arg_with_axes(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+    axes = plt.subplots()[1]
+
+    # Act
+    ax = xy.plot(t=(0, 4), plot_type="trajectories", ax=axes)
+
+    # Assert
+    assert ax == axes
+    plt.close()
+
+
+@pytest.mark.plot
+def test_plot_value_error_for_unknown_plot_type(example_xy_object):
+    # Arrange
+    xy = example_xy_object
+
+    # Assert
+    with pytest.raises(ValueError):
+        xy.plot(t=(0, 4), plot_type="unkown plot type")
+    plt.close()

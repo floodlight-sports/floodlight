@@ -37,7 +37,7 @@ def _create_periods_from_dat(
 
     # retrieve information from ball frame sets
     for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
-        if frame_set.get("TeamId") == "Ball":
+        if frame_set.get("TeamId").lower() == "ball":
             frames = [frame for frame in frame_set.iterfind("Frame")]
             periods[frame_set.get("GameSection")] = (
                 int(frames[0].get("N")),
@@ -59,6 +59,8 @@ def _create_periods_from_dat(
                     f"{int(round(1 / delta.total_seconds()))} Hz"
                 )
                 framerate_est = int(round(1 / delta.total_seconds()))
+
+        frame_set.clear()
 
     return periods, framerate_est
 
@@ -90,7 +92,12 @@ def create_links_from_mat_info(
     links_pID_to_jID = {}
     teams = root.find("MatchInformation").find("Teams")
     home = root.find("MatchInformation").find("General").get("HomeTeamId")
-    away = root.find("MatchInformation").find("General").get("AwayTeamId")
+    if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
+        away = root.find("MatchInformation").find("General").get("AwayTeamId")
+    elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
+        away = root.find("MatchInformation").find("General").get("GuestTeamId")
+    else:
+        away = None
 
     for team in teams:
         if team.get("TeamId") == home:
@@ -108,11 +115,11 @@ def create_links_from_mat_info(
 
     links_jID_to_xID = {
         "Home": {
-            int(links_pID_to_jID["Home"][pID]): xID + 1
+            int(links_pID_to_jID["Home"][pID]): xID
             for xID, pID in enumerate(links_pID_to_jID["Home"])
         },
         "Away": {
-            int(links_pID_to_jID["Away"][pID]): xID + 1
+            int(links_pID_to_jID["Away"][pID]): xID
             for xID, pID in enumerate(links_pID_to_jID["Away"])
         },
     }
@@ -387,13 +394,15 @@ def read_event_data_xml(
     kickoff_whistles = {}
     final_whistles = {}
     for whistle in root.findall("Event/KickoffWhistle"):
-        kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-            whistle.getparent().get("EventTime")
-        )
+        if whistle.get("GameSection") is not None:
+            kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
+                whistle.getparent().get("EventTime")
+            )
     for whistle in root.findall("Event/FinalWhistle"):
-        final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-            whistle.getparent().get("EventTime")
-        )
+        if whistle.get("GameSection") is not None:
+            final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
+                whistle.getparent().get("EventTime")
+            )
 
     # initialize periods
     segments = list(kickoff_whistles.keys())
@@ -461,7 +470,7 @@ def read_event_data_xml(
 
     # reformatting DataFrame
     teams = events[segments[0]]["tID"].unique()
-    team_events = {team: None for team in teams}
+    team_events = {segment: {} for segment in segments}
     for segment in segments:
         # sort rows in ascending order
         events[segment] = events[segment].sort_values("gameclock")
@@ -561,8 +570,8 @@ def read_position_data_xml(
     segments = list(periods.keys())
 
     # infer data array shapes
-    number_of_home_players = max(links_jID_to_xID["Home"].values())
-    number_of_away_players = max(links_jID_to_xID["Away"].values())
+    number_of_home_players = max(links_jID_to_xID["Home"].values()) + 1
+    number_of_away_players = max(links_jID_to_xID["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -597,7 +606,7 @@ def read_position_data_xml(
     for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
 
         # ball
-        if frame_set.get("TeamId") == "Ball":
+        if frame_set.get("TeamId").lower() == "ball":
             # (x, y) position
             segment = frame_set.get("GameSection")
             xydata["Ball"][segment][:, 0] = np.array(
@@ -633,14 +642,16 @@ def read_position_data_xml(
             # insert (x,y) data to correct place in bin
             start = int(frames[0].get("N")) - periods[segment][0]
             end = int(frames[-1].get("N")) - periods[segment][0] + 1
-            x_col = (links_jID_to_xID[team][jrsy] - 1) * 2
-            y_col = (links_jID_to_xID[team][jrsy] - 1) * 2 + 1
+            x_col = (links_jID_to_xID[team][jrsy]) * 2
+            y_col = (links_jID_to_xID[team][jrsy]) * 2 + 1
             xydata[team][segment][start:end, x_col] = np.array(
                 [float(frame.get("X")) for frame in frames]
             )
             xydata[team][segment][start:end, y_col] = np.array(
                 [float(frame.get("Y")) for frame in frames]
             )
+
+        frame_set.clear()
 
     # create XY objects
     home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)

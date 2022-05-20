@@ -21,7 +21,7 @@ def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
         List with every column name of the .csv-file.
     """
 
-    with open(filepath_data) as f:
+    with open(str(filepath_data)) as f:
         columns = f.readline().split(",")
 
     return columns
