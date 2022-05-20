@@ -478,7 +478,6 @@ def read_event_data_xml(
 
             # transform to data DataFrame
             team_dfs[segment][tID] = pd.DataFrame(team_events[segment][tID])
-            np.all([len(dic) == 9 for dic in team_events[segment][tID]])
 
             # columns to standard order
             team_dfs[segment][tID] = team_dfs[segment][tID][
