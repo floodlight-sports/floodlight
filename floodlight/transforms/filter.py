@@ -272,9 +272,9 @@ def savgol_lowpass(
     """Applies a Savitzky-Golay lowpass-filter [2]_ to a XY data object.
 
     For filtering, the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
-    generated/scipy.signal.butter.html>`_ function is used. This function provides a
-    convenient access to the function, directly applying the filter to all non-NaN
-    sequences in all columns.
+    generated/scipy.signal.savgol_filter.html>`_ function is used. This function
+    provides a convenient access to the function, directly applying the filter to all
+    non-NaN sequences in all columns.
 
     Parameters
     ----------
