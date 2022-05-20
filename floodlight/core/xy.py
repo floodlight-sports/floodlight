@@ -175,25 +175,31 @@ class XY:
             Rotation angle in degrees. Alpha must be between -360 and 360. If positive
             alpha, data is rotated in counter clockwise direction around the origin. If
             negative, data is rotated in clockwise direction around the origin.
+
+        Notes
+        -----
+        Executing this method will cast the object's xy attribute to dtype np.float32 if
+        it previously has a non-floating dtype.
         """
         if not (-360 <= alpha <= 360):
             raise ValueError(
                 f"Expected alpha to be from -360 to 360, got {alpha} instead"
             )
+        # cast to float
+        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+            self.xy = self.xy.astype(np.float32, copy=False)
 
+        # construct rotation matrix
         phi = np.radians(alpha)
         cos = np.cos(phi)
         sin = np.sin(phi)
-
-        # construct rotation matrix
         r = np.array([[cos, -sin], [sin, cos]]).transpose()
 
-        # construct block-diagonal rotation matrix to match number of players
-        n_players = int(self.xy.shape[1] / 2)
-        r_diag = np.kron(np.eye(n_players), r)
-
-        # perform rotation
-        self.xy = np.round(np.dot(self.xy, r_diag), 3)
+        # perform player-wise rotation - this correctly handles nan's compared to
+        # block matrix approach
+        for p in range(self.N):
+            columns = (p * 2, p * 2 + 1)
+            self.xy[:, columns] = np.round(self.xy[:, columns] @ r, 3)
 
     def slice(
         self, startframe: int = None, endframe: int = None, inplace: bool = False

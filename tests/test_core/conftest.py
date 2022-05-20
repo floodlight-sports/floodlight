@@ -39,6 +39,17 @@ def example_xy_data_float() -> np.ndarray:
 
 
 @pytest.fixture()
+def example_xy_data_float_with_nans() -> np.ndarray:
+    positions = np.array(
+        [
+            [1.0, np.nan, 0.00000000000000001, 99999999999999999],
+            [2.32843476297480273847, 6, np.nan, np.nan],
+        ]
+    )
+    return positions
+
+
+@pytest.fixture()
 def example_xy_object() -> XY:
     pos = np.array(
         [
