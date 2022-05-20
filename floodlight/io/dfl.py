@@ -260,14 +260,9 @@ def _get_event_outcome(eID, attrib) -> int:
         "GoalKick",
         "Kickoff",
     ]:
-        warnings.warn(
-            f"Standalone Event {eID} with missing child (e.g. Play, Pass or "
-            f"ShotAtGoal). Assigning None to respective outcome."
-        )
+        pass
     else:
-        warnings.warn(
-            f"Unknown Event Type: {eID}. Assigning None to respective outcome."
-        )
+        pass
     return outcome
 
 
