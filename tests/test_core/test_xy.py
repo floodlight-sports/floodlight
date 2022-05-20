@@ -134,12 +134,27 @@ def test_scale_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     data = XY(example_xy_data_pos_int)
 
     # Act + Assert
-    data.scale(factor=2)
-    assert np.array_equal(data.xy, np.array([[2, 4, 6, 8], [10, 12, 14, 16]]))
+    data.scale(factor=2.0)
+    assert data.xy.dtype == np.float32
+    assert np.array_equal(
+        data.xy, np.array([[2.0, 4.0, 6.0, 8.0], [10.0, 12.0, 14.0, 16.0]])
+    )
+
     data.scale(factor=-1, axis="x")
-    assert np.array_equal(data.xy, np.array([[-2, 4, -6, 8], [-10, 12, -14, 16]]))
+    assert np.array_equal(
+        data.xy, np.array([[-2.0, 4.0, -6.0, 8.0], [-10.0, 12.0, -14.0, 16.0]])
+    )
+
     data.scale(factor=0, axis="y")
-    assert np.array_equal(data.xy, np.array([[-2, 0, -6, 0], [-10, 0, -14, 0]]))
+    assert np.array_equal(
+        data.xy, np.array([[-2.0, 0.0, -6.0, 0.0], [-10.0, 0.0, -14.0, 0.0]])
+    )
+
+    data.scale(factor=1.01, axis="x")
+    assert np.allclose(
+        data.xy, np.array([[-2.02, 0.0, -6.06, 0.0], [-10.1, 0.0, -14.14, 0.0]])
+    )
+
     with pytest.raises(ValueError):
         data.scale(factor=1, axis="z")
 

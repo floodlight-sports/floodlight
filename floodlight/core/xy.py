@@ -140,13 +140,22 @@ class XY:
             Name of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
             data is scaled on y-axis. If None, data is scaled in both directions
             (default).
+
+        Notes
+        -----
+        Executing this method will cast the object's xy attribute to dtype np.float32 if
+        it previously has a non-floating dtype.
         """
+        # cast to float
+        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+            self.xy = self.xy.astype(np.float32, copy=False)
+
         if axis is None:
-            self.xy *= factor
+            self.xy = np.round(self.xy * factor, 3)
         elif axis == "x":
-            self.x *= factor
+            self.x = np.round(self.x * factor, 3)
         elif axis == "y":
-            self.y *= factor
+            self.y = np.round(self.y * factor, 3)
         else:
             raise ValueError(f"Expected axis to be one of ('x', 'y', None), got {axis}")
 
