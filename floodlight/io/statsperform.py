@@ -868,8 +868,8 @@ def read_tracking_data_txt(
         # potential check vs jerseys in txt file
 
     # infer data array shapes
-    number_of_home_players = max(links["Home"].values())
-    number_of_away_players = max(links["Away"].values())
+    number_of_home_players = max(links["Home"].values()) + 1
+    number_of_away_players = max(links["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         number_of_frames[segment] = (
