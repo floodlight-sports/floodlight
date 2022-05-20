@@ -260,14 +260,8 @@ def _get_event_outcome(eID, attrib) -> int:
         "GoalKick",
         "Kickoff",
     ]:
-        warnings.warn(
-            f"Standalone Event {eID} with missing child (e.g. Play, Pass or "
-            f"ShotAtGoal). Assigning None to respective outcome."
-        )
-    else:
-        warnings.warn(
-            "Unknown Event Type: {eID}. Assigning None to respective outcome."
-        )
+        pass
+
     return outcome
 
 
@@ -301,11 +295,6 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     elif "TeamFouler" in attrib:
         team = attrib["TeamFouler"]
 
-    # check
-    if eID not in ["KickoffWhistle", "FinalWhistle"]:  # events with no clear team
-        if team is None:
-            warnings.warn(f"Could not assign Team to Event {eID}")
-
     # player
     player = None
     if "Player" in attrib:
@@ -318,10 +307,6 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     elif "Fouler" in attrib:
         player = attrib["Fouler"]
 
-    # check
-    if eID not in ["KickoffWhistle", "FinalWhistle", "Substitution"]:
-        if player is None:
-            warnings.warn(f"Could not assign Player to Event {eID}")
     return team, player
 
 
@@ -411,7 +396,7 @@ def read_event_data_xml(
         periods[segment] = (kickoff_whistles[segment], final_whistles[segment])
 
     # set up bins
-    events = {segment: pd.DataFrame() for segment in segments}
+    team_events = {segment: {} for segment in segments}
 
     # loop over events
     for elem in root.findall("Event"):
@@ -447,68 +432,97 @@ def read_event_data_xml(
         event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
 
         # description, outcome, team, and player
-        for child in elem:
-            event["eID"], attrib = _get_event_description(child)
-            event["qualifier"] = attrib
-            event["outcome"] = _get_event_outcome(event["eID"], attrib)
-            event["tID"], event["pID"] = _get_event_team_and_player(
-                event["eID"], attrib
-            )
+        child = next(iter(elem))
+        eID, attrib = _get_event_description(child)
+        outcome = _get_event_outcome(eID, attrib)
+        tID, pID = _get_event_team_and_player(eID, attrib)
+        event["eID"] = eID
+        event["qualifier"] = attrib
+        event["outcome"] = outcome
+        event["tID"] = tID
+        event["pID"] = pID
 
         # insert to bin
+        if tID not in team_events[segment]:
+            team_events[segment][tID] = []
         if event["eID"] == "Substitution":  # split for the special case substitution
             # in-sub
             event["eID"] = "InSubstitution"
             event["pID"] = event["qualifier"]["PlayerIn"]
-            events[segment] = events[segment].append(event, ignore_index=True)
+            team_events[segment][tID].append(event)
             # out-sub
             event["eID"] = "OutSubstitution"
             event["pID"] = event["qualifier"]["PlayerOut"]
-            events[segment] = events[segment].append(event, ignore_index=True)
+            team_events[segment][tID].append(event)
         else:
-            events[segment] = events[segment].append(event, ignore_index=True)
+            team_events[segment][tID].append(event)
 
-    # reformatting DataFrame
-    teams = events[segments[0]]["tID"].unique()
-    team_events = {segment: {} for segment in segments}
+    # postprocessing
+    team_dfs = {segment: {} for segment in segments}
     for segment in segments:
-        # sort rows in ascending order
-        events[segment] = events[segment].sort_values("gameclock")
-        events[segment] = events[segment].reset_index(drop=True)
 
-        # columns to standard order
-        events[segment] = events[segment][
-            [
-                "eID",
-                "gameclock",
-                "tID",
-                "pID",
-                "outcome",
-                "timestamp",
-                "minute",
-                "second",
-                "qualifier",
+        # teams
+        teams = [tID for tID in team_events[segment] if tID is not None]
+
+        # loop over teams
+        for tID in teams:
+
+            # assign events with tID None to both teams
+            team_events[segment][tID] += team_events[segment][None]
+
+            # transform to data DataFrame
+            team_dfs[segment][tID] = pd.DataFrame(team_events[segment][tID])
+
+            # columns to standard order
+            team_dfs[segment][tID] = team_dfs[segment][tID][
+                [
+                    "eID",
+                    "gameclock",
+                    "tID",
+                    "pID",
+                    "outcome",
+                    "timestamp",
+                    "minute",
+                    "second",
+                    "qualifier",
+                ]
             ]
-        ]
+            team_dfs[segment][tID] = team_dfs[segment][tID].sort_values("gameclock")
+            team_dfs[segment][tID] = team_dfs[segment][tID].reset_index(drop=True)
 
-        # divide into teams
-        for team in teams:
-            team_events[segment][team] = events[segment][events[segment]["tID"] == team]
+    # check for teams
+    team1 = list(team_dfs[segments[0]].keys())[0]
+    team2 = list(team_dfs[segments[0]].keys())[1]
+    if not np.all([team1 in team_dfs[segment].keys() for segment in segments]):
+        KeyError(
+            f"Found tID {team1} of the first segment missing in at least one "
+            f"other segment!"
+        )
+    if not np.all([team2 in team_dfs[segment].keys() for segment in segments]):
+        KeyError(
+            f"Found tID {team2} of the first segment missing in at least one "
+            f"other segment!"
+        )
 
     # assembly
-    t1_ht1 = Events(
-        events=team_events[segments[0]][teams[0]],
+    events_team1_ht1 = Events(
+        events=team_dfs[segments[0]][team1],
     )
-    t1_ht2 = Events(
-        events=team_events[segments[1]][teams[0]],
+    events_team1_ht2 = Events(
+        events=team_dfs[segments[1]][team1],
     )
-    t2_ht1 = Events(
-        events=team_events[segments[0]][teams[1]],
+    events_team2_ht1 = Events(
+        events=team_dfs[segments[0]][team2],
     )
-    t2_ht2 = Events(
-        events=team_events[segments[1]][teams[1]],
+    events_team2_ht2 = Events(
+        events=team_dfs[segments[1]][team2],
     )
-    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
+    data_objects = (
+        events_team1_ht1,
+        events_team1_ht2,
+        events_team2_ht1,
+        events_team2_ht2,
+    )
 
     return data_objects
 

@@ -27,7 +27,7 @@ tID
     team identifier - Unique number or string for team identification.
 
 mID
-    match identifier - Unique number of string for team identification.
+    match identifier - Unique number or string for team identification.
 
 cID
     competition identifier - Unique number or string for competition (e.g. league or cup) identification.
