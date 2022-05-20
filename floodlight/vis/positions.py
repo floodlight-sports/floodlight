@@ -108,7 +108,7 @@ def plot_trajectories(
 
     # iterating over every object (for instance players) in the XY.xy array and plot the
     # trajectories for the given range of frames
-    for i in range(0, len(xy.xy[0]), 2):  # TODO xy.N instead of len(xy.xy[0])
+    for i in range(0, xy.N, 2):
 
         x = xy.xy[start_frame:end_frame, i]
         y = xy.xy[start_frame:end_frame, i + 1]
