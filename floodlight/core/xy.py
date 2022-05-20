@@ -125,9 +125,18 @@ class XY:
         shift : list or array-like
             Shift vector of form v = (x, y). Any iterable data type with two numeric
             entries is accepted.
+
+        Notes
+        -----
+        Executing this method will cast the object's xy attribute to dtype np.float32 if
+        it previously has a non-floating dtype.
         """
-        self.x += shift[0]
-        self.y += shift[1]
+        # cast to float
+        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+            self.xy = self.xy.astype(np.float32, copy=False)
+
+        self.x = np.round(self.x + shift[0], 3)
+        self.y = np.round(self.y + shift[1], 3)
 
     def scale(self, factor: float, axis: str = None):
         """Scales data by a given factor and optionally selected axis.

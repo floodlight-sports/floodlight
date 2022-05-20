@@ -120,11 +120,11 @@ def test_translate_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     data = XY(example_xy_data_pos_int)
 
     # Act
-    data.translate((2, 2))
-    translated_data = data.xy
+    data.translate((2, 2.2))
 
     # Assert
-    assert np.array_equal(translated_data, np.array([[3, 4, 5, 6], [7, 8, 9, 10]]))
+    assert data.xy.dtype == np.float32
+    assert np.allclose(data, np.array([[3.0, 4.2, 5.0, 6.2], [7.0, 8.2, 9.0, 10.2]]))
 
 
 # Test def scale(self, factor, axis)
