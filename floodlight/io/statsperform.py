@@ -873,7 +873,7 @@ def read_tracking_data_txt(
     number_of_frames = {}
     for segment in segments:
         number_of_frames[segment] = (
-            int((periods[segment][1] - periods[segment][0]) / framerate_est) + 1
+            int((periods[segment][1] - periods[segment][0]) / 1000 * framerate_est) + 1
         )
 
     # bins
@@ -915,7 +915,7 @@ def read_tracking_data_txt(
             continue
         else:
             # otherwise calculate relative frame (in respective segment)
-            frame_rel = int((gameclock - periods[segment][0]) / framerate_est)
+            frame_rel = int((gameclock - periods[segment][0]) / 1000 * framerate_est)
 
         # insert (x,y)-data into np.array
         for team in ["Home", "Away"]:
