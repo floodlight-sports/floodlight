@@ -21,7 +21,7 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
 
     Parameters
     ----------
-    sig: time-series as numpy array
+    sig: time-series as numpy array with a single dimension
     m: comparison length of runs (integer), typical m in {2,3}
     r: filtering level (real number)
 
@@ -29,20 +29,48 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
     -------
     ApEn: float - the Approximate Entropy of sig
     """
+
+    # sanity checks
+    assert type(sig) is np.ndarray, f'Signal should be a Numpy.ndarray with one dimension, got {type(sig)}.'
+    assert sig.ndim == 1, f'Signal should have only a single dimension, got {sig.ndim}'
+    assert not np.any(np.isnan(sig)), f'Signal cannot contain Numpy.NaNs.'
+
     N = len(sig)
 
     def phi_m(m_):
+        """Small helper function which calculates the sample entropy.
+
+        Parameters
+        ----------
+        m: comparison length
+
+        Returns
+        -------
+        Phi: sample entropy
+
+        """
         no_parts = N - m_ + 1
         x_i_s = np.zeros((no_parts, m_))
+        # determine reference patterns for chosen segment lengths
         for i in range(no_parts):
-            x_i_s[i, :] = sig[i : (i + m_)]
+            x_i_s[i, :] = sig[i:(i + m_)]
+        # placeholder for to determine pattern regularity
         c_i_m_r_s = np.zeros(no_parts)
+        # iterate through all comparisons
         for i in range(no_parts):
+            # determine the maximum distance between current reference pattern
+            # and the remaining patterns
             d_i_j = np.max(np.abs(x_i_s - x_i_s[i, :]), axis=1)
+            # Sum maximum distances across reference patterns
             c_i_m_r_s[i] = np.sum(d_i_j <= r)
+        # calculate entropy
         return np.sum(np.log(c_i_m_r_s)) / no_parts - np.log(no_parts)
 
+    # calculates the approximate entropy as the difference
+    # between the entropies with two different consecutive segment
+    # lengths.
     ap = phi_m(m) - phi_m(m + 1)
+    # clamp minimum ap value to zero.
     if ap < np.finfo("float64").eps:
         ap = 0.0
     return ap
