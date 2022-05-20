@@ -1,3 +1,5 @@
+from functools import wraps
+
 import matplotlib.pyplot as plt
 
 
@@ -19,6 +21,7 @@ def check_axes_given(func):
         Otherwise the function is returned as it is.
     """
 
+    @wraps(func)
     def add_ax(*args, **kwargs):  # actual wrapper function that gets args and kwargs
         # from the funtion that was passed
         # If matplotlib.axes is not given (ax == None) an axes is created.

@@ -1,4 +1,5 @@
 import warnings
+from functools import wraps
 
 from floodlight import Pitch
 
@@ -60,6 +61,7 @@ def requires_fit(func):
     """Decorator function for Model-based class-methods that require a previous call to
     that model's fit()-method. Raises a ValueError if fit() has not been called yet."""
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
         model = args[0]
         if not model.is_fitted:
