@@ -261,8 +261,7 @@ def _get_event_outcome(eID, attrib) -> int:
         "Kickoff",
     ]:
         pass
-    else:
-        pass
+
     return outcome
 
 
