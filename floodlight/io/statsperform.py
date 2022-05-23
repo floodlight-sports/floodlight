@@ -7,8 +7,7 @@ import numpy as np
 import pandas as pd
 from lxml import etree
 
-from floodlight.io.utils import download_from_url
-from floodlight.io.opta import get_and_convert
+from floodlight.io.utils import download_from_url, get_and_convert
 from floodlight.core.code import Code
 from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
