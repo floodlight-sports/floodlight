@@ -44,7 +44,10 @@ about data wrangling and start focussing on the analysis instead!
 
    modules/core/core
    modules/io/io
+   modules/models/models
+   modules/transforms/transforms
    modules/utils/utils
+   modules/vis/vis
 
 Indices and tables
 ==================

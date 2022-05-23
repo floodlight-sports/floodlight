@@ -21,13 +21,13 @@ jID
     jersey identifier - A players jersey number within a single observation.
 
 xID
-   index identifier - A players index in the list of all players of a team for a given observation. Starts counting at **1**. This identifier is primarily used for locating players in :doc:`XY </modules/core/xy>` objects, but can also be helpful iterating over or displaying all players of a team.
+   index identifier - A players index in the list of all players of a team for a given observation. Starts counting at **0**. This identifier is primarily used for locating players in :doc:`XY </modules/core/xy>` objects, but can also be helpful iterating over or displaying all players of a team.
 
 tID
     team identifier - Unique number or string for team identification.
 
 mID
-    match identifier - Unique number of string for team identification.
+    match identifier - Unique number or string for team identification.
 
 cID
     competition identifier - Unique number or string for competition (e.g. league or cup) identification.
