@@ -10,7 +10,7 @@ import pandas as pd
 from floodlight.io.utils import extract_zip, download_from_url
 from floodlight.io.statsbomb import read_open_statsbomb_event_data_json
 from floodlight import XY, Pitch, Events, Code
-from settings import DATA_DIR
+from floodlight.settings import DATA_DIR
 
 
 class EIGDDataset:

@@ -12,7 +12,7 @@ from floodlight.core.code import Code
 from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
-from settings import DATA_DIR
+from floodlight.settings import DATA_DIR
 
 # ----------------------------- StatsPerform Open Format -------------------------------
 
