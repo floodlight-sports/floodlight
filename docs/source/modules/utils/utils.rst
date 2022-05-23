@@ -2,10 +2,10 @@
 floodlight.utils
 ================
 
-A collection of utility functions
+A collection of utility functions.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Modules
+   :caption: Submodule Reference
 
    types

@@ -129,7 +129,7 @@ def _filter_sequence_butterworth_lowpass(
 def butterworth_lowpass(
     xy: XY, order: int = 3, Wn: Numeric = 1, remove_short_seqs: bool = False, **kwargs
 ) -> XY:
-    """Applies a digital Butterworth lowpass-filter [1]_ to a XY data object.
+    """Applies a digital Butterworth lowpass-filter to a XY data object. [1]_
 
     For filtering, the `scipy.filter.butter <https://docs.scipy.org/doc/scipy/reference/
     generated/scipy.signal.butter.html>`_ and the `scipy.signal.filtfilt <https://docs.
@@ -269,7 +269,7 @@ def savgol_lowpass(
     remove_short_seqs: bool = False,
     **kwargs,
 ) -> XY:
-    """Applies a Savitzky-Golay lowpass-filter [2]_ to a XY data object.
+    """Applies a Savitzky-Golay lowpass-filter to a XY data object. [2]_
 
     For filtering, the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
     generated/scipy.signal.savgol_filter.html>`_ function is used. This function

@@ -2,7 +2,7 @@
 floodlight.vis
 ==============
 
-Visualizations
+A collection of plotting functions based on the `matplotlib <https://matplotlib.org/>`_ library.
 
 .. toctree::
    :maxdepth: 1
