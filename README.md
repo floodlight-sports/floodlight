@@ -8,8 +8,6 @@
 [build-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml
 [lint-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml/badge.svg
 [lint-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml
-[status-image]: https://img.shields.io/badge/status-beta-006666
-[status-url]: https://img.shields.io/badge/status-beta-006666
 [black-image]: https://img.shields.io/badge/code%20style-black-000000.svg
 [black-url]: https://github.com/psf/black
 [contrib-image]: https://img.shields.io/badge/contributions-welcome-006666
@@ -21,7 +19,7 @@
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
-[![PyPI][status-image]][status-url]
+[![Contributions][contrib-image]][contrib-url]
 [![Code style: black][black-image]][black-url]
 
 
@@ -46,7 +44,7 @@ about data wrangling and start focussing on the analysis instead!
 * [Features](#features)
 * [Installation](#installation)
 * [Documentation](#documentation)
-* [How to contribute](#contributing-contributionscontrib-imagecontrib-url)
+* [How to contribute](#contributing)
 
 ----------------------------------------------------------------------------------------
 
@@ -108,7 +106,7 @@ You can find all documentation [here][docs-url].
 
 
 
-### Contributing [![Contributions][contrib-image]][contrib-url]
+### Contributing
 
 Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
 know to get started. We also provide an extended, beginner-friendly guide on how to
