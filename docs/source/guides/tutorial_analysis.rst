@@ -112,7 +112,7 @@ Alright, let's check out some more advanced computations. The general syntax sta
     model3 = MetabolicPowerModel()
     model3.fit(home)
     metabolic_power = model3.cumulative_metabolic_power()
-    metrics["Metabolic Power"] = metabolic_power[-1]
+    metrics["Metabolic Work"] = metabolic_power[-1]
 
     model4 = CentroidModel()
     model4.fit(home)
@@ -138,7 +138,7 @@ We can use pandas to brush and display the results. So let's create a DataFrame,
 Here's the (formatted) result you should get:
 
 =======  =================  ================  =================  =========================
-Subject  Total Dist. [m]    Top Speed [m/s]   Metabolic Power    Avg. Centroid Dist. [m]
+Subject  Total Dist. [m]    Top Speed [m/s]   Metabolic Work     Avg. Centroid Dist. [m]
 =======  =================  ================  =================  =========================
 P 0           394.095             6.941           1669.19                       5.805
 P 1           371.544             5.948           1536.22                       3.965
