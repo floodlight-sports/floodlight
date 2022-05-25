@@ -21,7 +21,7 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
 
     Parameters
     ----------
-    sig: time-series as numpy array with a single dimension
+    sig: time-series as Numpy.ndarray with a single dimension (sig.ndim == 1)
     m: comparison length of runs (integer), typical m in {2,3}
     r: filtering level (real number)
 
@@ -31,9 +31,12 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
     """
 
     # sanity checks
-    assert type(sig) is np.ndarray, f'Signal should be a Numpy.ndarray with one dimension, got {type(sig)}.'
-    assert sig.ndim == 1, f'Signal should have only a single dimension, got {sig.ndim}'
-    assert not np.any(np.isnan(sig)), f'Signal cannot contain Numpy.NaNs.'
+    if type(sig) is not np.ndarray:
+        raise TypeError(f'sig should be Numpy.ndarray, got {type(sig)}.')
+    if sig.ndim != 1:
+        raise TypeError(f'sig should have only a single dimension, got {sig.ndim}')
+    if np.any(np.isnan(sig)):
+        raise ValueError('Signal cannot contain Numpy.NaNs.')
 
     N = len(sig)
 
