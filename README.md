@@ -85,11 +85,12 @@ filtering, basic plotting routines and computational models.
 - Slicing and selection methods
 - Plot pitches and tracking data
 
-#### Models
+#### Models and Metrics
 
 - Centroids
 - Distances, Velocities, Accelerations
 - Metabolic Power and Equivalent Distances
+- Approximate Entropy
 
 ### Installation
 
@@ -116,19 +117,19 @@ start contributing in our documentation.
 
 ### Why
 
-Why do we need another package that introduces its own data structures and ways of dealing with certain problems? And,
-to be honest, what's the purpose of trying to integrate all these different files and fit them into a single framework?
+Why do we need another package that introduces its own data structures and ways of dealing with certain problems?
+And what's the purpose of trying to integrate all different data sources and fit them into a single framework?
 Especially since there already exist packages that aim to solve certain parts of that pipeline?
 
-The answer is, while we love those packages out there, that we did not find a solution that did fit our needs.
+Our answer is - although we love those packages out there - that we did not find a solution that did fit our needs.
 Available packages are either tightly connected to a certain data format/provider, adapt to the subtleties of a
-particular sport, or only solve *one* particular problem. This still left us with the essential problem of adapting to
-all those different interfaces.
+particular sport, or solve *one* particular problem. This still left us with the essential problem of adapting to
+different interfaces.
 
 We felt that as long as there is no underlying, high-level framework, each and every use case again and again needs its
-own implementation. At last, we found ourselves refactoring the same code - and there are certain processing or
-plotting routines that are required in *almost every* project - over and over again, just to fit the particular data
-structures we were dealing with at that time.
+own implementation. At last, we found ourselves refactoring the same code - and there are certain data processing or
+plotting routines that are required in *almost every* project - over and over again just to fit the particular data
+structures we're dealing with at that time.
 
 
 ### About
