@@ -235,26 +235,8 @@ class Pitch:
 
         Examples
         --------
-        >>> import matplotlib.pyplot as plt
-        >>> from floodlight.core.pitch import Pitch
-        >>> # create Pitch object
-        >>> football_pitch = Pitch(xlim=(0, 105), ylim=(0,68), unit="m",
-        >>>                  sport="football")
-
-        >>> # plot football pitch
-        >>> football_pitch.plot()
-        >>> plt.show()
-
-        .. image:: ../../_img/football_pitch_example.png
-
-        >>> # create Pitch object
-        >>> handball_pitch = Pitch(xlim=(0,40), ylim=(0,20), unit="m", sport="handball")
-
-        >>> # plot handball pitch
-        >>> handball_pitch.plot()
-        >>> plt.show()
-
-        .. image:: ../../_img/handball_pitch_example.png
+        - :ref:`Handball pitch <handball-pitch-label>`
+        - :ref:`Football pitch <football-pitch-label>`
 
         """
         # list of existing color_schemes and sports
