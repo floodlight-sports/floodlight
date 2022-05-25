@@ -33,8 +33,6 @@ def plot_positions(
 
     Notes
     -----
-    This function executes all the plotting methods to visualize the positions.
-
     The kwargs are only passed to the plot functions of matplotlib. To customize the
     plots have a look at
     `matplotlib
@@ -145,8 +143,6 @@ def plot_trajectories(
 
     Notes
     -----
-    This function executes all the plotting methods to visualize the trajectories.
-
     The kwargs are only passed to the plot functions of matplotlib. To customize the
     plots have a look at
     `matplotlib

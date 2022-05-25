@@ -48,8 +48,6 @@ def plot_handball_pitch(
 
     Notes
     -----
-    This function executes all the plotting methods to create a handball pitch.
-
     The kwargs are only passed to the plot functions of matplotlib. To customize the
     plots have a look at `matplotlib
     <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
@@ -622,8 +620,6 @@ def plot_football_pitch(
 
     Notes
     -----
-    This function executes all the plotting methods to create a football pitch.
-
     The kwargs are only passed to the plot functions of matplotlib. To customize the
     plots have a look at `matplotlib
     <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
