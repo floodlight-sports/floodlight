@@ -9,7 +9,7 @@ import numpy as np
 class Code:
     """Fragment of continuous signal encoding one game state. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     code: np.ndarray
         One-dimensional array with codes describing a sequence of play.
@@ -20,8 +20,12 @@ class Code:
         or explained.
     framerate: int, optional
         Temporal resolution of data in frames per second/Hertz.
+
+    Attributes
+    ----------
     token: list
         A list of all tokens used in game code, in ascending order.
+
     """
 
     code: np.ndarray
@@ -61,6 +65,7 @@ class Code:
 
     @property
     def token(self) -> list:
+        """A list of all tokens used in game code, in ascending order."""
         token = list(np.unique(self.code))
         token.sort()
 
