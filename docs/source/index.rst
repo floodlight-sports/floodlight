@@ -23,6 +23,7 @@ about data wrangling and start focussing on the analysis instead!
 
     Getting started <guides/getting_started>
     Contributing <guides/contrib_manual>
+    Tutorial: Data Analysis <guides/tutorial_analysis>
 
 
 .. toctree::
