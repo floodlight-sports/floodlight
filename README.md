@@ -8,13 +8,10 @@
 [build-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml
 [lint-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml/badge.svg
 [lint-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml
-[status-image]: https://img.shields.io/badge/status-beta-006666
-[status-url]: https://img.shields.io/badge/status-beta-006666
 [black-image]: https://img.shields.io/badge/code%20style-black-000000.svg
 [black-url]: https://github.com/psf/black
 [contrib-image]: https://img.shields.io/badge/contributions-welcome-006666
 [contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
-[institute-link]:
 
 # floodlight
 [![Latest Version][version-image]][version-url]
@@ -22,7 +19,7 @@
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
-[![PyPI][status-image]][status-url]
+[![Contributions][contrib-image]][contrib-url]
 [![Code style: black][black-image]][black-url]
 
 
@@ -42,38 +39,57 @@ a maximum of flexibility to incorporate as many data flavours as possible. A hig
 interface allows easy access to all standard routines, so that you can stop worrying
 about data wrangling and start focussing on the analysis instead!
 
+----------------------------------------------------------------------------------------
+
+* [Features](#features)
+* [Installation](#installation)
+* [Documentation](#documentation)
+* [How to contribute](#contributing)
+
+----------------------------------------------------------------------------------------
+
 
 ### Features
 
-This project is still in its early childhood, and we hope to quickly expand the set
-of features in the future. At this point, we've implemented core data structures and
-parsing functionality for major data providers.
+This project is still under development, and we hope to expand the set
+of features in the future. At this point, we provide core data structures,
+parsing functionality for major data providers, access to public data sets, data
+filtering, basic plotting routines and computational models.
 
-#### Data objects
+#### Data-level Objects
 
-- Data-level objects to store
-  - Tracking data
-  - Event data
-  - Pitch information
-  - Codes such as ball possession information
+- Tracking data
+- Event data
+- Pitch information
+- Codes such as ball possession information
+- Properties such as distances or advanced computations
 
 #### Parser
 
-- ChyronHego
-  - Tracking data
-  - Codes
-- DFL
-  - Tracking data
-  - Codes
-  - Event data
-- Kinexon
-  - Tracking data
-- Opta
-  - Event data (f24 feeds)
-- Stats Perform
-  - Tracking data
-  - Event data
+- ChyronHego (Tracking data, Codes)
+- DFL (Tracking data, Event data, Codes)
+- Kinexon (Tracking data)
+- Opta (Event data - F24 feeds)
+- StatsPerform (Tracking data, Event data - also directly from URLs)
+- StatsBomb (Event data)
 
+#### Datasets
+
+- EIGD-H (Handball tracking data)
+- StatsBomb OpenData (Football event data)
+
+#### Manipulation and Plotting
+
+- Spatial transformations for all data structures
+- Lowpass-filter tracking data
+- Slicing and selection methods
+- Plot pitches and tracking data
+
+#### Models
+
+- Centroids
+- Distances, Velocities, Accelerations
+- Metabolic Power and Equivalent Distances
 
 ### Installation
 
@@ -84,16 +100,18 @@ pip install floodlight
 ```
 
 
-### Contributing [![Contributions][contrib-image]][contrib-url]
+### Documentation
+
+You can find all documentation [here][docs-url].
+
+
+
+### Contributing
 
 Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
 know to get started. We also provide an extended, beginner-friendly guide on how to
 start contributing in our documentation.
 
-
-### Documentation
-
-You can find all documentation [here][docs-url].
 
 
 ### Why
@@ -118,6 +136,7 @@ structures we were dealing with at that time.
 This project has been kindly supported by the [Institute of Exercise Training and Sport
 Informatics](https://www.dshs-koeln.de/en/institut-fuer-trainingswissenschaft-und-sportinformatik/) at the German Sport
 University Cologne under supervision of Prof. Daniel Memmert.
+
 
 
 ### Related Projects

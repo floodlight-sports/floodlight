@@ -7,13 +7,12 @@ import numpy as np
 import pandas as pd
 from lxml import etree
 
-from floodlight.io.utils import download_from_url
-from floodlight.io.opta import get_and_convert
+from floodlight.io.utils import download_from_url, get_and_convert
 from floodlight.core.code import Code
 from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
-from settings import DATA_DIR
+from floodlight.settings import DATA_DIR
 
 # ----------------------------- StatsPerform Open Format -------------------------------
 
@@ -868,12 +867,12 @@ def read_tracking_data_txt(
         # potential check vs jerseys in txt file
 
     # infer data array shapes
-    number_of_home_players = max(links["Home"].values())
-    number_of_away_players = max(links["Away"].values())
+    number_of_home_players = max(links["Home"].values()) + 1
+    number_of_away_players = max(links["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         number_of_frames[segment] = (
-            int((periods[segment][1] - periods[segment][0]) / framerate_est) + 1
+            int((periods[segment][1] - periods[segment][0]) / 1000 * framerate_est) + 1
         )
 
     # bins
@@ -915,7 +914,7 @@ def read_tracking_data_txt(
             continue
         else:
             # otherwise calculate relative frame (in respective segment)
-            frame_rel = int((gameclock - periods[segment][0]) / framerate_est)
+            frame_rel = int((gameclock - periods[segment][0]) / 1000 * framerate_est)
 
         # insert (x,y)-data into np.array
         for team in ["Home", "Away"]:

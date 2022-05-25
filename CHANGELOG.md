@@ -1,5 +1,89 @@
 # Changelog
 
+## 0.3.0 (2022-05-23)
+
+#### New Features
+
+* add butterworth and savgol lowpass filter ([#51](https://github.com/floodlight-sports/floodlight/issues/51))
+* add data transformation for eigd dataset
+* add statsperform parser - standard format ([#41](https://github.com/floodlight-sports/floodlight/issues/41))
+* add statsbomb open data parser and dataset ([#59](https://github.com/floodlight-sports/floodlight/issues/59))
+* adds xy plotting methods with tests and docs ([#61](https://github.com/floodlight-sports/floodlight/issues/61))
+* add pitch.plot method for football and handball ([#44](https://github.com/floodlight-sports/floodlight/issues/44))
+* add vis module
+* add slice and get_event_stream methods ([#60](https://github.com/floodlight-sports/floodlight/issues/60))
+* add metabolic power model ([#48](https://github.com/floodlight-sports/floodlight/issues/48))
+* add require_fit decorator
+* add kinematics module - distance, velocity, acceleration models ([#45](https://github.com/floodlight-sports/floodlight/issues/45))
+* create io eigd dataset ([#55](https://github.com/floodlight-sports/floodlight/issues/55))
+* add is_fitted property
+* add centroid-based model and measures
+* add base-, team-, and dyadic properties
+* add basic base model
+* transformation methods for events object ([#47](https://github.com/floodlight-sports/floodlight/issues/47))
+* add N property
+* add is_metrical property
+* add method for finding sequences
+* add comparison dunder methods
+* add models module
+* add playerproperty class
+#### Fixes
+
+* broken link
+* xy translate dtype-handling
+* xy scale dtype-handling
+* xy rotation dtype- and nan-handling
+* add wraps to decorators to prevent shadowing
+* broken link
+* dfl events parser warnings, statsperform xID ([#66](https://github.com/floodlight-sports/floodlight/issues/66))
+* minor fixes ([#65](https://github.com/floodlight-sports/floodlight/issues/65))
+* xID indexing for dfl parser
+* xID indexing for tracab parser
+* extracting of zip with temorary file ([#58](https://github.com/floodlight-sports/floodlight/issues/58))
+* typo
+* typo
+* dfl parser xml element access and memory release ([#52](https://github.com/floodlight-sports/floodlight/issues/52))
+#### Refactorings
+
+* refactor get and convert as general function
+* sample_data.py -> ToyDataset() ([#57](https://github.com/floodlight-sports/floodlight/issues/57))
+* change axis arguments from {0, 1} to {'x', 'y'}
+* colum checks return empty lists instead of None
+#### Docs
+
+* add core module reference page
+* add transforms module reference page
+* add models module referene page
+* add vis submodule
+* add io module reference page
+* correct xID indexing documentation
+* include datasets in docs
+* add property module reference
+#### Others
+
+* add dependency matplotlib
+* add dependency scipy
+* add dependency h5py
+* release 0.2.1
+* remove python 3.7 from actions matrix
+* update readme
+* update templates
+* explicitly loop through players
+* docstrings and errors
+* add tests for dataset templates
+* add test for eigd transform
+* add tests for geometry model
+* add test for require fit decorator
+* add tests for base model
+* column_in_range method ([#53](https://github.com/floodlight-sports/floodlight/issues/53))
+* update tests for events core class ([#46](https://github.com/floodlight-sports/floodlight/issues/46))
+* add test for N property
+* add tests for is_metrical property
+* add tests for find_sequences method
+* add tests for dunder methods
+
+Full set of changes: [`0.2.1...0.3.0`](https://github.com/floodlight-sports/floodlight/compare/0.2.1...0.3.0)
+
 ## 0.2.1 (2022-02-02)
 
 #### Fixes
@@ -8,8 +92,12 @@
 * change minute column to be relative to segment
 * readjust negative gameclocks
 * update project python version to match latest on runner
+#### Docs
+
+* update changelog
 #### Others
 
+* bump version
 * release 0.2.0
 * update readme
 

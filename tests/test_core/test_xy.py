@@ -120,11 +120,11 @@ def test_translate_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     data = XY(example_xy_data_pos_int)
 
     # Act
-    data.translate((2, 2))
-    translated_data = data.xy
+    data.translate((2, 2.2))
 
     # Assert
-    assert np.array_equal(translated_data, np.array([[3, 4, 5, 6], [7, 8, 9, 10]]))
+    assert data.xy.dtype == np.float32
+    assert np.allclose(data, np.array([[3.0, 4.2, 5.0, 6.2], [7.0, 8.2, 9.0, 10.2]]))
 
 
 # Test def scale(self, factor, axis)
@@ -134,12 +134,27 @@ def test_scale_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
     data = XY(example_xy_data_pos_int)
 
     # Act + Assert
-    data.scale(factor=2)
-    assert np.array_equal(data.xy, np.array([[2, 4, 6, 8], [10, 12, 14, 16]]))
+    data.scale(factor=2.0)
+    assert data.xy.dtype == np.float32
+    assert np.array_equal(
+        data.xy, np.array([[2.0, 4.0, 6.0, 8.0], [10.0, 12.0, 14.0, 16.0]])
+    )
+
     data.scale(factor=-1, axis="x")
-    assert np.array_equal(data.xy, np.array([[-2, 4, -6, 8], [-10, 12, -14, 16]]))
+    assert np.array_equal(
+        data.xy, np.array([[-2.0, 4.0, -6.0, 8.0], [-10.0, 12.0, -14.0, 16.0]])
+    )
+
     data.scale(factor=0, axis="y")
-    assert np.array_equal(data.xy, np.array([[-2, 0, -6, 0], [-10, 0, -14, 0]]))
+    assert np.array_equal(
+        data.xy, np.array([[-2.0, 0.0, -6.0, 0.0], [-10.0, 0.0, -14.0, 0.0]])
+    )
+
+    data.scale(factor=1.01, axis="x")
+    assert np.allclose(
+        data.xy, np.array([[-2.02, 0.0, -6.06, 0.0], [-10.1, 0.0, -14.14, 0.0]])
+    )
+
     with pytest.raises(ValueError):
         data.scale(factor=1, axis="z")
 
@@ -159,36 +174,73 @@ def test_reflect_pos_int(example_xy_data_pos_int: np.ndarray) -> None:
         data.reflect(axis="z")
 
 
+# Test rotate method for correct rotations and type conversion
 @pytest.mark.unit
-def test_rotate(example_xy_data_pos_int: np.ndarray) -> None:
-    # Arrange
-    data = XY(example_xy_data_pos_int)
-
-    # Act
+def test_rotate_angles_and_type(example_xy_data_pos_int: np.ndarray) -> None:
+    # Arrange + Acts
+    data = XY(example_xy_data_pos_int.copy())
     data.rotate(90)
-    rotated_data_pos = data.xy
-    data = XY(example_xy_data_pos_int)
+    rotated_data_90 = data
+
+    data = XY(example_xy_data_pos_int.copy())
     data.rotate(-90)
-    rotated_data_neg = data.xy
-    data = XY(example_xy_data_pos_int)
+    rotated_data_neg_90 = data
+
+    data = XY(example_xy_data_pos_int.copy())
+    data.rotate(0)
+    rotated_data_0 = data
+
+    data = XY(example_xy_data_pos_int.copy())
+    data.rotate(37.5)
+    rotated_data_float = data
+
+    data = XY(example_xy_data_pos_int.copy())
+    data.rotate(-142)
+    rotated_data_neg_142 = data
 
     # Assert
+    assert rotated_data_90.xy.dtype == np.float32
     assert np.array_equal(
-        rotated_data_pos, np.array([[-2.0, 1.0, -4.0, 3.0], [-6.0, 5.0, -8.0, 7.0]])
+        rotated_data_90.xy, np.array([[-2.0, 1.0, -4.0, 3.0], [-6.0, 5.0, -8.0, 7.0]])
     )
     assert np.array_equal(
-        rotated_data_neg, np.array([[2.0, -1.0, 4.0, -3.0], [6.0, -5.0, 8.0, -7.0]])
+        rotated_data_neg_90.xy,
+        np.array([[2.0, -1.0, 4.0, -3.0], [6.0, -5.0, 8.0, -7.0]]),
+    )
+    assert np.array_equal(
+        rotated_data_0.xy, np.array([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0]])
+    )
+    assert np.allclose(
+        rotated_data_float.xy,
+        np.array([[-0.424, 2.195, -0.055, 5.0], [0.314, 7.804, 0.683, 10.608]]),
+    )
+    assert np.allclose(
+        rotated_data_neg_142.xy,
+        np.array([[0.443, -2.192, 0.099, -4.999], [-0.246, -7.806, -0.591, -10.614]]),
     )
 
 
+# Test rotate method for correct nan and exception handling
 @pytest.mark.unit
-def test_rotate_assert(example_xy_data_pos_int: np.ndarray) -> None:
-    # Arrange
-    data = XY(example_xy_data_pos_int)
+def test_rotate_nan_and_exceptions(example_xy_data_float_with_nans: np.ndarray) -> None:
+    # Arrange + Acts
+    data = XY(example_xy_data_float_with_nans)
+    data.rotate(90)
 
-    # Act
+    # Assert
+    assert data.xy.dtype == np.float64
     with pytest.raises(ValueError):
         data.rotate(367)
+    assert np.array_equal(
+        data.xy,
+        np.array(
+            [
+                [np.nan, np.nan, -1.000e17, 6.123e00],
+                [-6.000e00, 2.328e00, np.nan, np.nan],
+            ]
+        ),
+        equal_nan=True,
+    )
 
 
 # Test def slice(startframe, endframe, inplace) method
@@ -214,14 +266,7 @@ def test_slice(example_xy_data_pos_int: np.array) -> None:
     assert np.array_equal(xy.xy, np.array([[1, 2, 3, 4]]))
 
 
-# Test def plot(t: Union[int, Tuple[int, int]],
-#         plot_type: str = "postions",
-#         ball: bool = False,
-#         ax: matplotlib.axes = None,
-#         **kwargs)
-
-
-# Test return
+# Test plot method
 @pytest.mark.plot
 def test_plot_return_for_position_arg_without_axes(example_xy_object):
     # Arrange

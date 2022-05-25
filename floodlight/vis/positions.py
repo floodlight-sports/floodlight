@@ -30,6 +30,49 @@ def plot_positions(
     -------
     axes: matplotib.axes
         Axes from matplotlib library on which the positions are plotted.
+
+    Notes
+    -----
+    The kwargs are only passed to the plot functions of matplotlib. To customize the
+    plots have a look at
+    `matplotlib
+    <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+    For example in order to modify the color of the points pass a color
+    name or rgb-value (`matplotlib colors
+    <https://matplotlib.org/3.5.0/tutorials/colors/colors.html>`_) to the keyworded
+    argument 'color'. The same principle applies to other kwargs like 'zorder' and
+    'marker'.
+
+    .. _positions-plot-label:
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from floodlight.core.xy import XY
+    >>> from floodlight.core.pitch import Pitch
+    >>> from floodlight.vis.positions import plot_positions
+
+    >>> # positions
+    >>> pos = np.array(
+    >>>     [[35,5,35,63,25,25,25,50],
+    >>>     [45,10,45,55,35,20,35,45],
+    >>>     [55,10,55,55,45,20,45,45],
+    >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
+    >>> # create XY object
+    >>> xy_pos = XY(pos)
+    >>> # create Pitch object
+    >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m", sport="football")
+    >>> # create matplotlib.axes
+    >>> ax = plt.subplots()[1]
+    >>> # plot football pitch on ax
+    >>> football_pitch.plot(ax=ax)
+    >>> # plot positions on ax
+    >>> plot_positions(xy=xy_pos, frame=0, ball=False, ax=ax)
+    >>> plt.show()
+
+    .. image:: ../../_img/positions_example.png
+
     """
 
     # kwargs which are used to configure the plot with default values.
@@ -97,6 +140,49 @@ def plot_trajectories(
     -------
     axes: matplotib.axes
         Axes from matplotlib library on which the trajectories are drawn.
+
+    Notes
+    -----
+    The kwargs are only passed to the plot functions of matplotlib. To customize the
+    plots have a look at
+    `matplotlib
+    <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+    For example in order to modify the color of the lines pass a color
+    name or rgb-value (`matplotlib colors
+    <https://matplotlib.org/3.5.0/tutorials/colors/colors.html>`_) to the keyworded
+    argument 'color'. The same principle applies to other kwargs like 'zorder' and
+    'linestyle'.
+
+    .. _trajectories-plot-label:
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from floodlight.core.xy import XY
+    >>> from floodlight.core.pitch import Pitch
+    >>> from floodlight.vis.positions import plot_trajectories
+
+    >>> # positions
+    >>> pos = np.array(
+    >>>     [[35,5,35,63,25,25,25,50],
+    >>>     [45,10,45,55,35,20,35,45],
+    >>>     [55,10,55,55,45,20,45,45],
+    >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
+    >>> # create XY object
+    >>> xy_pos = XY(pos)
+    >>> # create matplotlib.axes
+    >>> ax = plt.subplots()[1]
+    >>> # create Pitch object
+    >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m", sport="football")
+    >>> # plot football pitch on ax
+    >>> football_pitch.plot(ax=ax)
+    >>> # plot positions on ax
+    >>> plot_trajectories(xy=xy_pos, start_frame=0, end_frame=4, ball=False, ax=ax)
+    >>> plt.show()
+
+    .. image:: ../../_img/trajectories_example.png
+
     """
 
     # kwargs which are used to configure the plot with default values.
@@ -108,7 +194,7 @@ def plot_trajectories(
 
     # iterating over every object (for instance players) in the XY.xy array and plot the
     # trajectories for the given range of frames
-    for i in range(0, len(xy.xy[0]), 2):  # TODO xy.N instead of len(xy.xy[0])
+    for i in range(0, xy.N):
 
         x = xy.xy[start_frame:end_frame, i]
         y = xy.xy[start_frame:end_frame, i + 1]

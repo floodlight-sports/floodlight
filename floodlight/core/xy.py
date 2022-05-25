@@ -13,20 +13,25 @@ from floodlight.vis.positions import plot_positions, plot_trajectories
 class XY:
     """Spatio-temporal data fragment. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     xy: np.ndarray
         Full data array containing x- and y-coordinates, where each player's coordinates
         occupy two consecutive columns.
-    x: np.ndarray
-        X-data array, where each player's x-coordinates occupy one column.
-    y: np.ndarray
-        Y-data array, where each player's y-coordinates occupy one column.
     framerate: int, optional
         Temporal resolution of data in frames per second/Hertz.
-    direction: str, optional
+    direction: {'lr', 'rl'}, optional
         Playing direction of players in data fragment, should be either
         'lr' (left-to-right) or 'rl' (right-to-left).
+
+    Attributes
+    ----------
+    x: np.array
+        X-data array, where each player's x-coordinates occupy one column.
+    y: np.array
+        Y-data array, where each player's y-coordinates occupy one column.
+    N: int
+        The object's number of players.
     """
 
     xy: np.ndarray
@@ -46,7 +51,15 @@ class XY:
         self.xy[key] = value
 
     @property
-    def x(self):
+    def N(self) -> int:
+        n_columns = self.xy.shape[1]
+        if (n_columns % 2) != 0:
+            raise ValueError(f"XY has an odd number of columns ({n_columns})")
+        return n_columns // 2
+
+    @property
+    def x(self) -> np.array:
+        """X-data array, where each player's x-coordinates occupy one column."""
         return self.xy[:, ::2]
 
     @x.setter
@@ -54,20 +67,13 @@ class XY:
         self.xy[:, ::2] = x_data
 
     @property
-    def y(self):
+    def y(self) -> np.array:
+        """Y-data array, where each player's y-coordinates occupy one column."""
         return self.xy[:, 1::2]
 
     @y.setter
     def y(self, y_data: np.ndarray):
         self.xy[:, 1::2] = y_data
-
-    @property
-    def N(self) -> int:
-        """Returns the object's number of players."""
-        n_columns = self.xy.shape[1]
-        if (n_columns % 2) != 0:
-            raise ValueError(f"XY has an odd number of columns ({n_columns})")
-        return n_columns // 2
 
     def frame(self, t: int) -> np.ndarray:
         """Returns data for given frame *t*.
@@ -125,9 +131,18 @@ class XY:
         shift : list or array-like
             Shift vector of form v = (x, y). Any iterable data type with two numeric
             entries is accepted.
+
+        Notes
+        -----
+        Executing this method will cast the object's xy attribute to dtype np.float32 if
+        it previously has a non-floating dtype.
         """
-        self.x += shift[0]
-        self.y += shift[1]
+        # cast to float
+        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+            self.xy = self.xy.astype(np.float32, copy=False)
+
+        self.x = np.round(self.x + shift[0], 3)
+        self.y = np.round(self.y + shift[1], 3)
 
     def scale(self, factor: float, axis: str = None):
         """Scales data by a given factor and optionally selected axis.
@@ -140,13 +155,22 @@ class XY:
             Name of scaling axis. If set to 'x' data is scaled on x-axis, if set to 'y'
             data is scaled on y-axis. If None, data is scaled in both directions
             (default).
+
+        Notes
+        -----
+        Executing this method will cast the object's xy attribute to dtype np.float32 if
+        it previously has a non-floating dtype.
         """
+        # cast to float
+        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+            self.xy = self.xy.astype(np.float32, copy=False)
+
         if axis is None:
-            self.xy *= factor
+            self.xy = np.round(self.xy * factor, 3)
         elif axis == "x":
-            self.x *= factor
+            self.x = np.round(self.x * factor, 3)
         elif axis == "y":
-            self.y *= factor
+            self.y = np.round(self.y * factor, 3)
         else:
             raise ValueError(f"Expected axis to be one of ('x', 'y', None), got {axis}")
 
@@ -175,25 +199,31 @@ class XY:
             Rotation angle in degrees. Alpha must be between -360 and 360. If positive
             alpha, data is rotated in counter clockwise direction around the origin. If
             negative, data is rotated in clockwise direction around the origin.
+
+        Notes
+        -----
+        Executing this method will cast the object's xy attribute to dtype np.float32 if
+        it previously has a non-floating dtype.
         """
         if not (-360 <= alpha <= 360):
             raise ValueError(
                 f"Expected alpha to be from -360 to 360, got {alpha} instead"
             )
+        # cast to float
+        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+            self.xy = self.xy.astype(np.float32, copy=False)
 
+        # construct rotation matrix
         phi = np.radians(alpha)
         cos = np.cos(phi)
         sin = np.sin(phi)
-
-        # construct rotation matrix
         r = np.array([[cos, -sin], [sin, cos]]).transpose()
 
-        # construct block-diagonal rotation matrix to match number of players
-        n_players = int(self.xy.shape[1] / 2)
-        r_diag = np.kron(np.eye(n_players), r)
-
-        # perform rotation
-        self.xy = np.round(np.dot(self.xy, r_diag), 3)
+        # perform player-wise rotation - this correctly handles nan's compared to
+        # block matrix approach
+        for p in range(self.N):
+            columns = (p * 2, p * 2 + 1)
+            self.xy[:, columns] = np.round(self.xy[:, columns] @ r, 3)
 
     def slice(
         self, startframe: int = None, endframe: int = None, inplace: bool = False
@@ -279,36 +309,8 @@ class XY:
 
         Examples
         --------
-        >>> import matplotlib.pyplot as plt
-        >>> import numpy as np
-        >>> from floodlight.core.pitch import Pitch
-        >>> from floodlight.core.xy import XY
-        >>> # positions
-        >>> pos = np.array(
-        >>>     [[35,5,35,63,25,25,25,50],
-        >>>     [45,10,45,55,35,20,35,45],
-        >>>     [55,10,55,55,45,20,45,45],
-        >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
-        >>> xy_pos = XY(pos) # create XY object
-        >>> # create Pitch object
-        >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m",
-        >>> sport="football")
-        >>> # create matplotlib.axes
-        >>> ax = plt.subplots()[1]
-        >>> # plot pitch on ax
-        >>> football_pitch.plot(color_scheme="standard", ax=ax)
-
-        >>> # plot positions on ax
-        >>> xy_pos.plot(plot_type="positions", t=0, ax=ax)
-        >>> plt.show()
-
-        .. image:: ../../_img/positions_example.png
-
-        >>> # plot trajectories from frame 0 to 4 on ax
-        >>> xy_pos.plot(plot_type="trajectories", t=(0,4), ball= False, ax=ax)
-        >>> plt.show()
-
-        .. image:: ../../_img/trajectories_example.png
+        - :ref:`Positions plot <positions-plot-label>`
+        - :ref:`Trajectories plot <trajectories-plot-label>`
 
         """
 

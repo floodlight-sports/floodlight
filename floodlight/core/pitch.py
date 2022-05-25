@@ -14,7 +14,7 @@ class Pitch:
     """
     Pitch and coordinate system specifications. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     xlim: Tuple[Numeric, Numeric]
         Limits of pitch boundaries in longitudinal direction. This tuple has the form
@@ -24,11 +24,13 @@ class Pitch:
         Limits of pitch boundaries in lateral direction. This tuple has the form
         (y_min, y_max) and delimits the width of the pitch (not of any actual data)
         within the coordinate system.
-    unit: str
-        The unit in which data is measured along axes. Possible types are
-        {'m', 'cm', 'percent'}, whereas 'percent' should be used to denote standardized
-        pitches where data is scaled along the axes independent of the actual pitch
-        size. In this case, you should specify the `length` and `width` attributes.
+    unit: {'m', 'cm', 'percent', 'normed'}
+        The unit in which data is measured along axes. The values 'percent' and 'normed'
+        can be used to denote standardized pitches where data is scaled along the axes
+        independent of the actual pitch size. In this case, 'percent' refers to a
+        scaling onto the range (0, 100), and 'normed' to all other scalings.
+        To get non-distored calculations from these unit-systems, the `length` and
+        `width` attributes need to be specified.
     boundaries: str
         One of {'fixed', 'flexible'}. Here, 'fixed' denotes coordinate systems that
         limit axes to the respective xlim and ylim. On the contrary, 'flexible'
@@ -41,6 +43,13 @@ class Pitch:
     sport: str, optional
         Sport for which the pitch is used. This is used to automatically generate lines
         and markings.
+
+    Attributes
+    ----------
+    center: tuple
+        Returns coordinates of the pitch center.
+    is_metrical: bool
+        Returns True if the object's unit is metrical, False otherwise.
     """
 
     xlim: Tuple[Numeric, Numeric]
@@ -235,26 +244,8 @@ class Pitch:
 
         Examples
         --------
-        >>> import matplotlib.pyplot as plt
-        >>> from floodlight.core.pitch import Pitch
-        >>> # create Pitch object
-        >>> football_pitch = Pitch(xlim=(0, 105), ylim=(0,68), unit="m",
-        >>>                  sport="football")
-
-        >>> # plot football pitch
-        >>> football_pitch.plot()
-        >>> plt.show()
-
-        .. image:: ../../_img/football_pitch_example.png
-
-        >>> # create Pitch object
-        >>> handball_pitch = Pitch(xlim=(0,40), ylim=(0,20), unit="m", sport="handball")
-
-        >>> # plot handball pitch
-        >>> handball_pitch.plot()
-        >>> plt.show()
-
-        .. image:: ../../_img/handball_pitch_example.png
+        - :ref:`Handball pitch <handball-pitch-label>`
+        - :ref:`Football pitch <football-pitch-label>`
 
         """
         # list of existing color_schemes and sports

@@ -22,13 +22,16 @@ class Events:
     reserved for properties that follow conventions. These may be necessary and their
     existence is checked for running particular analyses.
 
-    Attributes
+    Parameters
     ----------
     events: pd.DataFrame
         DataFrame containing rows of events and columns of respective event properties.
     direction: str, optional
         Playing direction of players in data fragment, should be either
         'lr' (left-to-right) or 'rl' (right-to-left).
+
+    Attributes
+    ----------
     essential: list
         List of essential columns available for stored events.
     protected: list
@@ -36,16 +39,14 @@ class Events:
     custom: list
         List of custom (i.e. non-essential and non-protected) columns available for
         stored events.
-    essential_missing: list or None
-        List of missing essential columns or None if no columns are missing.
-    essential_invalid: list or None
-        List of essential columns that violate the definitions or None if all columns
-        match the definitions.
-    protected_missing: list or None
-        List of missing protected columns or None if no columns are missing.
-    protected_invalid: list or None
-        List of protected columns that violate the definitions or None if all columns
-        match the definitions.
+    essential_missing: list
+        List of missing essential columns.
+    essential_invalid: list
+        List of essential columns that violate the definitions.
+    protected_missing: list
+        List of missing protected columns.
+    protected_invalid: list
+        List of protected columns that violate the definitions.
     """
 
     events: pd.DataFrame

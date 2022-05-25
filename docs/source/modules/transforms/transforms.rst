@@ -2,10 +2,19 @@
 floodlight.transforms
 =====================
 
-Some useful transformers
+Collection of data transformation and processing functions.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Transforms
+   :caption: Submodule Reference
 
    filter
+
+.. rubric:: Filter
+
+.. currentmodule:: floodlight.transforms.filter
+.. autosummary::
+   :nosignatures:
+
+   butterworth_lowpass
+   savgol_lowpass
