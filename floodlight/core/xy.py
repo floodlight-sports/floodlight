@@ -309,36 +309,8 @@ class XY:
 
         Examples
         --------
-        >>> import matplotlib.pyplot as plt
-        >>> import numpy as np
-        >>> from floodlight.core.pitch import Pitch
-        >>> from floodlight.core.xy import XY
-        >>> # positions
-        >>> pos = np.array(
-        >>>     [[35,5,35,63,25,25,25,50],
-        >>>     [45,10,45,55,35,20,35,45],
-        >>>     [55,10,55,55,45,20,45,45],
-        >>>     [88.5,20,88.5,30,88.5,40,88.5,50]])
-        >>> xy_pos = XY(pos) # create XY object
-        >>> # create Pitch object
-        >>> football_pitch = Pitch(xlim=(0,105), ylim=(0, 68), unit="m",
-        >>> sport="football")
-        >>> # create matplotlib.axes
-        >>> ax = plt.subplots()[1]
-        >>> # plot pitch on ax
-        >>> football_pitch.plot(color_scheme="standard", ax=ax)
-
-        >>> # plot positions on ax
-        >>> xy_pos.plot(plot_type="positions", t=0, ax=ax)
-        >>> plt.show()
-
-        .. image:: ../../_img/positions_example.png
-
-        >>> # plot trajectories from frame 0 to 4 on ax
-        >>> xy_pos.plot(plot_type="trajectories", t=(0,4), ball= False, ax=ax)
-        >>> plt.show()
-
-        .. image:: ../../_img/trajectories_example.png
+        - :ref:`Positions plot <positions-plot-label>`
+        - :ref:`Trajectories plot <trajectories-plot-label>`
 
         """
 

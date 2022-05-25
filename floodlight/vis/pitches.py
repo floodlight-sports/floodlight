@@ -45,6 +45,34 @@ def plot_handball_pitch(
     -------
     axes : matplotlib.axes
         Axes from matplotlib library on which a handball pitch is plotted.
+
+    Notes
+    -----
+    This function executes all the plotting methods to create a handball pitch.
+
+    The kwargs are only passed to the plot functions of matplotlib. To customize the
+    plots have a look at `matplotlib
+    <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+    For example in order to modify the linewidth pass a float to the keyworded
+    argument 'linewidth'. The same principle applies to other kwargs like 'zorder',
+    'scalex' and 'scaley'.
+
+    .. _handball-pitch-label:
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight.vis.pitches import plot_handball_pitch
+    >>> # create matplotlib.axes
+    >>> ax = plt.subplots()[1]
+
+    >>> # plot handball pitch
+    >>> plot_handball_pitch(xlim=(0,40), ylim=(0,20), unit='m', color_scheme='standard',
+    >>>                     show_axis_ticks=False, ax=ax)
+    >>> plt.show()
+
+    .. image:: ../../_img/pitch_handball_example.png
+
     """
 
     # kwargs which are used to configure the plot with default values 1 and 0.
@@ -591,6 +619,34 @@ def plot_football_pitch(
     -------
     axes : matplotlib.axes
         Axes from matplotlib library on which a football pitch is plotted.
+
+    Notes
+    -----
+    This function executes all the plotting methods to create a football pitch.
+
+    The kwargs are only passed to the plot functions of matplotlib. To customize the
+    plots have a look at `matplotlib
+    <https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+    For example in order to modify the linewidth pass a float to the keyworded
+    argument 'linewidth'. The same principle applies to other kwargs like 'zorder',
+    'scalex' and 'scaley'.
+
+    .. _football-pitch-label:
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight.vis.pitches import plot_football_pitch
+    >>> # create matplotlib.axes
+    >>> ax = plt.subplots()[1]
+
+    >>> # plot handball pitch
+    >>> plot_football_pitch(xlim=(0,108), ylim=(0,68), length=108, width=68, unit='m',
+    >>>                     color_scheme='standard', show_axis_ticks=False, ax=ax)
+    >>> plt.show()
+
+    .. image:: ../../_img/pitch_football_example.png
+
     """
     # kwargs which are used to configure the plot with default values 1 and 0.
     # all the other kwargs will be just passed to all the plot functions.
