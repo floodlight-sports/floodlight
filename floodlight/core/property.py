@@ -71,7 +71,7 @@ class BaseProperty:
 class TeamProperty(BaseProperty):
     """Fragment of one continuous team property. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     property: np.ndarray
         A 1-dimensional array of properties of shape (T), where T is the number of
@@ -87,7 +87,7 @@ class TeamProperty(BaseProperty):
 class PlayerProperty(BaseProperty):
     """Fragment of one continuous property per player. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     property: np.ndarray
         A 2-dimensional array of properties of shape (T, N), where T is the number of
@@ -103,7 +103,7 @@ class PlayerProperty(BaseProperty):
 class DyadicProperty(BaseProperty):
     """Fragment of one continuous property per player dyad. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     property: np.ndarray
         A 3-dimensional array of properties of shape (T, N_1, N_2), where T is the

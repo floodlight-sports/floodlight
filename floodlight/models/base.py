@@ -7,7 +7,7 @@ from floodlight import Pitch
 class BaseModel:
     """Base class for all models.
 
-    Attributes
+    Parameters
     ----------
     pitch: Pitch, optional
         Some models require pitch information, so the corresponding Pitch object is

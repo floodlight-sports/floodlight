@@ -20,6 +20,11 @@ class EIGDDataset:
     Upon instantiation, the class checks if the data already exists in the repository's
     root ``.data``-folder, and will download the files (~120MB) to this folder if not.
 
+    Parameters
+    ----------
+    dataset_dir_name: str, optional
+        Name of subdirectory where the dataset is stored within the root .data
+        directory. Defaults to 'eigd_dataset'.
 
     Notes
     -----
@@ -60,7 +65,7 @@ class EIGDDataset:
             <https://dl.acm.org/doi/abs/10.1145/3475722.3482792>`_
     """
 
-    def __init__(self, dataset_path="eigd_dataset"):
+    def __init__(self, dataset_dir_name="eigd_dataset"):
         self._EIGD_SCHEMA = "https"
         self._EIGD_BASE_URL = (
             "data.uni-hannover.de/dataset/8ccb364e-145f-4b28-8ff4-954b86e9b30d/"
@@ -73,7 +78,7 @@ class EIGDDataset:
         self._EIGD_FILE_EXT = "h5"
         self._EIGD_FRAMERATE = 30
 
-        self._data_dir = os.path.join(DATA_DIR, dataset_path)
+        self._data_dir = os.path.join(DATA_DIR, dataset_dir_name)
 
         if not os.path.isdir(self._data_dir):
             os.makedirs(self._data_dir, exist_ok=True)
@@ -187,13 +192,13 @@ class ToyDataset:
 
     """
 
-    def __init__(self, dataset_path="toy_dataset"):
+    def __init__(self):
         self._TOY_FRAMERATE = 5
         self._TOY_DIRECTIONS = {
             "HT1": {"Home": "rl", "Away": "lr"},
             "HT2": {"Home": "lr", "Away": "rl"},
         }
-        self._data_dir = os.path.join(DATA_DIR, dataset_path)
+        self._data_dir = os.path.join(DATA_DIR, "toy_dataset")
 
     def get(
         self, segment: str = "HT1"
@@ -300,6 +305,12 @@ class StatsBombOpenDataset:
     are only downloaded on demand. All downloaded files stay on disk if not manually
     removed.
 
+    Parameters
+    ----------
+    dataset_dir_name: str, optional
+        Name of subdirectory where the dataset is stored within the root .data
+        directory. Defaults to 'statsbomb_dataset'.
+
     Notes
     -----
     The dataset contains results, lineups, event data, and (partly) `StatsBomb360 data
@@ -373,7 +384,7 @@ class StatsBombOpenDataset:
     >>>     clasico_events.append(data)
     """
 
-    def __init__(self, dataset_path="statsbomb_dataset"):
+    def __init__(self, dataset_dir_name="statsbomb_dataset"):
         # setup
         self._links_competition_to_cID = {}
         self._links_season_to_sID = {}
@@ -389,7 +400,7 @@ class StatsBombOpenDataset:
         self._STATSBOMB_FILE_EXT = ".json"
 
         # create data directory and check if competition info needs to be downloaded
-        self._data_dir = os.path.join(DATA_DIR, dataset_path)
+        self._data_dir = os.path.join(DATA_DIR, dataset_dir_name)
         self.filepath_competitions = os.path.join(
             self._data_dir,
             self._STATSBOMB_COMPETITIONS_FILENAME + self._STATSBOMB_FILE_EXT,

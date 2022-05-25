@@ -47,11 +47,6 @@ class CentroidModel(BaseModel):
     >>> cm.stretch_index(xy, axis='x')
     TeamProperty(property=array([0.5, 0.]), name='stretch_index', framerate=None)
 
-    Attributes
-    ----------
-    _centroid_: XY
-        Calculated centroids with shape (T, 2), where T is the total number of frames.
-
     References
     ----------
         .. [1] `Sampaio, J., & Maçãs, V. (2012). Measuring tactical behaviour in

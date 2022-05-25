@@ -13,20 +13,25 @@ from floodlight.vis.positions import plot_positions, plot_trajectories
 class XY:
     """Spatio-temporal data fragment. Core class of floodlight.
 
-    Attributes
+    Parameters
     ----------
     xy: np.ndarray
         Full data array containing x- and y-coordinates, where each player's coordinates
         occupy two consecutive columns.
-    x: np.ndarray
-        X-data array, where each player's x-coordinates occupy one column.
-    y: np.ndarray
-        Y-data array, where each player's y-coordinates occupy one column.
     framerate: int, optional
         Temporal resolution of data in frames per second/Hertz.
-    direction: str, optional
+    direction: {'lr', 'rl'}, optional
         Playing direction of players in data fragment, should be either
         'lr' (left-to-right) or 'rl' (right-to-left).
+
+    Attributes
+    ----------
+    x: np.array
+        X-data array, where each player's x-coordinates occupy one column.
+    y: np.array
+        Y-data array, where each player's y-coordinates occupy one column.
+    N: int
+        The object's number of players.
     """
 
     xy: np.ndarray
@@ -46,7 +51,15 @@ class XY:
         self.xy[key] = value
 
     @property
-    def x(self):
+    def N(self) -> int:
+        n_columns = self.xy.shape[1]
+        if (n_columns % 2) != 0:
+            raise ValueError(f"XY has an odd number of columns ({n_columns})")
+        return n_columns // 2
+
+    @property
+    def x(self) -> np.array:
+        """X-data array, where each player's x-coordinates occupy one column."""
         return self.xy[:, ::2]
 
     @x.setter
@@ -54,20 +67,13 @@ class XY:
         self.xy[:, ::2] = x_data
 
     @property
-    def y(self):
+    def y(self) -> np.array:
+        """Y-data array, where each player's y-coordinates occupy one column."""
         return self.xy[:, 1::2]
 
     @y.setter
     def y(self, y_data: np.ndarray):
         self.xy[:, 1::2] = y_data
-
-    @property
-    def N(self) -> int:
-        """Returns the object's number of players."""
-        n_columns = self.xy.shape[1]
-        if (n_columns % 2) != 0:
-            raise ValueError(f"XY has an odd number of columns ({n_columns})")
-        return n_columns // 2
 
     def frame(self, t: int) -> np.ndarray:
         """Returns data for given frame *t*.
