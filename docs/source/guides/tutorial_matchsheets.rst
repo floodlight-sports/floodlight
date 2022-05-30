@@ -2,13 +2,13 @@
 Tutorial: Match Sheet Creation
 ==============================
 
-In this tutorial we will have a look at how to create match sheets from the openly published event data from StatsBomb with the interface and objects provided by floodlight. The goal is to load a match from the dataset, extract information about the scored goals, and use this information to create a match sheet.
+In this tutorial we will create match sheets from the openly published event data from StatsBomb with the interface and objects provided by floodlight. Our goal is to load a match from the dataset, extract information about the scored goals, and use this information to create a match sheet.
 
 
 Setup
 =====
 
-Let's start by getting some data that we can work with. The open StatsBomb dataset contains (amongst others) data from the UEFA Euro 2020 with (partial) information about the player positions at the events which can be used for our purpose. We load a single match from the dataset and also get the corresponding pitch information.
+First we need some data to work with. The open StatsBomb dataset contains (amongst others) data from the UEFA Euro 2020 with (partial) information about the player positions at the events which can be used for our purpose. From this dataset we load a single match from the dataset and also get the corresponding pitch information.
 
 .. code-block:: python
 
@@ -25,7 +25,7 @@ The variables ``home_ht1``, ``home_ht2``, ``away_ht1``, and ``away_ht2`` are Eve
 Data Preparation
 ================
 
-To create match sheets from the event data, we want to select certain (important) events to look at. To keep it short and simple, we stick to goals. We use the ``select`` function from the ``floodlight.core.events`` submodule to find all shots with positive outcome (1).
+To create match sheets from the event data we want to select certain (important) events to look at. To keep it short and simple we stick to goals. We use the ``select`` function from the ``floodlight.core.events`` submodule to find all shots with a positive outcome (1).
 
 .. code-block:: python
 
@@ -85,17 +85,17 @@ Here's the (formatted) DataFrame you should get:
 eID   gameclock  pID    tID  mID      outcome  timestamp    minute  second  at_x   at_y  to_x   to_y  event_name    player_name              team_name  qualifier
 ====  ========== ====== ==== ======== ======== ============ ======= ======= ====== ===== ====== ===== ============= ======================== ========== ==========
 25    1172.344   nan    785  3794686  nan      0:19:32.433  19      32      68.3   62.1  nan    nan   Own Goal For  None                     Croatia    ...
-16    2248.398   6720   772  3794686  1        0:37:28.398  37      28      109.0  43.3  120.0  42.6  Shot          Pablo Sarabia García     Spain      ...
-16    3366.771   3957   772  3794686  1        0:11:06.771  56      6       115.3  42.4  120.0  41.0  Shot          César Azpilicueta Tanco  Spain      ...
-16    4562.056   6748   772  3794686  1        0:31:02.056  76      2       112.1  51.2  120.0  39.5  Shot          Ferrán Torres García     Spain      ...
-16    5056.385   16527  772  3794686  1        0:39:16.385  84      16      119.0  40.9  120.0  42.5  Shot          Mislav Oršić             Croatia    ...
-16    5511.058   11603  772  3794686  1        0:46:51.058  91      51      114.2  37.2  120.0  41.9  Shot          Mario Pašalić            Croatia    ...
+16    2248.398   6720   772  3794686  1        0:37:28.398  37      28      109.0  43.3  120.0  42.6  Shot          Pablo Sarabia Garcia     Spain      ...
+16    3366.771   3957   772  3794686  1        0:11:06.771  56      6       115.3  42.4  120.0  41.0  Shot          Cesar Azpilicueta Tanco  Spain      ...
+16    4562.056   6748   772  3794686  1        0:31:02.056  76      2       112.1  51.2  120.0  39.5  Shot          Ferran Torres Garcia     Spain      ...
+16    5056.385   16527  772  3794686  1        0:39:16.385  84      16      119.0  40.9  120.0  42.5  Shot          Mislav Orsic             Croatia    ...
+16    5511.058   11603  772  3794686  1        0:46:51.058  91      51      114.2  37.2  120.0  41.9  Shot          Mario Pasalic            Croatia    ...
 ====  ========== ====== ==== ======== ======== ============ ======= ======= ====== ===== ====== ===== ============= ======================== ========== ==========
 
 Data Extraction
 ===============
 
-Alright, now let's try to extract the relevant information from the above DataFrame. First we want to extract some meta informaton about the goals. For later use, we write a function ``get_goal_info`` for that matter.
+Alright, now let's try to extract the relevant information from the above DataFrame. First we want to extract some meta information about the goals. For later use we write a function ``get_goal_info(goal)`` for that matter.
 
 .. code-block:: python
 
@@ -111,7 +111,7 @@ Alright, now let's try to extract the relevant information from the above DataFr
             xG = None
         return scoring_team, scoring_player, xG
 
-Next, we deal with the stored StatsBomb360 position data. The appropriate floodlight object to deal with position data is a XY object. To create XY objects that relate to a single frame of the match we have to bring them into shape (1, N). Therefore we define the function ``get_xy_data(goal)``.
+Next, we deal with the previously mentioned StatsBomb360 position data. The appropriate floodlight object to deal with position data is a XY object. To create XY objects that relate to a single frame of the match we have to bring them into shape (1, N). Therefore we define the function ``get_xy_data(goal)``.
 
 .. code-block:: python
 
@@ -149,7 +149,7 @@ Next, we deal with the stored StatsBomb360 position data. The appropriate floodl
 Plotting
 ========
 
-Now we can use the predefined functions to create a plot of the single goal (e.g. the last) with the plotting functionality of the XY and Pitch object.
+Now we can use the predefined functions to create a plot of a single goal (e.g. the last) with the plotting functionality of the XY and Pitch object.
 
 .. code-block:: python
 
@@ -172,9 +172,9 @@ Now we can use the predefined functions to create a plot of the single goal (e.g
 
 .. image:: ../_img/tutorial_matchsheets_singlegoal.png
 
-This looks alright! However, our goal is to summarize the whole match into a single match sheet that displays all the goals.
+This is a neat start! However, our goal is to summarize the whole match into a single match sheet that displays all the goals.
 
-As we know the number of goals in the first two halves we can setup a grid of subplots. In this case we create a 2x3 grid for the six goals in the match. We also create a legend with the colors for the two teams.
+Therefore, we setup a grid of subplots (in this case a 2x3 grid for the six goals). We add a legend with our designated colors for the two teams.
 
 .. code-block:: python
 
@@ -194,7 +194,7 @@ As we know the number of goals in the first two halves we can setup a grid of su
 
 .. image:: ../_img/tutorial_matchsheets_grid.png
 
-Finally, we create the match sheet by iterating over all goals and updating the respective subplots. To improve visibility we want Spain to play towards left goal of the pitch. Therefore we use the ``rotate`` and ``translate`` function of the floodlight XY module for goals scored by Spain.
+Now we create the match sheet by iterating over all goals and updating the respective subplots. For visibility we want to display the goals for Spain at the left side of the pitch. Therefore we use the ``rotate`` and ``translate`` function of the floodlight XY module.
 
 .. code-block:: python
 
@@ -203,28 +203,22 @@ Finally, we create the match sheet by iterating over all goals and updating the 
 
     for _, goal in all_goals.iterrows():
 
+        # display meta information
         scoring_team, scoring_player, xG = get_goal_info(goal)
-        conceding_team = (
-            list(colors.keys())[0]
-            if scoring_team == list(colors.values())[0]
-            else list(colors.keys())[1]
-        )
         if scoring_team == "Croatia":
             conceding_team = "Spain"
             home_score += 1
         else:  # score by Spain
             conceding_team = "Croatia"
             away_score += 1
-
         ax[i, j].set_title(
             f"{home_score}:{away_score} for {str(scoring_team)} by {str(scoring_player)} "
             f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
             fontdict={'size': 10}
         )
 
-        pitch.plot(ax=ax[i, j])
+        # get position data
         xy_ball, xy_off, xy_def = get_xy_data(goal)
-
         # rotate position data towards left goal for Spain
         if scoring_team == "Spain":
             xy_off.rotate(180)
@@ -233,7 +227,8 @@ Finally, we create the match sheet by iterating over all goals and updating the 
             xy_def.translate((pitch.xlim[1], pitch.ylim[1]))
             xy_ball.rotate(180)
             xy_ball.translate((pitch.xlim[1], pitch.ylim[1]))
-
+        # plot pitch and position data
+        pitch.plot(ax=ax[i, j])
         xy_off.plot(t=0, ax=ax[i, j], color=colors[scoring_team])
         xy_def.plot(t=0, ax=ax[i, j], color=colors[conceding_team])
         xy_ball.plot(
@@ -246,8 +241,8 @@ Finally, we create the match sheet by iterating over all goals and updating the 
             col = 0
             row += 1
 
-The result then looks like this
+The result should look like below. However, keep in mind that the StatsBomb360 data does only contain the positions from some players at the event (extracted from the camera angle). That's why you can not see the player responsible for the own goal in the first plot.
 
 .. image:: ../_img/tutorial_matchsheets_allgoals.png
 
-Feel free to try to get the script running on your machine and also to experiment with other matches, event types, and styles.
+Feel free to try out this code with other matches from the StatsBomb dataset (``dataset.available_matches``) and also to experiment with other event types, plotting styles and your own ideas!
