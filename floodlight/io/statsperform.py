@@ -770,7 +770,7 @@ def read_event_data_xml(
                 event_lists[team][segment]["jID"].append(jID)
 
             # relative time
-            gameclock = get_and_convert(event.attrib, "Time", int)
+            gameclock = get_and_convert(event.attrib, "Time", int) / 1000
             minute = np.floor(gameclock / 60)
             second = np.floor(gameclock - minute * 60)
             for team in teams_assigned:
