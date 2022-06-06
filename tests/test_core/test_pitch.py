@@ -68,8 +68,8 @@ def test_template_tracab() -> None:
     # Assert
     with pytest.raises(TypeError):
         Pitch.from_template("tracab")
-    assert pitch.xlim == (-55, 55)
-    assert pitch.ylim == (-34, 34)
+    assert pitch.xlim == (-5500, 5500)
+    assert pitch.ylim == (-3400, 3400)
     assert pitch.unit == "cm"
     assert pitch.boundaries == "flexible"
 
