@@ -125,11 +125,11 @@ covered`
                         f" 'backward', got {difference})"
                     )
 
-                # set single frames to 0 because differentiation is not possible
+            # set single frames to 0 because differentiation is not possible
             for start, end in seqs_short:
                 col_diff[start:end] = 0
 
-                # enter filtered data into respective column
+            # enter filtered data into respective column
             differences_xy[:, i] = col_diff
 
         distance_euclidean = np.hypot(
