@@ -3,6 +3,7 @@ import numpy as np
 from floodlight import XY
 from floodlight.core.property import PlayerProperty
 from floodlight.models.base import BaseModel, requires_fit
+from floodlight.transforms.filter import _get_filterable_and_short_sequences
 
 
 class DistanceModel(BaseModel):
@@ -83,27 +84,58 @@ covered`
             calculated in both dimensions.
         """
 
+        # differentiate only sequences without NaNs
+        # shortest possible signal length to differentiate
+        min_signal_len = 2
+        # pe-allocate array for differences
         if axis is None:
-            if difference == "central":
-                differences_xy = np.gradient(xy.xy, axis=0)
-            elif difference == "backward":
-                differences_xy = np.diff(xy.xy, axis=0, prepend=0)
-            else:
-                raise ValueError(
-                    f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
-                )
-            distance_euclidean = np.hypot(
-                differences_xy[:, ::2],
-                differences_xy[:, 1::2],
-            )
+            to_differentiate = xy.xy
         elif axis == "x":
-            distance_euclidean = np.gradient(xy.x, axis=0)
+            to_differentiate = xy.x
         elif axis == "y":
-            distance_euclidean = np.gradient(xy.y, axis=0)
+            to_differentiate = xy.y
         else:
             raise ValueError(
                 f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
             )
+
+        differences_xy = np.full(to_differentiate.shape, np.NaN)
+        # loop through the xy-object columns
+        for i, column in enumerate(np.transpose(to_differentiate)):
+            # extract indices of filterable and short sequences
+            seqs_diff, seqs_short = _get_filterable_and_short_sequences(
+                column, min_signal_len
+            )
+            # pre-allocate space for filtered column
+            col_diff = np.full(column.shape, np.nan)
+
+            # loop through filterable sequences
+            for start, end in seqs_diff:
+                # apply filter to the sequence and enter filtered data to their
+                # respective indices in the data
+                if difference == "central":
+                    col_diff[start:end] = np.gradient(column[start:end])
+                elif difference == "backward":
+                    col_diff[start:end] = np.diff(
+                        column[start:end], prepend=column[start]
+                    )
+                else:
+                    raise ValueError(
+                        f"Expected differences to be one of ('central',"
+                        f" 'backward', got {difference})"
+                    )
+
+                # set single frames to 0 because differentiation is not possible
+            for start, end in seqs_short:
+                col_diff[start:end] = 0
+
+                # enter filtered data into respective column
+            differences_xy[:, i] = col_diff
+
+        distance_euclidean = np.hypot(
+            differences_xy[:, ::2],
+            differences_xy[:, 1::2],
+        )
 
         self._distance_euclidean_ = PlayerProperty(
             property=distance_euclidean, name="distance_covered", framerate=xy.framerate
@@ -323,12 +355,37 @@ class AccelerationModel(BaseModel):
         velocity_model.fit(xy, difference=difference, axis=axis)
         velocity = velocity_model.velocity()
 
-        if difference == "central":
-            acceleration = np.gradient(velocity.property, axis=0) * velocity.framerate
-        else:
-            acceleration = (
-                np.diff(velocity.property, axis=0, append=0) * velocity.framerate
+        min_signal_len = 2
+        # pe-allocate array for differences
+        differences_vel = np.empty(velocity.property.shape)
+        # loop through the xy-object columns
+        for i, column in enumerate(np.transpose(velocity)):
+            # extract indices of filterable and short sequences
+            seqs_diff, seqs_short = _get_filterable_and_short_sequences(
+                column, min_signal_len
             )
+            # pre-allocate space for filtered column
+            col_diff = np.full(column.shape, np.nan)
+
+            # loop through filterable sequences
+            for start, end in seqs_diff:
+                # apply filter to the sequence and enter filtered data to their
+                # respective indices in the data
+                if difference == "central":
+                    col_diff[start:end] = np.gradient(column[start:end])
+                else:
+                    col_diff[start:end] = np.diff(
+                        column[start:end], prepend=column[start]
+                    )
+
+            # set single frames to 0 because differentiation is not possible
+            for start, end in seqs_short:
+                col_diff[start:end] = 0
+
+            # enter filtered data into respective column
+            differences_vel[:, i] = col_diff
+
+        acceleration = differences_vel * velocity.framerate
 
         self._acceleration_ = PlayerProperty(
             property=acceleration,
