@@ -12,6 +12,7 @@ Collection of file parsing functionalities for different data providers as well 
    dfl
    kinexon
    opta
+   secondspectrum
    statsbomb
    statsperform
    tracab
@@ -58,6 +59,15 @@ Collection of file parsing functionalities for different data providers as well 
 
    read_f24
    get_opta_feedtype
+
+.. rubric:: Second Spectrum
+
+.. currentmodule:: floodlight.io.secondspectrum
+.. autosummary::
+   :nosignatures:
+
+   read_secspec_files
+   create_links_from_metajson
 
 .. rubric:: StatsBomb
 

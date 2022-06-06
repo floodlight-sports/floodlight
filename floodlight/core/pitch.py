@@ -75,8 +75,8 @@ class Pitch:
         ----------
         template_name: str
             The name of the template the pitch should follow. Currently supported are
-            {'dfl', 'eigd', 'opta', 'statsbomb', 'statsperform', 'statsperform_open',
-            'tracab'}.
+            {'dfl', 'eigd', 'opta', 'statsbomb', 'secondspectrum', 'statsperform',
+            'statsperform_open', 'tracab'}.
         kwargs:
             You may pass optional arguments (`length`, `width`, `sport`) used for class
             instantiation. For some data providers, additional kwargs are needed to
@@ -134,6 +134,24 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
+        elif template_name == "secondspectrum":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact Second Spectrum Pitch object, "
+                    "`length` and `width` of the pitch need "
+                    "to be passed as keyworded arguments"
+                )
+            x_half = round(kwargs["length"] / 2, 3)
+            y_half = round(kwargs["width"] / 2, 3)
+            return cls(
+                xlim=(-x_half, x_half),
+                ylim=(-y_half, y_half),
+                unit="m",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
+            )
         elif template_name == "statsperform":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
@@ -158,8 +176,8 @@ class Pitch:
                     "Pitch object, `length` and `width` of the pitch need "
                     "to be passed as keyworded arguments"
                 )
-            x_half = round(kwargs["length"] / 2, 3)
-            y_half = round(kwargs["width"] / 2, 3)
+            x_half = round((kwargs["length"] * 100) / 2, 3)
+            y_half = round((kwargs["width"] * 100) / 2, 3)
             return cls(
                 xlim=(-x_half, x_half),
                 ylim=(-y_half, y_half),
