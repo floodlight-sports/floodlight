@@ -70,6 +70,7 @@ filtering, basic plotting routines and computational models.
 - DFL (Tracking data, Event data, Codes)
 - Kinexon (Tracking data)
 - Opta (Event data - F24 feeds)
+- Second Spectrum (Tracking data)
 - StatsPerform (Tracking data, Event data - also directly from URLs)
 - StatsBomb (Event data)
 
