@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.1 (2022-06-06)
+
+#### New Features
+
+* add second spectrum parser
+* add approximate entropy ([#67](https://github.com/floodlight-sports/floodlight/issues/67))
+#### Fixes
+
+* broken settings path
+* iterating stepsize
+* include settings to module
+#### Docs
+
+* match sheet tutorial ([#71](https://github.com/floodlight-sports/floodlight/issues/71))
+* overhaul contributing guide
+* overhaul compendium
+* extend getting started section
+* add metrics and entropy module
+* add data analysis tutorial
+* remove redundancies
+* move plotting examples from wrapper to function ([#69](https://github.com/floodlight-sports/floodlight/issues/69))
+* clean class docstrings
+#### Others
+
+* fix typos
+* update readme
+
+Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floodlight/compare/0.3.0...0.3.1)
+
 ## 0.3.0 (2022-05-23)
 
 #### New Features
@@ -51,6 +80,7 @@
 * colum checks return empty lists instead of None
 #### Docs
 
+* update changelog
 * add core module reference page
 * add transforms module reference page
 * add models module referene page
@@ -61,6 +91,8 @@
 * add property module reference
 #### Others
 
+* release 0.3.0
+* bump version
 * add dependency matplotlib
 * add dependency scipy
 * add dependency h5py
