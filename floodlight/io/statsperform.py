@@ -801,7 +801,7 @@ def read_event_data_xml(
     length = get_and_convert(root.attrib, "FieldLength", int)
     width = get_and_convert(root.attrib, "FieldWidth", int)
     pitch = Pitch.from_template(
-        "statsperform",
+        "statsperform_event",
         length=length,
         width=width,
         sport="football",

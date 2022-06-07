@@ -152,7 +152,7 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
-        elif template_name == "statsperform":
+        elif template_name == "statsperform_event":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
                     "For an exact StatsPerform Pitch object, "
@@ -165,6 +165,21 @@ class Pitch:
                 xlim=(-x_half, x_half),
                 ylim=(-y_half, y_half),
                 unit="cm",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+            )
+        elif template_name == "statsperform_tracking":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact StatsPerform Pitch object, "
+                    "`length` and `width` of the pitch need "
+                    "to be passed as keyworded arguments"
+                )
+            return cls(
+                xlim=(0, kwargs["length"]),
+                ylim=(0, kwargs["width"]),
+                unit="m",
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
@@ -203,6 +218,8 @@ class Pitch:
                 ylim=(0.0, 80.0),
                 unit="normed",
                 boundaries="flexible",
+                length=120,
+                width=80,
                 sport="football",
             )
         else:
