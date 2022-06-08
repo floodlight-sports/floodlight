@@ -12,6 +12,9 @@
 [black-url]: https://github.com/psf/black
 [contrib-image]: https://img.shields.io/badge/contributions-welcome-006666
 [contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
+[arxiv-image]: https://img.shields.io/badge/arXiv-2206.02562-b31b1b.svg
+[arxiv-url]: https://arxiv.org/abs/2206.02562
+
 
 # floodlight
 [![Latest Version][version-image]][version-url]
@@ -19,9 +22,8 @@
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
-[![Contributions][contrib-image]][contrib-url]
 [![Code style: black][black-image]][black-url]
-
+[![arXiv][arxiv-image]][arxiv-url]
 
 ## A high-level, data-driven sports analytics framework
 
@@ -110,9 +112,29 @@ You can find all documentation [here][docs-url].
 
 ### Contributing
 
+[![Contributions][contrib-image]][contrib-url]
+
 Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
 know to get started. We also provide an extended, beginner-friendly guide on how to
 start contributing in our documentation.
+
+
+
+### Citing
+
+If you've used *floodlight* in your scientific work, please cite the [corresponding paper][arxiv-url].
+
+```
+@misc{Raabe2022floodlight,
+  doi = {10.48550/ARXIV.2206.02562},
+  url = {https://arxiv.org/abs/2206.02562},
+  author = {Raabe, Dominik and Biermann, Henrik and Bassek, Manuel and Wohlan, Martin and Komitova, Rumena and Rein,
+           Robert and Groot, Tobias Kuppens and Memmert, Daniel},
+  title = {floodlight -- A high-level, data-driven sports analytics framework},
+  publisher = {arXiv},
+  year = {2022},
+}
+```
 
 
 
