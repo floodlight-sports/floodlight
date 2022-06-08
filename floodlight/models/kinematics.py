@@ -233,7 +233,9 @@ class VelocityModel(BaseModel):
         distance_model.fit(xy, difference=difference, axis=axis)
         distance_euclidean = distance_model.distance_covered()
 
-        velocity = distance_euclidean.property * distance_euclidean.framerate
+        velocity = np.multiply(
+            distance_euclidean.property, distance_euclidean.framerate
+        )
 
         self._velocity_ = PlayerProperty(
             property=velocity, name="velocity", framerate=xy.framerate
@@ -334,15 +336,17 @@ class AccelerationModel(BaseModel):
         velocity = velocity_model.velocity()
 
         if difference == "central":
-            acceleration = np.gradient(velocity.property, axis=0) * velocity.framerate
+            acceleration = np.multiply(
+                np.gradient(velocity.property, axis=0), velocity.framerate
+            )
         else:
-            acceleration = (
+            acceleration = np.multiply(
                 np.diff(
                     velocity.property,
                     axis=0,
                     prepend=velocity.property[0].reshape(1, -1),
-                )
-                * velocity.framerate
+                ),
+                velocity.framerate,
             )
 
         self._acceleration_ = PlayerProperty(
