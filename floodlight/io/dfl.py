@@ -375,25 +375,33 @@ def read_event_data_xml(
     tree = etree.parse(str(filepath_events))
     root = tree.getroot()
 
-    # find start and end of half
-    kickoff_whistles = {}
-    final_whistles = {}
-    for whistle in root.findall("Event/KickoffWhistle"):
-        if whistle.get("GameSection") is not None:
-            kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-                whistle.getparent().get("EventTime")
+    # find start of halves
+    start_times = {}
+    start_events = root.findall("Event/KickoffWhistle")
+    if not bool(start_events):  # if no KickoffWhistle is in data search for Kickoff
+        start_events = root.findall("Event/Kickoff")
+    if not bool(start_events):  # if no Kickoff is in data search for KickOff
+        start_events = root.findall("Event/KickOff")
+    for event in start_events:
+        if event.get("GameSection") is not None:
+            start_times[event.get("GameSection")] = iso8601.parse_date(
+                event.getparent().get("EventTime")
             )
-    for whistle in root.findall("Event/FinalWhistle"):
-        if whistle.get("GameSection") is not None:
-            final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-                whistle.getparent().get("EventTime")
+
+    # find end of halves
+    end_times = {}
+    end_events = root.findall("Event/FinalWhistle")
+    for event in end_events:
+        if event.get("GameSection") is not None:
+            end_times[event.get("GameSection")] = iso8601.parse_date(
+                event.getparent().get("EventTime")
             )
 
     # initialize periods
-    segments = list(kickoff_whistles.keys())
+    segments = list(start_times.keys())
     periods = {}
     for segment in segments:
-        periods[segment] = (kickoff_whistles[segment], final_whistles[segment])
+        periods[segment] = (start_times[segment], end_times[segment])
 
     # set up bins
     team_events = {segment: {} for segment in segments}
@@ -650,7 +658,7 @@ def read_position_data_xml(
                 team = "Away"
                 jrsy = links_pID_to_jID[team][frame_set.get("PersonId")]
             else:
-                pass
+                continue
                 # possible error or warning
 
             # insert (x,y) data to correct place in bin
