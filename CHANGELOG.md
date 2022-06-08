@@ -1,18 +1,52 @@
 # Changelog
 
+## 0.3.2 (2022-06-08)
+
+#### Fixes
+
+* statsperform pitch templates ([#75](https://github.com/floodlight-sports/floodlight/issues/75))
+* adapt dfl parser to different format versions and fix statsperform gameclock unit ([#76](https://github.com/floodlight-sports/floodlight/issues/76))
+* pass difference argument to axis-specific differentiation and fix prepend ([#77](https://github.com/floodlight-sports/floodlight/issues/77))
+#### Docs
+
+* add paper reference
+#### Others
+
+* update module init
+
+Full set of changes: [`0.3.1...0.3.2`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.3.2)
+
 ## 0.3.1 (2022-06-06)
 
 #### New Features
 
 * add second spectrum parser
 * add approximate entropy ([#67](https://github.com/floodlight-sports/floodlight/issues/67))
+* add second spectrum parser
+* add approximate entropy ([#67](https://github.com/floodlight-sports/floodlight/issues/67))
 #### Fixes
 
+* adapt test to changes
+* broken settings path
+* iterating stepsize
+* include settings to module
+* adapt test to changes
 * broken settings path
 * iterating stepsize
 * include settings to module
 #### Docs
 
+* update changelog
+* match sheet tutorial ([#71](https://github.com/floodlight-sports/floodlight/issues/71))
+* overhaul contributing guide
+* overhaul compendium
+* extend getting started section
+* add metrics and entropy module
+* add data analysis tutorial
+* remove redundancies
+* move plotting examples from wrapper to function ([#69](https://github.com/floodlight-sports/floodlight/issues/69))
+* clean class docstrings
+* update changelog
 * match sheet tutorial ([#71](https://github.com/floodlight-sports/floodlight/issues/71))
 * overhaul contributing guide
 * overhaul compendium
@@ -24,6 +58,10 @@
 * clean class docstrings
 #### Others
 
+* bump version
+* bump version
+* fix typos
+* update readme
 * fix typos
 * update readme
 
