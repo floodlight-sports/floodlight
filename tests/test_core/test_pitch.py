@@ -49,7 +49,7 @@ def test_template_statsperform_open() -> None:
 @pytest.mark.unit
 def test_template_statsperform_event() -> None:
     # Arrange
-    pitch = Pitch.from_template("statsperform_event", length=11000, width=6800)
+    pitch = Pitch.from_template("statsperform_event", length=110, width=68)
 
     # Assert
     with pytest.raises(TypeError):

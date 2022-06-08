@@ -798,8 +798,8 @@ def read_event_data_xml(
                 event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
     # create pitch
-    length = get_and_convert(root.attrib, "FieldLength", int)
-    width = get_and_convert(root.attrib, "FieldWidth", int)
+    length = get_and_convert(root.attrib, "FieldLength", int) / 100
+    width = get_and_convert(root.attrib, "FieldWidth", int) / 100
     pitch = Pitch.from_template(
         "statsperform_event",
         length=length,
