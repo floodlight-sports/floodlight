@@ -87,7 +87,7 @@ covered`
             if difference == "central":
                 differences_xy = np.gradient(xy.xy, axis=0)
             elif difference == "backward":
-                differences_xy = np.diff(xy.xy, axis=0, prepend=0)
+                differences_xy = np.diff(xy.xy, axis=0, prepend=xy.xy[0].reshape(1, -1))
             else:
                 raise ValueError(
                     f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
@@ -97,9 +97,19 @@ covered`
                 differences_xy[:, 1::2],
             )
         elif axis == "x":
-            distance_euclidean = np.gradient(xy.x, axis=0)
+            if difference == "central":
+                distance_euclidean = np.gradient(xy.x, axis=0)
+            elif difference == "backward":
+                distance_euclidean = np.diff(
+                    xy.x, axis=0, prepend=xy.x[0].reshape(1, -1)
+                )
         elif axis == "y":
-            distance_euclidean = np.gradient(xy.y, axis=0)
+            if difference == "central":
+                distance_euclidean = np.gradient(xy.y, axis=0)
+            if difference == "backward":
+                distance_euclidean = np.diff(
+                    xy.y, axis=0, prepend=xy.y[0].reshape(1, -1)
+                )
         else:
             raise ValueError(
                 f"Expected axis to be one of (None, 'x', 'y'), got {axis}."
@@ -327,7 +337,12 @@ class AccelerationModel(BaseModel):
             acceleration = np.gradient(velocity.property, axis=0) * velocity.framerate
         else:
             acceleration = (
-                np.diff(velocity.property, axis=0, append=0) * velocity.framerate
+                np.diff(
+                    velocity.property,
+                    axis=0,
+                    append=velocity.property[0].reshape(1, -1),
+                )
+                * velocity.framerate
             )
 
         self._acceleration_ = PlayerProperty(
