@@ -340,7 +340,7 @@ class AccelerationModel(BaseModel):
                 np.diff(
                     velocity.property,
                     axis=0,
-                    append=velocity.property[0].reshape(1, -1),
+                    prepend=velocity.property[0].reshape(1, -1),
                 )
                 * velocity.framerate
             )
