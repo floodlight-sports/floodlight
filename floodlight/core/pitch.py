@@ -75,8 +75,8 @@ class Pitch:
         ----------
         template_name: str
             The name of the template the pitch should follow. Currently supported are
-            {'dfl', 'eigd', 'opta', 'statsbomb', 'secondspectrum', 'statsperform',
-            'statsperform_open', 'tracab'}.
+            {'dfl', 'eigd', 'opta', 'statsbomb', 'secondspectrum', 'statsperform_event',
+            'statsperform_tracking', 'statsperform_open', 'tracab'}.
         kwargs:
             You may pass optional arguments (`length`, `width`, `sport`) used for class
             instantiation. For some data providers, additional kwargs are needed to
@@ -152,19 +152,34 @@ class Pitch:
                 width=kwargs.get("width"),
                 sport=kwargs.get("sport"),
             )
-        elif template_name == "statsperform":
+        elif template_name == "statsperform_event":
             if "length" not in kwargs or "width" not in kwargs:
                 raise TypeError(
                     "For an exact StatsPerform Pitch object, "
                     "`length` and `width` of the pitch need "
                     "to be passed as keyworded arguments"
                 )
-            x_half = round(kwargs["length"] / 2, 3)
-            y_half = round(kwargs["width"] / 2, 3)
+            x_half = round((kwargs["length"] * 100) / 2, 3)
+            y_half = round((kwargs["width"] * 100) / 2, 3)
             return cls(
                 xlim=(-x_half, x_half),
                 ylim=(-y_half, y_half),
                 unit="cm",
+                boundaries="flexible",
+                length=kwargs.get("length"),
+                width=kwargs.get("width"),
+            )
+        elif template_name == "statsperform_tracking":
+            if "length" not in kwargs or "width" not in kwargs:
+                raise TypeError(
+                    "For an exact StatsPerform Pitch object, "
+                    "`length` and `width` of the pitch need "
+                    "to be passed as keyworded arguments"
+                )
+            return cls(
+                xlim=(0, kwargs["length"]),
+                ylim=(0, kwargs["width"]),
+                unit="m",
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),

@@ -47,16 +47,30 @@ def test_template_statsperform_open() -> None:
 
 
 @pytest.mark.unit
-def test_template_statsperform() -> None:
+def test_template_statsperform_event() -> None:
     # Arrange
-    pitch = Pitch.from_template("statsperform", length=11000, width=6800)
+    pitch = Pitch.from_template("statsperform_event", length=110, width=68)
 
     # Assert
     with pytest.raises(TypeError):
-        Pitch.from_template("statsperform")
+        Pitch.from_template("statsperform_event")
     assert pitch.xlim == (-5500, 5500)
     assert pitch.ylim == (-3400, 3400)
     assert pitch.unit == "cm"
+    assert pitch.boundaries == "flexible"
+
+
+@pytest.mark.unit
+def test_template_statsperform_tracking() -> None:
+    # Arrange
+    pitch = Pitch.from_template("statsperform_tracking", length=110, width=68)
+
+    # Assert
+    with pytest.raises(TypeError):
+        Pitch.from_template("statsperform_tracking")
+    assert pitch.xlim == (0, 110)
+    assert pitch.ylim == (0, 68)
+    assert pitch.unit == "m"
     assert pitch.boundaries == "flexible"
 
 
