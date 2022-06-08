@@ -378,6 +378,7 @@ def read_event_data_xml(
     # find start of halves
     start_times = {}
     start_events = root.findall("Event/KickoffWhistle")
+    # look at different encodings as the data format changed over time
     if not bool(start_events):  # if no KickoffWhistle is in data search for Kickoff
         start_events = root.findall("Event/Kickoff")
     if not bool(start_events):  # if no Kickoff is in data search for KickOff
