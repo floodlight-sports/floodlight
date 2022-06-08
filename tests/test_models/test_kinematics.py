@@ -168,7 +168,7 @@ def test_acceleration_model_difference_backward(example_xy_object_kinematics) ->
     # Assert
     assert np.array_equal(
         np.round(acceleration, 3),
-        np.array(((400, np.NaN), (165.685, np.NaN), (-565.685, np.NaN))),
+        np.array(((0, 0), (400, np.NaN), (165.685, np.NaN))),
         equal_nan=True,
     )
 
