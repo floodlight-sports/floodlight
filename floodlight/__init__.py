@@ -2,8 +2,19 @@ from .core.code import Code
 from .core.events import Events
 from .core.pitch import Pitch
 from .core.xy import XY
+from .core.property import DyadicProperty, PlayerProperty, TeamProperty
 
-__all__ = ["__version__", "__doc__", "Code", "Events", "Pitch", "XY"]
+__all__ = [
+    "__version__",
+    "__doc__",
+    "Code",
+    "DyadicProperty",
+    "Events",
+    "Pitch",
+    "PlayerProperty",
+    "TeamProperty",
+    "XY",
+]
 
 __version__ = "0.3.1"
 
