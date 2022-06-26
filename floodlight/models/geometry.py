@@ -1,11 +1,14 @@
 import warnings
 
+import numpy
 import numpy as np
 from scipy.spatial.distance import cdist
+from scipy.spatial import ConvexHull
 
 from floodlight import XY
 from floodlight.core.property import TeamProperty, PlayerProperty
 from floodlight.models.base import BaseModel, requires_fit
+from floodlight.models.utils import _exclude_x_ids
 
 
 class CentroidModel(BaseModel):
@@ -75,21 +78,8 @@ class CentroidModel(BaseModel):
             A list of xIDs to be excluded from computation. This can be useful if one
             would like, for example, to exclude goalkeepers from analysis.
         """
-        if not exclude_xIDs:
-            exclude_xIDs = []
-        # boolean for column inclusion, initialize to True for all columns
-        include = np.full((xy.N * 2), True)
-
-        # exclude columns according to exclude_xIDs
-        for xID in exclude_xIDs:
-            if xID not in range(0, xy.N):
-                raise ValueError(
-                    f"Expected entries of exclude_xIDs to be in range 0 to {xy.N}, "
-                    f"got {xID}."
-                )
-            exclude_start = xID * 2
-            exclude_end = exclude_start + 2
-            include[exclude_start:exclude_end] = False
+        # array to indicate which players are to be excluded from the calculation
+        include = _exclude_x_ids(xy, exclude_xIDs)
 
         with warnings.catch_warnings():
             # supress warnings caused by empty slices
@@ -209,3 +199,39 @@ class CentroidModel(BaseModel):
         )
 
         return stretch_index
+
+
+class ConvexHullModel(BaseModel):
+    """Class for convex hull calculation."""
+
+    def __init__(self):
+        super().__init__()
+        # model parameter
+        self._convex_hulls_ = None
+
+    def fit(self, xy: XY, exclude_xIDs: list = None):
+        """Fit the model to the given data and create ConvexHull objects from
+            scipy for each frame.
+
+        Parameters
+        ----------
+        xy: XY
+            Player spatiotemporal data for which the convex hull is calculated.
+        exclude_xIDs: list, optional
+            A list of xIDs to be excluded from computation. This can be useful if one
+            would like, for example, to exclude goalkeepers from analysis.
+        """
+
+        # array to indicate which players are to be excluded from the calculation
+        include = _exclude_x_ids(xy, exclude_xIDs)
+
+        # check for NaN's in xy since ConvexHull from scipy can not handle NaN values
+        if np.isnan(xy[:, include]).any():
+            raise ValueError("xy array contains NaN")
+
+        _convex_hulls_ = np.full((len(xy), 1), np.nan)
+
+        for t in range(len(xy)):
+            _convex_hulls_[t] = ConvexHull(xy.frame(t)[:, include].reshape(-1, 2))
+
+        self._convex_hulls_ = _convex_hulls_
