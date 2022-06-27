@@ -25,6 +25,20 @@ def example_xy_object_geometry():
     return xy
 
 
+@pytest.fixture()
+def example_xy_object_geometry_convex_hull():
+    xy = XY(
+        np.array(
+            [
+                [0, 0, 10, 0, 10, 10, 0, 10, 5, 5],
+                [0, 0, 10, 0, 5, 10, 2, 2, 3, 3],
+                [0, 5, 5, 10, 10, 5, 5, 0, 5, 5],
+            ]
+        )
+    )
+    return xy
+
+
 # sample data for testing kinematic models
 @pytest.fixture()
 def example_xy_object_kinematics():
