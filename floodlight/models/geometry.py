@@ -202,24 +202,80 @@ class CentroidModel(BaseModel):
 
 
 class ConvexHullModel(BaseModel):
-    """Class for convex hull calculation."""
+    """Class for convex hull calculation.
+
+    Upon calling the :func:`~ConvexHullModel.fit`-method, this model creates a
+    ConvexHull object of the team for every frame.
+
+    Notes
+    -----
+    The convex hull is computed using the
+    `ConvexHull class
+    <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.ConvexHull.
+    html>`_ from scipy.spatial and can be understood as the minimal convex area
+    containing all outfield players [reference].
+
+    The convex hull is also known in the literature under the terms ‘surface area’,
+    ‘coverage area’ and ‘playing area’ [1].
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from floodlight import XY
+    >>> from floodlight.models.geometry import ConvexHullModel
+
+    >>> xy = XY(np.array(   [0, 0, 10, 0, 10, 10, 0, 10, 5, 5], # square (10x10)
+    >>>                     [0, 0, 10, 0, 5, 10, 2, 2, 3, 3],   # triangle ((1/2)x10x10)
+    >>>                     [0, 5, 5, 10, 10, 5, 5, 0, 5, 5]))  # rhombus (5x10)
+    >>> exclude_xIDs = [4]
+    >>> chull = ConvexHullModel()
+    >>> chull.fit(xy=xy, exclude_xIDs=exclude_xIDs)
+    >>> chull.area_convex_hull()
+    TeamProperty(property=array([100, 50, 50]), name='area_convex_hull', framerate=None)
+
+    The area enclosed by the convex hull can be visualised using matplotlib as follows:
+
+    >>> import matplotlib.pyplot as plt
+    >>> c_hulls=[]
+    >>> c_hulls = chull.convex_hulls
+    >>> plt.plot(c_hulls[0].points[:, 0], c_hulls[0].points[:, 1], 'o')
+    >>> for simplex in c_hulls[0].simplices:
+    >>>     plt.plot(c_hulls[0].points[simplex, 0], c_hulls[0].points[simplex, 1], 'k-')
+    >>> plt.show()
+
+    .. image:: ../../_img/convex_hull.png
+
+    References
+    ----------
+        .. [1] `Low, B., Coutinho, D., Gonçalves, B., Rein, R., Memmert, D., & Sampaio,
+            J. (2020). A Systematic Review of Collective Tactical Behaviours in Football
+            Using Positional Data. Sports Medicine, 50(2), 343–385.
+            <https://link.springer.com/article/10.1007/s40279-019-01194-7>`_
+    """
 
     def __init__(self):
         super().__init__()
         # model parameter
-        self._convex_hulls_ = None
+        self.convex_hulls = None
 
-    def fit(self, xy: XY, exclude_xIDs: list = None):
-        """Fit the model to the given data and create ConvexHull objects from
-            scipy for each frame.
+    def fit(self, xy: XY, exclude_xIDs: list = None, **kwargs):
+        """
+        Fit the model to the given data and create ConvexHull objects from scipy.spatial
+        for each frame.
 
         Parameters
         ----------
         xy: XY
-            Player spatiotemporal data for which the convex hull is calculated.
+            Player spatiotemporal data for which the ConvexHull object is created.
         exclude_xIDs: list, optional
             A list of xIDs to be excluded from computation. This can be useful if one
             would like, for example, to exclude goalkeepers from analysis.
+        kwargs:
+            Optional keyworded arguments e.g. {'incremental: bool = False',
+            'qhull_options: str' = None} which are passed to the ConvexHull objects
+            (`scipy.spatial.ConvexHull
+            <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.ConvexHull.
+            html>`_).
         """
 
         # array to indicate which players are to be excluded from the calculation
@@ -229,9 +285,35 @@ class ConvexHullModel(BaseModel):
         if np.isnan(xy[:, include]).any():
             raise ValueError("xy array contains NaN")
 
-        _convex_hulls_ = np.full((len(xy), 1), np.nan)
+        convex_hulls = list(range(len(xy)))
 
+        # create and add ConvexHull objects to list
         for t in range(len(xy)):
-            _convex_hulls_[t] = ConvexHull(xy.frame(t)[:, include].reshape(-1, 2))
+            convex_hulls[t] = ConvexHull(xy.frame(t)[include].reshape(-1, 2), **kwargs)
 
-        self._convex_hulls_ = _convex_hulls_
+        self.convex_hulls = convex_hulls
+
+    @requires_fit
+    def area_convex_hull(self) -> TeamProperty:
+        """Calculates the area enclosed by the convex hull.
+
+        Returns
+        -------
+        area_convex_hulls: TeamProperty
+            A TeamProperty object of shape (T, 1), where T is the total number of
+            frames. Each entry contains the area enclosed by the convex hull of that
+            particular frame.
+        """
+        # List of the areas of the convex hulls for each image
+        areas = np.full((len(self.convex_hulls), 1), np.nan)
+
+        # add area of the convex hull for every frame to list
+        for i, c_hull in enumerate(self.convex_hulls):
+            areas[i] = c_hull.volume  # for 2D area = volume
+
+        # generate TeamProperty object and add calculated areas as property
+        area_convex_hulls = TeamProperty(
+            property=np.concatenate(areas), name="area_convex_hull"
+        )
+
+        return area_convex_hulls
