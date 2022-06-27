@@ -4,7 +4,7 @@ from floodlight import XY
 
 
 def _exclude_x_ids(xy: XY, xIDs_to_exclude: list) -> np.ndarray:
-    """Returns an array of booleans to denote which xIDs should be excluded.
+    """Returns an array of boolean values indicating which xIDs to exclude.
 
     Parameters
     ----------
@@ -20,7 +20,7 @@ def _exclude_x_ids(xy: XY, xIDs_to_exclude: list) -> np.ndarray:
         False.
     """
 
-    # boolean for column inclusion, initialize to True for all columns
+    # boolean for column inclusion, initialized to True for all columns
     include = np.full((xy.N * 2), True)
 
     # exclude columns according to xIDs_to_exclude
