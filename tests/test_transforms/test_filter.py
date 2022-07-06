@@ -16,8 +16,8 @@ def test_get_sequences(example_sequence: np.ndarray) -> None:
     # Assert
     assert np.all(
         (
-            np.array_equal(seq_filt, np.array([[2, 4], [6, 8]])),
-            np.array_equal(seq_short, np.array([[9, 10]])),
+            np.array_equal(seq_filt, np.array([[2, 5]])),
+            np.array_equal(seq_short, np.array([[7, 9], [10, 11]])),
         )
     )
 
