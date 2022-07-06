@@ -6,7 +6,7 @@ from floodlight import XY
 @pytest.fixture()
 def example_sequence():
     seq = np.array(
-        [np.NaN, np.NaN, -5.07, -2.7, np.NaN, np.NaN, 1.53, 27.13, None, 30.06]
+        [np.NaN, np.NaN, -5.07, -2.7, -3, np.NaN, np.NaN, 1.53, 27.13, None, 30.06]
     )
     return seq
 
