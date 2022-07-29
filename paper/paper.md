@@ -48,6 +48,22 @@ The increase of available data has had a positive impact on the entire sports do
 
 The *floodlight* Python package provides a framework to support and automate team sport data analysis. *floodlight* is constructed to process spatiotemporal tracking data, event data, and other game meta-information to support scientific performance analyses. *floodlight* was designed to provide a general yet flexible approach to performance analysis, while simultaneously providing a user-friendly high-level interface for users with basic programming skills. The package includes routines for most aspects of the data analysis process, including dedicated data classes, file parsing functionality, public dataset APIs, pre-processing routines, common data models and several standard analysis algorithms previously used in the literature, as well as basic visualization functionality.
 
+The following features are implemented:
+
+**Data-level Objects**: ``XY`` (tracking data), ``Events`` (event data), ``Code`` (meta information), ``Pitch`` (pitch layout), ``PlayerProperty`` (player information per frame), ``TeamProperty`` (team information per frame),``DyadicProperty`` (player interaction information per frame).
+
+**Data parser**: For files from ChyronHego (tracking data, codes), DFL (tracking data, codes), Kinexon (tracking data), Opta (event data), Second Spectrum (tracking data), StatsPerform (tracking data, event data) StatsBomb (event data).
+
+**Datasets**: EIGD-H, StatsBomb OpenData
+
+**Processing**: Spatial transforms (tracking and event data), Butterworth and Savitzky-Golay lowpass filter (tracking data), data slicing (all temporal objects), selection and sequencing (event data, codes).
+
+**Visualization**: Pitches (football and handball), player positions, player trajectories.
+
+**Data models**: Distances, distance covered, velocities, accelerations, centroids, centroid distances, stretch index, metabolic power, equivalent distance, approximate entropy.
+
+**Documentation**: Module reference, extended contributing guide, team sports data analysis compendium, tutorials (getting started, analyzing data, preparing match sheets).
+
 Central to the package is a set of generalized, provider- and sports-independent core data structures based on *numpy* [@Harris2020] and *pandas* [@McKinney2010]. Each of these data structures are dedicated to one specific type of sports data, including spatiotemporal tracking data, event data, game codes (meta information such as ball possession information), pitch information regarding the embedding of data and playing surfaces into Cartesian coordinate systems, as well as team and player properties (such as frame-wise velocity or acceleration values). The data structures are designed with a focus on scientific computing, i.e., optimized for accessible and intuitive data manipulations as well as sensitive to performance by utilizing *numpy*'s view-, vectorization- and indexing techniques.
 
 ![Positions of football players (left) and trajectories of handball players (right) from real-world match data as visualized with *floodlight*.\label{fig:sample}](plotting_sample.png)
