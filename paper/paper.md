@@ -50,7 +50,8 @@ The *floodlight* Python package provides a framework to support and automate tea
 
 ![Positions of football players (left) and trajectories of handball players (right) from real-world match data as visualized with *floodlight*.\label{fig:sample}](plotting_sample.png)
 
-The following features are implemented:
+
+# Features
 
 **Data-level Objects**: ``XY`` (tracking data), ``Events`` (event data), ``Code`` (meta information), ``Pitch`` (pitch layout), ``PlayerProperty`` (player information per frame), ``TeamProperty`` (team information per frame),``DyadicProperty`` (player interaction information per frame).
 
