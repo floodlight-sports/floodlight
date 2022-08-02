@@ -53,17 +53,17 @@ The *floodlight* Python package provides a framework to support and automate tea
 
 # Features
 
-**Data-level Objects**: ``XY`` (tracking data), ``Events`` (event data), ``Code`` (meta information), ``Pitch`` (pitch layout), ``PlayerProperty`` (player information per frame), ``TeamProperty`` (team information per frame),``DyadicProperty`` (player interaction information per frame).
+**Data-level objects**: ``XY`` (tracking data), ``Events`` (event data), ``Code`` (meta information), ``Pitch`` (pitch layout), ``PlayerProperty`` (player information per frame), ``TeamProperty`` (team information per frame), ``DyadicProperty`` (player interaction information per frame).
 
-**Data parser**: For files from ChyronHego (tracking data, codes), DFL (tracking data, codes), Kinexon (tracking data), Opta (event data), Second Spectrum (tracking data), StatsPerform (tracking data, event data) StatsBomb (event data).
+**Data parser**: For provider raw data files from ChyronHego (tracking data, codes), DFL (tracking data, codes), Kinexon (tracking data), Opta (event data), Second Spectrum (tracking data), StatsPerform (tracking data, event data) StatsBomb (event data).
 
-**Datasets**: EIGD-H, StatsBomb OpenData
+**Datasets**: EIGD-H, StatsBomb OpenData.
 
 **Processing**: Spatial transforms (tracking and event data), Butterworth and Savitzky-Golay lowpass filter (tracking data), data slicing (all temporal objects), selection and sequencing (event data, codes).
 
 **Visualization**: Pitches (football and handball), player positions, player trajectories.
 
-**Data models**: Distances, distance covered, velocities, accelerations, centroids, centroid distances, stretch index, metabolic power, equivalent distance, approximate entropy.
+**Data models**: Distances, distances covered, velocities, accelerations, centroids, centroid distances, stretch index, metabolic power, equivalent distances, approximate entropy.
 
 **Documentation**: Module reference, extended contributing guide, team sports data analysis compendium, tutorials (getting started, analyzing data, preparing match sheets).
 
