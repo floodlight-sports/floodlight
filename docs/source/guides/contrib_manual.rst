@@ -35,7 +35,8 @@ Developing
 
 Let's start and install our repository in *dev*-mode for developing. This installation differs from *production*-mode. The latter describes the ready-to-use version of the package as you would install it e.g. from PyPI. *Dev*-mode, on the contrary, refers to the direct copy of the repository as you would find it on GitHub, including tools used for developing, testing, quality assurance and all (public) branches where new features are developed.
 
-This mode has more dependencies which change regularly as we develop the next release, i.e., a snapshot of a publishable version of the code. Dependency management (and packaging) used to be inconvenient in Python, yet it is important that every contributor works on the same environment when collaborating on code. Luckily, there's a tool called *poetry* which simplifies this a lot. Thus, the first step is to install poetry!
+This mode has more dependencies which change regularly as we develop the next release, i.e., a snapshot of a publishable version of the code. Dependency management (and packaging) used to be inconvenient in Python, yet it is important that every contributor works on the same environment when collaborating on code. Luckily, there's a tool called *poetry* which simplifies this a lot. *poetry* works with the static ``pyproject.toml`` file containing project metadata, and replaces the usage of ``setup.py`` files. Thus, the first step is to install poetry!
+
 
 Poetry requires a system-wide installation that's different on Windows and MacOS. The full installation instructions can be found on `the official page <https://python-poetry.org/docs/master/#installation>`_. The quick four-step-version goes:
 
