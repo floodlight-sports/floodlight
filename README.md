@@ -15,6 +15,8 @@
 [contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
 [arxiv-image]: https://img.shields.io/badge/arXiv-2206.02562-b31b1b.svg
 [arxiv-url]: https://arxiv.org/abs/2206.02562
+[codecov-image]: https://codecov.io/gh/floodlight-sports/floodlight/branch/develop/graph/badge.svg?token=RLY582UBC6
+[codecov-url]: https://codecov.io/gh/floodlight-sports/floodlight
 
 
 # floodlight
@@ -23,6 +25,7 @@
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
+[![Codecov][codecov-image]][codecov-url]
 [![Code style: black][black-image]][black-url]
 [![arXiv][arxiv-image]][arxiv-url]
 
