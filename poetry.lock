@@ -172,6 +172,9 @@ category = "dev"
 optional = false
 python-versions = ">=3.7"
 
+[package.dependencies]
+tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.11.0a6\" and extra == \"toml\""}
+
 [package.extras]
 toml = ["tomli"]
 
@@ -597,6 +600,21 @@ toml = "*"
 testing = ["xmlschema", "requests", "nose", "mock", "hypothesis (>=3.56)", "argcomplete"]
 
 [[package]]
+name = "pytest-cov"
+version = "3.0.0"
+description = "Pytest plugin for measuring coverage."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+coverage = {version = ">=5.2.1", extras = ["toml"]}
+pytest = ">=4.6"
+
+[package.extras]
+testing = ["virtualenv", "pytest-xdist", "six", "process-tests", "hunter", "fields"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -921,7 +939,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8, <3.11"
-content-hash = "be73388705207583baad88b52d6d45e464cbf626729940003b0046b22809fb09"
+content-hash = "f60b12c4af007324d5faea423e91f8317d9ab1fedcc6465fe1e5fe46eb8306b4"
 
 [metadata.files]
 alabaster = []
@@ -978,6 +996,7 @@ pyflakes = []
 pygments = []
 pyparsing = []
 pytest = []
+pytest-cov = []
 python-dateutil = []
 pytz = []
 pyyaml = []
