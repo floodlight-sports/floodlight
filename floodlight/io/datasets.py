@@ -326,7 +326,7 @@ class StatsBombOpenDataset:
     The UEFA Euro data contains 51 matches where StatsBomb360 data is available.
     As the data is constantly updated, we provide an overview over the stats here but
     refer to the official repository for up-to-date information (last
-    modified 12.05.2022)::
+    checked 20.08.2022)::
 
         number_of_matches = {
             "Champions League": {
