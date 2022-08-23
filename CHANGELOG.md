@@ -1,20 +1,32 @@
 # Changelog
 
-## 0.3.2 (2022-06-08)
+## 0.3.3 (2022-08-23)
 
 #### Fixes
 
+* UTF-8 encoding Kinexon parser
+* UFT-8 encoding Kinexon parser
+* minimum signal length ([#81](https://github.com/floodlight-sports/floodlight/issues/81))
 * statsperform pitch templates ([#75](https://github.com/floodlight-sports/floodlight/issues/75))
 * adapt dfl parser to different format versions and fix statsperform gameclock unit ([#76](https://github.com/floodlight-sports/floodlight/issues/76))
 * pass difference argument to axis-specific differentiation and fix prepend ([#77](https://github.com/floodlight-sports/floodlight/issues/77))
 #### Docs
 
+* add information on setup.py
+* update datasets description
+* update readme
+* update changelog
 * add paper reference
 #### Others
 
+* add dependency pytest-cov
+* add dependency coverage
+* bump version
+* add coverage reports generation and codecov upload
+* update readme
 * update module init
 
-Full set of changes: [`0.3.1...0.3.2`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.3.2)
+Full set of changes: [`0.3.1...0.3.3`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.3.3)
 
 ## 0.3.1 (2022-06-06)
 
