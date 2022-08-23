@@ -58,10 +58,10 @@ def _get_filterable_and_short_sequences(
     non_nan_sequences = sequences[seq_is_nan == 1]
     # split remaining sequences into filterable and short
     filterable_sequences = non_nan_sequences[
-        (non_nan_sequences[:, 1] - non_nan_sequences[:, 0]) >= min_signal_len
+        (non_nan_sequences[:, 1] - non_nan_sequences[:, 0]) > min_signal_len
     ]
     short_sequences = non_nan_sequences[
-        (non_nan_sequences[:, 1] - non_nan_sequences[:, 0]) < min_signal_len
+        (non_nan_sequences[:, 1] - non_nan_sequences[:, 0]) <= min_signal_len
     ]
 
     return filterable_sequences, short_sequences

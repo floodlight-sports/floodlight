@@ -11,7 +11,7 @@ If all or some of this is new to you, and you would prefer a detailed step-by-st
 Development
 -----------
 
-We use *poetry* for development and dependency management, so setting up your local dev environment is rather straightforward:
+We use *poetry* for development and dependency management, which is based on the static `pyproject.toml` file and replaces `setup.py`. With *poetry*, setting up your local dev environment is rather straightforward:
 
 1. Fork and Clone this repository
 2. Install poetry if you have not done so yet

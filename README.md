@@ -4,6 +4,7 @@
 [python-url]: https://pypi.org/project/floodlight/
 [docs-image]: https://readthedocs.org/projects/floodlight/badge/?version=latest
 [docs-url]: https://floodlight.readthedocs.io/en/latest/?badge=latest
+[tutorial-url]: https://floodlight.readthedocs.io/en/latest/guides/getting_started.html
 [build-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml/badge.svg
 [build-url]: https://github.com/floodlight-sports/floodlight/actions/workflows/build.yaml
 [lint-image]: https://github.com/floodlight-sports/floodlight/actions/workflows/linting.yaml/badge.svg
@@ -14,6 +15,8 @@
 [contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
 [arxiv-image]: https://img.shields.io/badge/arXiv-2206.02562-b31b1b.svg
 [arxiv-url]: https://arxiv.org/abs/2206.02562
+[codecov-image]: https://codecov.io/gh/floodlight-sports/floodlight/branch/develop/graph/badge.svg?token=RLY582UBC6
+[codecov-url]: https://codecov.io/gh/floodlight-sports/floodlight
 
 
 # floodlight
@@ -22,6 +25,7 @@
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
+[![Codecov][codecov-image]][codecov-url]
 [![Code style: black][black-image]][black-url]
 [![arXiv][arxiv-image]][arxiv-url]
 
@@ -43,12 +47,43 @@ about data wrangling and start focussing on the analysis instead!
 
 ----------------------------------------------------------------------------------------
 
+* [Quick Demo](#quick-demo)
 * [Features](#features)
 * [Installation](#installation)
 * [Documentation](#documentation)
 * [How to contribute](#contributing)
 
 ----------------------------------------------------------------------------------------
+
+### Quick Demo
+
+**floodlight** simplifies sports data loading, processing and advanced performance
+analyses. Check out the example below, where querying a public data sample, filtering
+the data and computing the expended metabolic work of the active home team players is
+done in a few lines of code:
+
+```
+>>> from floodlight.io.datasets import EIGDDataset
+>>> from floodlight.transforms.filter import butterworth_lowpass
+>>> from floodlight.models.kinetics import MetabolicPowerModel
+
+>>> dataset = EIGDDataset()
+>>> home_team_data, away_team_data, ball_data = dataset.get()
+
+>>> home_team_data = butterworth_lowpass(home_team_data)
+
+>>> model = MetabolicPowerModel()
+>>> model.fit(home_team_data)
+>>> metabolic_power = model.cumulative_metabolic_power()
+
+>>> print(metabolic_power[-1, 0:7])
+
+[1669.18781115 1536.22481121 1461.03243489 1488.61249785  773.09264071
+ 1645.01702421  746.94057676]
+```
+
+To find out more, see the full set of features below or get started quickly with
+[one of our many tutorials][tutorial-url] from the official documentation!
 
 
 ### Features
