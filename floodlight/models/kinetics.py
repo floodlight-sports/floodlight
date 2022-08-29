@@ -476,9 +476,9 @@ equivalent_distance`
             frames and N is the number of players. The columns contain the cumulative
             metabolic power calculated by numpy.nancumsum() over axis=0.
         """
-        cum_metp = (
-            np.nancumsum(self._metabolic_power_.property, axis=0)
-            / self._metabolic_power_.framerate
+        cum_metp = np.divide(
+            np.nancumsum(self._metabolic_power_.property, axis=0),
+            self._metabolic_power_.framerate
         )
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
@@ -535,9 +535,9 @@ equivalent_distance`
             frames and N is the number of players. The columns contain the cumulative
             equivalent distance calculated by numpy.nancumsum() over axis=0.
         """
-        cum_metp = (
-            np.nancumsum(self._metabolic_power_.property, axis=0)
-            / self._metabolic_power_.framerate
+        cum_metp = np.divide(
+            np.nancumsum(self._metabolic_power_.property, axis=0),
+            self._metabolic_power_.framerate
         )
         cum_eqdist = cum_metp / eccr
 
