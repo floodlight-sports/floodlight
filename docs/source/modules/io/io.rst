@@ -67,6 +67,7 @@ Collection of file parsing functionalities for different data providers as well 
    :nosignatures:
 
    read_secspec_files
+   read_secspec_insight
    create_links_from_metajson
 
 .. rubric:: StatsBomb
