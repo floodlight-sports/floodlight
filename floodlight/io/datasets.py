@@ -375,12 +375,16 @@ class StatsBombOpenDataset:
     # extract every La Liga Clásico played in Camp Nou by Lionel Messi
     >>> clasicos = matches[matches["match_name"] == "Barcelona vs. Real Madrid"]
     # print outcomes
-    >>> for _, match in clasicos.iterrows():
-    >>>     print(f"Season {match['season_name']} - Barcelona {match['score']} Real'")
+    >>> for i in clasicos.index:
+    >>>     print(f"Season {clasicos.at[i, 'season_name']}"
+    >>>           f"- Barcelona {clasicos.at[i, 'score']} Real'")
     # read events to list
     >>> clasico_events = []
-    >>> for _, clasico in clasicos.iterrows():
-    >>>     data = dataset.get("La Liga", clasico["season_name"], clasico["match_name"])
+    >>> for i in clasicos.index:
+    >>>     data = dataset.get("La Liga",
+    >>>                        clasicos.at[i, "season_name"],
+    >>>                        clasicos.at[i, "match_name"]
+    >>>                        )
     >>>     clasico_events.append(data)
     """
 
@@ -449,7 +453,7 @@ class StatsBombOpenDataset:
             ``sex`` of the players (female or male), the ``StatsBomb360_status``  and
             the final ``score``.
         """
-        summary = pd.DataFrame()
+        summary = []
 
         # loop over season and competition
         for competition in self._links_competition_to_cID:
@@ -485,8 +489,8 @@ class StatsBombOpenDataset:
                         "sID": sID,
                         "mID": info["match_id"],
                     }
-                    summary = summary.append(match_info, ignore_index=True)
-        return summary
+                    summary.append(match_info)
+        return pd.DataFrame.from_records(summary)
 
     def get(
         self,
@@ -614,13 +618,13 @@ class StatsBombOpenDataset:
         self._links_match_to_mID.update({competition_name: {}})
 
         # loop over all available seasons of the given competition
-        for _, single_season in competition_info.iterrows():
-            if cID != single_season["competition_id"]:
+        for i in competition_info.index:
+            if cID != competition_info.at[i, "competition_id"]:
                 continue
 
             # update season and match dictionaries with season information
-            sID = single_season["season_id"]
-            season_name = single_season["season_name"]
+            sID = competition_info.at[i, "season_id"]
+            season_name = competition_info.at[i, "season_name"]
             self._links_season_to_sID[competition_name].update({season_name: sID})
             self._links_match_to_mID[competition_name].update({season_name: {}})
 
@@ -669,9 +673,9 @@ class StatsBombOpenDataset:
         """
         competition_info = pd.read_json(self.filepath_competitions)
 
-        for _, single_season in competition_info.iterrows():
-            cID = single_season["competition_id"]
-            sID = single_season["season_id"]
+        for i in competition_info.index:
+            cID = competition_info.at[i, "competition_id"]
+            sID = competition_info.at[i, "season_id"]
             matches_filepath = os.path.join(
                 os.path.join(self._matches_data_dir, str(cID)),
                 str(sID) + self._STATSBOMB_FILE_EXT,
