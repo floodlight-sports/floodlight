@@ -159,7 +159,7 @@ Now we can use the predefined functions to create a plot of a single goal (e.g. 
 
     fig, ax = plt.subplots()
     scoring_team, scoring_player, xG = get_goal_info(goal)
-    ax[i, j].set_title(
+    ax.set_title(
         f"Goal for {scoring_team} by {str(scoring_player)} "
         f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
         fontdict={'size': 9}
@@ -168,7 +168,7 @@ Now we can use the predefined functions to create a plot of a single goal (e.g. 
     xy_ball, xy_off, xy_def = get_xy_data(goal)
     xy_off.plot(t=0, ax=ax, color="red")
     xy_def.plot(t=0, ax=ax, color="white")
-    xy_ball.plot(t=(0, 2), plot_type="trajectories", color="cyan", ball=True, ax=ax)
+    xy_ball.plot(t=(0, 2), plot_type="trajectories", color="magenta", ball=True, ax=ax)
 
 .. image:: ../_img/tutorial_matchsheets_singlegoal.png
 
@@ -211,7 +211,7 @@ Now we create the match sheet by iterating over all goals and updating the respe
         else:  # score by Spain
             conceding_team = "Croatia"
             away_score += 1
-        ax[i, j].set_title(
+        ax[row, col].set_title(
             f"{home_score}:{away_score} for {str(scoring_team)} by {str(scoring_player)} "
             f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
             fontdict={'size': 10}
@@ -228,9 +228,9 @@ Now we create the match sheet by iterating over all goals and updating the respe
             xy_ball.rotate(180)
             xy_ball.translate((pitch.xlim[1], pitch.ylim[1]))
         # plot pitch and position data
-        pitch.plot(ax=ax[i, j])
-        xy_off.plot(t=0, ax=ax[i, j], color=colors[scoring_team])
-        xy_def.plot(t=0, ax=ax[i, j], color=colors[conceding_team])
+        pitch.plot(ax=ax[row, col])
+        xy_off.plot(t=0, ax=ax[row, col], color=colors[scoring_team])
+        xy_def.plot(t=0, ax=ax[row, col], color=colors[conceding_team])
         xy_ball.plot(
             t=(0, 2), plot_type="trajectories", color="cyan", ball=True, ax=ax[i, j]
         )
