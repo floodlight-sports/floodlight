@@ -493,19 +493,19 @@ class Events:
                 f"Expected fade to be a positive integer or None, got {fade} instead."
             )
 
-        sorted_events = self.events.sort_values("frameclock")
-        start = int(np.round(np.nanmin(sorted_events["frameclock"].values)))
-        end = int(np.round(np.nanmax(sorted_events["frameclock"].values))) + 1
+        tmp_events = self.events.sort_values("frameclock")
+        start = int(np.round(np.nanmin(tmp_events["frameclock"].values)))
+        end = int(np.round(np.nanmax(tmp_events["frameclock"].values))) + 1
 
         code = np.full((end - start,), np.nan, dtype=object)
-        for _, event in sorted_events.iterrows():
-            if pd.isna(event["frameclock"]):
+        for i in tmp_events.index:
+            if pd.isna(tmp_events.at[i, "frameclock"]):
                 continue
-            frame = int(np.round(event["frameclock"]))
+            frame = int(np.round(tmp_events.at[i, "frameclock"]))
             if fade is None:
-                code[frame - start :] = event["eID"]
+                code[frame - start :] = tmp_events.at[i, "eID"]
             else:
-                code[frame - start : frame - start + fade + 1] = event["eID"]
+                code[frame - start : frame - start + fade + 1] = tmp_events.at[i, "eID"]
 
         event_stream = Code(
             code=code,
