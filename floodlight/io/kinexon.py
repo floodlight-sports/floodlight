@@ -21,7 +21,7 @@ def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
         List with every column name of the .csv-file.
     """
 
-    with open(filepath_data) as f:
+    with open(str(filepath_data), encoding="utf-8") as f:
         columns = f.readline().split(",")
 
     return columns
@@ -199,7 +199,7 @@ def get_meta_data(
         warnings.warn("Since no group exist in data, dummy group '0' is created!")
 
     # loop
-    with open(str(filepath_data), "r") as f:
+    with open(str(filepath_data), "r", encoding="utf-8") as f:
         # skip the header of the file
         _ = f.readline()
         while True:
@@ -383,7 +383,7 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
         )
 
     # loop
-    with open(str(filepath_data), "r") as f:
+    with open(str(filepath_data), "r", encoding="utf-8") as f:
         # skip the header of the file
         _ = f.readline()
         while True:

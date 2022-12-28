@@ -6,7 +6,7 @@ Do you consider contributing to our project? That's great! We welcome all kinds 
 
 .. TIP::
 
-   If you have some experience contributing to open source projects, check out our Contributing file on GitHub to get you started. This guide is intended for new users that would like to contribute to our project but would prefer a more in-depth explanation of all the steps necessary to do so.
+   If you have some experience contributing to open source projects, check out our Contributing file on GitHub to get started. This guide is intended for users that would like to contribute to our project but have less experience or would prefer a more in-depth explanation of all the steps necessary to do so.
 
 We're firm believers of open source and want to create an inclusive environment around our project where everybody is welcome to join! In this spirit, you don't need a lot of experience in Python to contribute, and we try hard to provide all necessary information to anybody not familiar with all this DevOps stuff. This guide is an extended manual that aims to cover all topics needed to get you started developing in our project! The covered topics include
 
@@ -23,7 +23,7 @@ Preliminaries
 There are a few pre-requisites for using this guide:
 
 * An account on `GitHub <https://github.com/>`_ where we host all the source code.
-* Both `python ~ 3.8` and `git` installed on your machine. If that's not yet the case, install python from the `official page <https://www.python.org/downloads/>`_ (or check out `pyenv <https://github.com/pyenv/pyenv>`_) and `git <https://git-scm.com/>`_.
+* Both `python 3.8/3.9/3.10` and `git` installed on your machine. If that's not yet the case, install python from the `official page <https://www.python.org/downloads/>`_ (or check out `pyenv <https://github.com/pyenv/pyenv>`_) and `git <https://git-scm.com/>`_.
 
 .. NOTE::
 
@@ -33,7 +33,10 @@ There are a few pre-requisites for using this guide:
 Developing
 ==========
 
-Now, lets install our repository in *dev*-mode to start developing. This installation differs from *production*-mode. The latter describes the ready-to-use version of the package as you would install it e.g. from PyPI. *Dev*-mode, on the contrary, refers to the direct copy of the repository as you would find it on GitHub, including tools used for developing, testing, quality assurance and all (public) branches where new features are developed. This mode has more dependencies which change regularly as we develop the next release, i.e., a snapshot of a publishable version of the code. Dependency management (and packaging) used to be inconvenient in Python, yet it is important that every contributor works on the same environment when collaborating on code. Luckily, there's a tool called *poetry* which simplifies this a lot. Thus, the first step is to install poetry!
+Let's start and install our repository in *dev*-mode for developing. This installation differs from *production*-mode. The latter describes the ready-to-use version of the package as you would install it e.g. from PyPI. *Dev*-mode, on the contrary, refers to the direct copy of the repository as you would find it on GitHub, including tools used for developing, testing, quality assurance and all (public) branches where new features are developed.
+
+This mode has more dependencies which change regularly as we develop the next release, i.e., a snapshot of a publishable version of the code. Dependency management (and packaging) used to be inconvenient in Python, yet it is important that every contributor works on the same environment when collaborating on code. Luckily, there's a tool called *poetry* which simplifies this a lot. *poetry* works with the static ``pyproject.toml`` file containing project metadata, and replaces the usage of ``setup.py`` files. Thus, the first step is to install poetry!
+
 
 Poetry requires a system-wide installation that's different on Windows and MacOS. The full installation instructions can be found on `the official page <https://python-poetry.org/docs/master/#installation>`_. The quick four-step-version goes:
 
@@ -58,7 +61,7 @@ to check if the installation was successful
 With poetry and git, getting the right environment is now rather easy. First, you need to get a copy of the original repository. To do so, follow these steps:
 
 1. Go to the `repository page <https://github.com/floodlight-sports/floodlight>`_
-2. Hit the **Fork** Button on the top right of the page. This will create a personal blueprint in your github account. Compared to the base repository, you have the permission to manage this repository in whatever way you like
+2. Hit the **Fork** Button on the top right of the page. This will create a personal blueprint in your GitHub account. Compared to the base repository, you have the permission to manage this repository in whatever way you like
 3. Clone the repository to your local machine as usual.
 
 You've now got your own "version" of the original repository on your machine. The last step is to install all the necessary dependencies. Go the repo's directory and just run
@@ -215,6 +218,8 @@ on the respective branch.
 Testing
 =======
 
+Next, let's talk about testing. This project's is a big fan of test-driven development and maintains an extensive test suite. If you want to contribute a new feature, thorough tests are expected to be included in your addition. This section discusses everything you need to know to write good tests!
+
 Why testing code?
 -----------------
 
@@ -225,8 +230,8 @@ Why testing code?
 
 .. _General rules:
 
-General rules
--------------
+Rules of Thumb
+--------------
 
 .. TIP::
 
@@ -243,8 +248,6 @@ General rules
     * Tests should run alone and **independent**.
     * Tests should **run fast**.
     * Tests should be **run frequently** (at least before and after every coding session).
-    * After or before writing a class or method write the according tests (keep your test suite always **up to date**).
-    * You should write broken tests when you have to interrupt your work. When coming back you will have a pointer to where you have finished the last time.
     * The test methods should have long and **descriptive names**.
     * Every unit test should follow the **Arrange-Act-Assert model** (see below).
 
@@ -427,12 +430,9 @@ Pytest comes with a few marks out of the box which can bee seen `here <https://d
 Testing workflow
 ----------------
 
+A helpful testing workflow could look something like this:
+
     #. Before starting the coding session :ref:`run pytest <How to execute pytest>` in your terminal to see if everything works or you get some errors which have to be fixed.
     #. After or before writing a class or method write the according tests and fixtures to keep your test suite always up to date.
     #. After finishing your coding session :ref:`run pytest <How to execute pytest>` again.
-    #. If you have not finished your task write a test that points to were you ended the last time.
-
-
-References
-==========
-https://git-scm.com/book/de/v2/GitHub-Mitwirken-an-einem-Projekt
+    #. If you have to interrupt your work, write a test that points to were you ended the last time.

@@ -23,6 +23,8 @@ about data wrangling and start focussing on the analysis instead!
 
     Getting started <guides/getting_started>
     Contributing <guides/contrib_manual>
+    Tutorial: Data Analysis <guides/tutorial_analysis>
+    Tutorial: Match Sheets <guides/tutorial_matchsheets>
 
 
 .. toctree::
@@ -44,7 +46,11 @@ about data wrangling and start focussing on the analysis instead!
 
    modules/core/core
    modules/io/io
+   modules/metrics/metrics
+   modules/models/models
+   modules/transforms/transforms
    modules/utils/utils
+   modules/vis/vis
 
 Indices and tables
 ==================

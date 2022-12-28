@@ -37,7 +37,7 @@ def _create_periods_from_dat(
 
     # retrieve information from ball frame sets
     for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
-        if frame_set.get("TeamId") == "Ball":
+        if frame_set.get("TeamId").lower() == "ball":
             frames = [frame for frame in frame_set.iterfind("Frame")]
             periods[frame_set.get("GameSection")] = (
                 int(frames[0].get("N")),
@@ -59,6 +59,8 @@ def _create_periods_from_dat(
                     f"{int(round(1 / delta.total_seconds()))} Hz"
                 )
                 framerate_est = int(round(1 / delta.total_seconds()))
+
+        frame_set.clear()
 
     return periods, framerate_est
 
@@ -90,7 +92,12 @@ def create_links_from_mat_info(
     links_pID_to_jID = {}
     teams = root.find("MatchInformation").find("Teams")
     home = root.find("MatchInformation").find("General").get("HomeTeamId")
-    away = root.find("MatchInformation").find("General").get("AwayTeamId")
+    if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
+        away = root.find("MatchInformation").find("General").get("AwayTeamId")
+    elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
+        away = root.find("MatchInformation").find("General").get("GuestTeamId")
+    else:
+        away = None
 
     for team in teams:
         if team.get("TeamId") == home:
@@ -108,11 +115,11 @@ def create_links_from_mat_info(
 
     links_jID_to_xID = {
         "Home": {
-            int(links_pID_to_jID["Home"][pID]): xID + 1
+            int(links_pID_to_jID["Home"][pID]): xID
             for xID, pID in enumerate(links_pID_to_jID["Home"])
         },
         "Away": {
-            int(links_pID_to_jID["Away"][pID]): xID + 1
+            int(links_pID_to_jID["Away"][pID]): xID
             for xID, pID in enumerate(links_pID_to_jID["Away"])
         },
     }
@@ -253,14 +260,8 @@ def _get_event_outcome(eID, attrib) -> int:
         "GoalKick",
         "Kickoff",
     ]:
-        warnings.warn(
-            f"Standalone Event {eID} with missing child (e.g. Play, Pass or "
-            f"ShotAtGoal). Assigning None to respective outcome."
-        )
-    else:
-        warnings.warn(
-            "Unknown Event Type: {eID}. Assigning None to respective outcome."
-        )
+        pass
+
     return outcome
 
 
@@ -294,11 +295,6 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     elif "TeamFouler" in attrib:
         team = attrib["TeamFouler"]
 
-    # check
-    if eID not in ["KickoffWhistle", "FinalWhistle"]:  # events with no clear team
-        if team is None:
-            warnings.warn(f"Could not assign Team to Event {eID}")
-
     # player
     player = None
     if "Player" in attrib:
@@ -311,10 +307,6 @@ def _get_event_team_and_player(eID, attrib) -> Tuple[str, str]:
     elif "Fouler" in attrib:
         player = attrib["Fouler"]
 
-    # check
-    if eID not in ["KickoffWhistle", "FinalWhistle", "Substitution"]:
-        if player is None:
-            warnings.warn(f"Could not assign Player to Event {eID}")
     return team, player
 
 
@@ -383,26 +375,37 @@ def read_event_data_xml(
     tree = etree.parse(str(filepath_events))
     root = tree.getroot()
 
-    # find start and end of half
-    kickoff_whistles = {}
-    final_whistles = {}
-    for whistle in root.findall("Event/KickoffWhistle"):
-        kickoff_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-            whistle.getparent().get("EventTime")
-        )
-    for whistle in root.findall("Event/FinalWhistle"):
-        final_whistles[whistle.get("GameSection")] = iso8601.parse_date(
-            whistle.getparent().get("EventTime")
-        )
+    # find start of halves
+    start_times = {}
+    start_events = root.findall("Event/KickoffWhistle")
+    # look at different encodings as the data format changed over time
+    if not bool(start_events):  # if no KickoffWhistle is in data search for Kickoff
+        start_events = root.findall("Event/Kickoff")
+    if not bool(start_events):  # if no Kickoff is in data search for KickOff
+        start_events = root.findall("Event/KickOff")
+    for event in start_events:
+        if event.get("GameSection") is not None:
+            start_times[event.get("GameSection")] = iso8601.parse_date(
+                event.getparent().get("EventTime")
+            )
+
+    # find end of halves
+    end_times = {}
+    end_events = root.findall("Event/FinalWhistle")
+    for event in end_events:
+        if event.get("GameSection") is not None:
+            end_times[event.get("GameSection")] = iso8601.parse_date(
+                event.getparent().get("EventTime")
+            )
 
     # initialize periods
-    segments = list(kickoff_whistles.keys())
+    segments = list(start_times.keys())
     periods = {}
     for segment in segments:
-        periods[segment] = (kickoff_whistles[segment], final_whistles[segment])
+        periods[segment] = (start_times[segment], end_times[segment])
 
     # set up bins
-    events = {segment: pd.DataFrame() for segment in segments}
+    team_events = {segment: {} for segment in segments}
 
     # loop over events
     for elem in root.findall("Event"):
@@ -438,68 +441,97 @@ def read_event_data_xml(
         event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
 
         # description, outcome, team, and player
-        for child in elem:
-            event["eID"], attrib = _get_event_description(child)
-            event["qualifier"] = attrib
-            event["outcome"] = _get_event_outcome(event["eID"], attrib)
-            event["tID"], event["pID"] = _get_event_team_and_player(
-                event["eID"], attrib
-            )
+        child = next(iter(elem))
+        eID, attrib = _get_event_description(child)
+        outcome = _get_event_outcome(eID, attrib)
+        tID, pID = _get_event_team_and_player(eID, attrib)
+        event["eID"] = eID
+        event["qualifier"] = attrib
+        event["outcome"] = outcome
+        event["tID"] = tID
+        event["pID"] = pID
 
         # insert to bin
+        if tID not in team_events[segment]:
+            team_events[segment][tID] = []
         if event["eID"] == "Substitution":  # split for the special case substitution
             # in-sub
             event["eID"] = "InSubstitution"
             event["pID"] = event["qualifier"]["PlayerIn"]
-            events[segment] = events[segment].append(event, ignore_index=True)
+            team_events[segment][tID].append(event)
             # out-sub
             event["eID"] = "OutSubstitution"
             event["pID"] = event["qualifier"]["PlayerOut"]
-            events[segment] = events[segment].append(event, ignore_index=True)
+            team_events[segment][tID].append(event)
         else:
-            events[segment] = events[segment].append(event, ignore_index=True)
+            team_events[segment][tID].append(event)
 
-    # reformatting DataFrame
-    teams = events[segments[0]]["tID"].unique()
-    team_events = {team: None for team in teams}
+    # postprocessing
+    team_dfs = {segment: {} for segment in segments}
     for segment in segments:
-        # sort rows in ascending order
-        events[segment] = events[segment].sort_values("gameclock")
-        events[segment] = events[segment].reset_index(drop=True)
 
-        # columns to standard order
-        events[segment] = events[segment][
-            [
-                "eID",
-                "gameclock",
-                "tID",
-                "pID",
-                "outcome",
-                "timestamp",
-                "minute",
-                "second",
-                "qualifier",
+        # teams
+        teams = [tID for tID in team_events[segment] if tID is not None]
+
+        # loop over teams
+        for tID in teams:
+
+            # assign events with tID None to both teams
+            team_events[segment][tID] += team_events[segment][None]
+
+            # transform to data DataFrame
+            team_dfs[segment][tID] = pd.DataFrame(team_events[segment][tID])
+
+            # columns to standard order
+            team_dfs[segment][tID] = team_dfs[segment][tID][
+                [
+                    "eID",
+                    "gameclock",
+                    "tID",
+                    "pID",
+                    "outcome",
+                    "timestamp",
+                    "minute",
+                    "second",
+                    "qualifier",
+                ]
             ]
-        ]
+            team_dfs[segment][tID] = team_dfs[segment][tID].sort_values("gameclock")
+            team_dfs[segment][tID] = team_dfs[segment][tID].reset_index(drop=True)
 
-        # divide into teams
-        for team in teams:
-            team_events[segment][team] = events[segment][events[segment]["tID"] == team]
+    # check for teams
+    team1 = list(team_dfs[segments[0]].keys())[0]
+    team2 = list(team_dfs[segments[0]].keys())[1]
+    if not np.all([team1 in team_dfs[segment].keys() for segment in segments]):
+        KeyError(
+            f"Found tID {team1} of the first segment missing in at least one "
+            f"other segment!"
+        )
+    if not np.all([team2 in team_dfs[segment].keys() for segment in segments]):
+        KeyError(
+            f"Found tID {team2} of the first segment missing in at least one "
+            f"other segment!"
+        )
 
     # assembly
-    t1_ht1 = Events(
-        events=team_events[segments[0]][teams[0]],
+    events_team1_ht1 = Events(
+        events=team_dfs[segments[0]][team1],
     )
-    t1_ht2 = Events(
-        events=team_events[segments[1]][teams[0]],
+    events_team1_ht2 = Events(
+        events=team_dfs[segments[1]][team1],
     )
-    t2_ht1 = Events(
-        events=team_events[segments[0]][teams[1]],
+    events_team2_ht1 = Events(
+        events=team_dfs[segments[0]][team2],
     )
-    t2_ht2 = Events(
-        events=team_events[segments[1]][teams[1]],
+    events_team2_ht2 = Events(
+        events=team_dfs[segments[1]][team2],
     )
-    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
+    data_objects = (
+        events_team1_ht1,
+        events_team1_ht2,
+        events_team2_ht1,
+        events_team2_ht2,
+    )
 
     return data_objects
 
@@ -561,8 +593,8 @@ def read_position_data_xml(
     segments = list(periods.keys())
 
     # infer data array shapes
-    number_of_home_players = max(links_jID_to_xID["Home"].values())
-    number_of_away_players = max(links_jID_to_xID["Away"].values())
+    number_of_home_players = max(links_jID_to_xID["Home"].values()) + 1
+    number_of_away_players = max(links_jID_to_xID["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -597,7 +629,7 @@ def read_position_data_xml(
     for _, frame_set in etree.iterparse(filepath_positions, tag="FrameSet"):
 
         # ball
-        if frame_set.get("TeamId") == "Ball":
+        if frame_set.get("TeamId").lower() == "ball":
             # (x, y) position
             segment = frame_set.get("GameSection")
             xydata["Ball"][segment][:, 0] = np.array(
@@ -627,20 +659,22 @@ def read_position_data_xml(
                 team = "Away"
                 jrsy = links_pID_to_jID[team][frame_set.get("PersonId")]
             else:
-                pass
+                continue
                 # possible error or warning
 
             # insert (x,y) data to correct place in bin
             start = int(frames[0].get("N")) - periods[segment][0]
             end = int(frames[-1].get("N")) - periods[segment][0] + 1
-            x_col = (links_jID_to_xID[team][jrsy] - 1) * 2
-            y_col = (links_jID_to_xID[team][jrsy] - 1) * 2 + 1
+            x_col = (links_jID_to_xID[team][jrsy]) * 2
+            y_col = (links_jID_to_xID[team][jrsy]) * 2 + 1
             xydata[team][segment][start:end, x_col] = np.array(
                 [float(frame.get("X")) for frame in frames]
             )
             xydata[team][segment][start:end, y_col] = np.array(
                 [float(frame.get("Y")) for frame in frames]
             )
+
+        frame_set.clear()
 
     # create XY objects
     home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)
@@ -652,25 +686,25 @@ def read_position_data_xml(
 
     # create Code objects
     possession_ht1 = Code(
-        code=codes["possession"]["firstHalf"],
+        code=np.array(codes["possession"]["firstHalf"]),
         name="possession",
         definitions={1: "Home", 2: "Away"},
         framerate=framerate_est,
     )
     possession_ht2 = Code(
-        code=codes["possession"]["secondHalf"],
+        code=np.array(codes["possession"]["secondHalf"]),
         name="possession",
         definitions={1: "Home", 2: "Away"},
         framerate=framerate_est,
     )
     ballstatus_ht1 = Code(
-        code=codes["ballstatus"]["firstHalf"],
+        code=np.array(codes["ballstatus"]["firstHalf"]),
         name="ballstatus",
         definitions={0: "Dead", 1: "Alive"},
         framerate=framerate_est,
     )
     ballstatus_ht2 = Code(
-        code=codes["ballstatus"]["secondHalf"],
+        code=np.array(codes["ballstatus"]["secondHalf"]),
         name="ballstatus",
         definitions={0: "Dead", 1: "Alive"},
         framerate=framerate_est,

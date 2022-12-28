@@ -1,6 +1,14 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm
 
+
+### Data that is not the Toy Dataset ###
+!.data/
+.data/*
+!.data/toy_dataset/
+!.data/toy_dataset/*
+
+
 ### PyCharm ###
 .idea/
 

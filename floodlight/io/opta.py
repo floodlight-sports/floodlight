@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Any, Tuple, Union
+from typing import Tuple, Union
 
 import pytz
 import iso8601
@@ -9,6 +9,7 @@ from lxml import etree
 
 from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
+from floodlight.io.utils import get_and_convert
 
 
 def get_opta_feedtype(filepath: Union[str, Path]) -> Union[str, None]:
@@ -44,46 +45,15 @@ def get_opta_feedtype(filepath: Union[str, Path]) -> Union[str, None]:
     return feedtype
 
 
-def get_and_convert(dic: dict, key: Any, value_type: type, default: Any = None) -> Any:
-    """Performs dictionary get and type conversion simultaneously.
-
-    Parameters
-    ----------
-    dic: dict
-        Dictionary to be queried.
-    key: Any
-        Key to be looked up.
-    value_type: type
-        Desired output type the value should be cast into.
-    default: Any, optional
-        Return value if key is not in dic, defaults to None.
-
-    Returns
-    -------
-    value: value_type
-        Returns the value for key if key is in dic, else default. Tries type conversion
-        to `type(value) = value_type`. If type conversion fails, e.g. by trying to force
-        something like `float(None)` due to a missing dic entry, value is returned in
-        its original data type.
-    """
-    value = dic.get(key, default)
-    try:
-        value = value_type(value)
-    except TypeError:
-        pass
-
-    return value
-
-
 def read_f24(
     filepath: Union[str, Path]
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Parse Opta's f24 feed (containing match events) and extract event data and pitch
-     information.
+    information.
 
-     This function provides a high-level access to the particular f24 feed and will
-     return event objects for both teams. The number of segments is inferred from the
-     data, yet data for each segment is stored in a separate object.
+    This function provides a high-level access to the particular f24 feed and will
+    return event objects for both teams. The number of segments is inferred from the
+    data, yet data for each segment is stored in a separate object.
 
     Parameters
     ----------
@@ -145,6 +115,7 @@ def read_f24(
     }
     directions = {team: {} for team in teams}
     dir_link = {"Left to Right": "lr", "Right to Left": "rl"}
+    segment_offsets = {1: 0, 2: 45, 3: 90, 4: 105}
     kickoffs = {}
 
     # read kickoff events for times and playing direction
@@ -198,10 +169,14 @@ def read_f24(
         # absolute and relative time
         event_timestring = get_and_convert(event.attrib, "timestamp", str)
         minute = get_and_convert(event.attrib, "min", int)
+        # transform minute to be relative to current segment
+        minute -= segment_offsets[period]
         second = get_and_convert(event.attrib, "sec", int)
         timestamp = iso8601.parse_date(event_timestring, default_timezone=pytz.utc)
         delta = timestamp - kickoffs[segment]
         gameclock = delta.total_seconds()
+        # re-adjust pre-kick-off events (e.g. substitutions) to 00:00
+        gameclock = max(gameclock, 0.0)
         event_lists[team][segment]["timestamp"].append(timestamp)
         event_lists[team][segment]["minute"].append(minute)
         event_lists[team][segment]["second"].append(second)
