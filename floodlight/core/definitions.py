@@ -19,6 +19,14 @@ essential_events_columns = {
     }
 }
 
+essential_teamsheet_columns = {
+    "player": {
+        "definition": "Name of a player. May be abbreviated or contain aliases.",
+        "dtypes": [str],
+        "value_range": None,
+    }
+}
+
 
 protected_columns = {
     "pID": {
@@ -67,12 +75,12 @@ protected_columns = {
         "value_range": None
     },
     "minute": {
-        "definition": "Minute of the segment the event took place",
+        "definition": "Minute of the segment when an event took place",
         "dtypes": [int],
         "value_range": [0, np.inf]
     },
     "second": {
-        "definition": "Second of the minute of the segment the event took place",
+        "definition": "Second of the minute of the segment when an event took place",
         "dtypes": [int],
         "value_range": [0, np.inf]
     },
@@ -83,24 +91,24 @@ protected_columns = {
         "value_range": [0, 1],
     },
     "at_x": {
-        "definition": "The x position (longitudinal) where the event took place or "
+        "definition": "The x position (longitudinal) where an event took place or "
                       "originated from",
         "dtypes": [float],
         "value_range": None
     },
     "at_y": {
-        "definition": "The y position (lateral) where the event took place or "
+        "definition": "The y position (lateral) where an event took place or "
                       "originated from",
         "dtypes": [float],
         "value_range": None
     },
     "to_x": {
-        "definition": "The x position (longitudinal) where the event ended",
+        "definition": "The x position (longitudinal) where an event ended",
         "dtypes": [float],
         "value_range": None
     },
     "to_y": {
-        "definition": "The y position (lateral) where the event ended",
+        "definition": "The y position (lateral) where an event ended",
         "dtypes": [float],
         "value_range": None
     },
