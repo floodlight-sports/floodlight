@@ -41,7 +41,7 @@ def _read_mat_info_xml(
     width = float(width) if width else None
     pitch = Pitch.from_template("soccerbot", length=length, width=width)
 
-    # parse kick offs for all halves
+    # parse kickoffs for all halves
     kickoffs = {}
     for segment in root.find("KickOff").attrib:
         kickoffs[segment] = int(root.find("KickOff").get(segment))
