@@ -146,9 +146,9 @@ def butterworth_lowpass(
         signal.butter <https://docs.scipy.org/doc/scipy/reference/generated/scipy.
         signal.butter.html>`_ function. Default is 3
     Wn: Numeric, optional
-        The critical cutoff frequency. Corresponds to the argument ``Wn`` from the
-        `scipy.signal.butter <https://docs.scipy.org/doc/scipy/reference/generated/
-        scipy.signal.butter.html>`_ function. Default is 1.
+        The normalized critical cutoff frequency. Corresponds to the argument ``Wn``
+        from the `scipy.signal.butter <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.butter.html>`_ function. Default is 1.
     remove_short_seqs: bool, optional
         If True, sequences that are to short for the filter with the specified settings
         are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
