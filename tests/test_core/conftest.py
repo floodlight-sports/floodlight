@@ -227,3 +227,19 @@ def example_pitch_handball() -> Pitch:
     )
 
     return handball_pitch
+
+
+# Teamsheet
+@pytest.fixture()
+def example_teamsheet_data() -> pd.DataFrame:
+
+    data = pd.DataFrame(
+        {
+            "player": ["player 1", "player 2", "player 3"],
+            "pID": [1, 2, 3],
+            "jID": [1, 13, 99],
+            "position": ["GK", "SUB", "SUB"],
+        }
+    )
+
+    return data
