@@ -1,3 +1,5 @@
+.. _definitions target:
+
 ===========================
 floodlight.core.definitions
 ===========================

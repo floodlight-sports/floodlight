@@ -12,6 +12,7 @@ Collection of core data structures. Each class is designed to contain one type o
    events
    pitch
    code
+   teamsheet
    property
    definitions
 
@@ -29,3 +30,12 @@ Collection of core data structures. Each class is designed to contain one type o
    property.DyadicProperty
    property.PlayerProperty
    property.TeamProperty
+
+
+.. rubric:: Observation-level Core Objects
+
+.. currentmodule:: floodlight.core
+.. autosummary::
+   :nosignatures:
+
+   teamsheet.Teamsheet

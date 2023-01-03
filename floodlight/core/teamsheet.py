@@ -11,12 +11,10 @@ from floodlight.core.definitions import essential_teamsheet_columns, protected_c
 class Teamsheet:
     """Teamsheet storing player information. Core class of floodlight.
 
-    Teamsheet data is stored in `pandas` ``DataFrame``, where each row stores one player
-    with their different properties organized in columns. You may put whatever
-    information you like in these columns. Yet, the column `"player"` is mandatory
-    to identify a player. Some special column names are reserved for properties that
-    follow conventions. These may be necessary and their existence is checked for
-    running particular analyses.
+    Teamsheet data is stored in a `pandas` ``DataFrame``, where each row stores one
+    player with their different properties organized in columns. Columns may contain
+    any relevant information. A `"player"` column is required for instantiation
+    to identify a player, and some particular column names are protected (see Notes).
 
     Parameters
     ----------
@@ -31,7 +29,7 @@ class Teamsheet:
         List of protected columns available for stored players.
     custom: list
         List of custom (i.e. non-essential and non-protected) columns available for
-        stored events.
+        stored players.
     essential_missing: list
         List of missing essential columns.
     essential_invalid: list
@@ -40,6 +38,18 @@ class Teamsheet:
         List of missing protected columns.
     protected_invalid: list
         List of protected columns that violate the definitions.
+
+    Notes
+    -----
+    Teamsheet data, particularly information available for players, may vary across
+    data providers. To accommodate all data flavours, any column name or data type is
+    permissible. However, one `essential` column is required (`"player"`). Other column
+    names are `protected`. Using these names assumes that data stored in these columns
+    follows conventions in terms of data types and value ranges. These are required for
+    methods working with protected columns to assure correct calculations. Definitions
+    for `essential` and `protected` columns can be found in
+    :ref:`floodlight.core.definitions <definitions target>`.
+
     """
 
     teamsheet: pd.DataFrame
@@ -58,14 +68,13 @@ class Teamsheet:
         if incorrect_columns:
             for col in incorrect_columns:
                 warnings.warn(
-                    f"Floodlight Teamsheet column {col} does not match the defined "
-                    f"value range (from floodlight.core.definitions). You can pursue at"
-                    f" this point, however, be aware that this may lead to unexpected "
-                    f"behavior in the future."
+                    f"The '{col}' column does not match the defined value range (from "
+                    f"floodlight.core.definitions). This may lead to unexpected "
+                    f"behavior of methods using this column."
                 )
 
     def __str__(self):
-        return f"Floodlight Events object of shape {self.teamsheet.shape}"
+        return f"Floodlight Teamsheet object of shape {self.teamsheet.shape}"
 
     def __len__(self):
         return len(self.teamsheet)
@@ -137,7 +146,8 @@ class Teamsheet:
 
     def column_values_in_range(self, col: str, definitions: Dict[str, Dict]) -> bool:
         """Check if values for a single column of the inner teamsheet DataFrame are in
-        correct range using using the specifications from floodlight.core.definitions.
+        correct range using the specifications from
+        :ref:`floodlight.core.definitions <definitions target>`.
 
         Parameters
         ----------
