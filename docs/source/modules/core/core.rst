@@ -13,6 +13,7 @@ Collection of core data structures. Each class is designed to contain one type o
    pitch
    code
    property
+   definitions
 
 
 .. rubric:: Data-level Core Objects
