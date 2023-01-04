@@ -393,7 +393,7 @@ equivalent_distance`
         # Calculate energy cost of locomotion
         ecl = MetabolicPowerModel._calc_ecl(es, vel, em, eccr)
         # Calculate metabolic power as product of ecl and velocity (m/s)
-        metp = ecl * vel / framerate
+        metp = ecl * vel
 
         return metp
 
@@ -476,7 +476,10 @@ equivalent_distance`
             frames and N is the number of players. The columns contain the cumulative
             metabolic power calculated by numpy.nancumsum() over axis=0.
         """
-        cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
+        cum_metp = np.divide(
+            np.nancumsum(self._metabolic_power_.property, axis=0),
+            self._metabolic_power_.framerate
+        )
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
             name="cumulative_metabolic_power",
@@ -532,7 +535,10 @@ equivalent_distance`
             frames and N is the number of players. The columns contain the cumulative
             equivalent distance calculated by numpy.nancumsum() over axis=0.
         """
-        cum_metp = np.nancumsum(self._metabolic_power_.property, axis=0)
+        cum_metp = np.divide(
+            np.nancumsum(self._metabolic_power_.property, axis=0),
+            self._metabolic_power_.framerate
+        )
         cum_eqdist = cum_metp / eccr
 
         cumulative_equivalent_distance = PlayerProperty(

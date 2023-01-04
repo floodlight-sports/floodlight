@@ -5,7 +5,7 @@ Thank you for considering to help with this package! We warmly welcome all kinds
 
 Please also feel encouraged to open an issue (or PR) if you found a bug, have general feedback or if you are unsure whether your new feature would be a good addition.
 
-If all or some of this is new to you, and you would prefer a detailed step-by-step explanation of how to contribute, check out our extended contributing manual in the [documentation](floodlight.readthedocs.io).
+If all or some of this is new to you, and you would prefer a detailed step-by-step explanation of how to contribute, check out our extended contributing manual in the [documentation](https://floodlight.readthedocs.io).
 
 
 Development

@@ -78,7 +78,6 @@ Finally, we collect all goals into a single pandas DataFrame.
         )
     ).sort_values("gameclock")
 
-
 Here's the (formatted) DataFrame you should get:
 
 ====  ========== ====== ==== ======== ======== ============ ======= ======= ====== ===== ====== ===== ============= ======================== ========== ==========
@@ -105,7 +104,7 @@ Alright, now let's try to extract the relevant information from the above DataFr
         scoring_team = goal["team_name"]
         if goal["event_name"] == "Shot":
             scoring_player = goal["player_name"]
-            xG = ast.literal_eval(goal["qualifier"])['shot']['statsbomb_xg']
+            xG = ast.literal_eval(goal["qualifier"])["shot"]["statsbomb_xg"]
         else:
             scoring_player = "Own Goal"
             xG = None
@@ -123,13 +122,14 @@ Next, we deal with the previously mentioned StatsBomb360 position data. The appr
         freeze_frame = ast.literal_eval(goal["qualifier"])["360_freeze_frame"]
 
         # set "to-location" to goal center if not available
+        at_x, at_y, to_x, to_y = goal["at_x"], goal["at_y"], goal["to_x"], goal["to_y"]
         if np.isnan(goal["to_x"]):
-            goal["to_x"] = 120
+            to_x = 120
         if np.isnan(goal["to_y"]):
-            goal["to_y"] = 40
+            to_y = 40
 
         # create arrays
-        xy_ball = np.array([[goal["at_x"], goal["at_y"]], [goal["to_x"], goal["to_y"]]])
+        xy_ball = np.array([[at_x, at_y], [to_x, to_y]])
         xy_off = np.array(
             [player["location"] for player in freeze_frame if player["teammate"]]
         )
@@ -155,11 +155,11 @@ Now we can use the predefined functions to create a plot of a single goal (e.g. 
 
     import matplotlib.pyplot as plt
 
-    goal = all_goals.iloc[-1]
+    goal = all_goals.loc[all_goals.index[-1]]
 
     fig, ax = plt.subplots()
     scoring_team, scoring_player, xG = get_goal_info(goal)
-    ax[i, j].set_title(
+    ax.set_title(
         f"Goal for {scoring_team} by {str(scoring_player)} "
         f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
         fontdict={'size': 9}
@@ -168,7 +168,17 @@ Now we can use the predefined functions to create a plot of a single goal (e.g. 
     xy_ball, xy_off, xy_def = get_xy_data(goal)
     xy_off.plot(t=0, ax=ax, color="red")
     xy_def.plot(t=0, ax=ax, color="white")
-    xy_ball.plot(t=(0, 2), plot_type="trajectories", color="cyan", ball=True, ax=ax)
+    xy_ball.plot(
+        t=(0, 2),
+        plot_type="trajectories",
+        ball=True,
+        color="k",
+        linewidth=2,
+        linestyle="--",
+        marker="X",
+        markevery=[0],
+        ax=ax,
+    )
 
 .. image:: ../_img/tutorial_matchsheets_singlegoal.png
 
@@ -201,24 +211,24 @@ Now we create the match sheet by iterating over all goals and updating the respe
     row, col, home_score, away_score = 0, 0, 0, 0
     colors = {"Croatia": "white", "Spain": "red"}
 
-    for _, goal in all_goals.iterrows():
+    for i in all_goals.index:
 
         # display meta information
-        scoring_team, scoring_player, xG = get_goal_info(goal)
+        scoring_team, scoring_player, xG = get_goal_info(all_goals.loc[i])
         if scoring_team == "Croatia":
             conceding_team = "Spain"
             home_score += 1
         else:  # score by Spain
             conceding_team = "Croatia"
             away_score += 1
-        ax[i, j].set_title(
+        ax[row, col].set_title(
             f"{home_score}:{away_score} for {str(scoring_team)} by {str(scoring_player)} "
             f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
-            fontdict={'size': 10}
+            fontdict={"size": 10},
         )
 
         # get position data
-        xy_ball, xy_off, xy_def = get_xy_data(goal)
+        xy_ball, xy_off, xy_def = get_xy_data(all_goals.loc[i])
         # rotate position data towards left goal for Spain
         if scoring_team == "Spain":
             xy_off.rotate(180)
@@ -228,11 +238,19 @@ Now we create the match sheet by iterating over all goals and updating the respe
             xy_ball.rotate(180)
             xy_ball.translate((pitch.xlim[1], pitch.ylim[1]))
         # plot pitch and position data
-        pitch.plot(ax=ax[i, j])
-        xy_off.plot(t=0, ax=ax[i, j], color=colors[scoring_team])
-        xy_def.plot(t=0, ax=ax[i, j], color=colors[conceding_team])
+        pitch.plot(ax=ax[row, col])
+        xy_off.plot(t=0, ax=ax[row, col], color=colors[scoring_team])
+        xy_def.plot(t=0, ax=ax[row, col], color=colors[conceding_team])
         xy_ball.plot(
-            t=(0, 2), plot_type="trajectories", color="cyan", ball=True, ax=ax[i, j]
+            t=(0, 2),
+            plot_type="trajectories",
+            ball=True,
+            color="k",
+            linewidth=2,
+            linestyle="--",
+            marker="X",
+            markevery=[0],
+            ax=ax[row, col],
         )
 
         # update grid position
