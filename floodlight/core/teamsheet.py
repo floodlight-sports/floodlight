@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict
+from lxml import etree
 import warnings
 
 import pandas as pd
@@ -144,6 +145,31 @@ class Teamsheet:
 
         return invalid_columns
 
+    @classmethod
+    def from_file(
+        cls, filepath_data: str, provider_name: str,
+    ):
+        """
+        Creates a teamsheet object from a provider specific match information file.
+
+        Parameters
+        ----------
+        filepath_data:  str
+            Full path to file where the information is stored.
+        provider_name: str
+            The name of the template the teamsheet should follow. Currently supported
+            are {'dfl'}.
+
+        Returns
+        -------
+        teamsheet: Teamsheet
+            A class instance of the given provider format.
+        """
+        if provider_name == "dfl":
+            return cls.__parse_from_dfl_mat_info(filepath_data)
+        else:
+            return None
+
     def column_values_in_range(self, col: str, definitions: Dict[str, Dict]) -> bool:
         """Check if values for a single column of the inner teamsheet DataFrame are in
         correct range using the specifications from
@@ -224,3 +250,78 @@ class Teamsheet:
             links[self.teamsheet.at[idx, keys]] = self.teamsheet.at[idx, values]
 
         return links
+
+    @classmethod
+    def __parse_from_dfl_mat_info(cls, filepath_mat_info):
+        """Reads Teamsheet data from a xml file in DFL format and returns a
+        teamsheet object.
+
+        Parameters
+        ----------
+        filepath_mat_info: str or pathlib.Path
+            Full path to XML File where the Match Information data in DFL format is saved
+
+        Returns
+        -------
+        teamsheet: Teamsheet
+        """
+        # set up XML tree
+        tree = etree.parse(str(filepath_mat_info))
+        root = tree.getroot()
+
+        # set up meta information
+        teams = root.find("MatchInformation").find("Teams")
+        home_id = root.find("MatchInformation").find("General").get("HomeTeamId")
+        if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
+            away_id = root.find("MatchInformation").find("General").get("AwayTeamId")
+        elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
+            away_id = root.find("MatchInformation").find("General").get("GuestTeamId")
+        else:
+            away_id = None
+
+        # intialize matchsheets
+        home_teamsheet = pd.DataFrame(
+            columns=["player", "pID", "jID", "position", "tID", "team_name"]
+        )
+        away_teamsheet = pd.DataFrame()
+
+        # parse information
+        for team in teams:
+            if team.get("TeamId") == home_id:
+                home_teamsheet["player"] = [
+                    player.get("Shortname") for player in team.find("Players")
+                ]
+                home_teamsheet["pID"] = [
+                    player.get("PersonId") for player in team.find("Players")
+                ]
+                home_teamsheet["jID"] = [
+                    int(player.get("ShirtNumber")) for player in team.find("Players")
+                ]
+                home_teamsheet["position"] = [
+                    player.get("PlayingPosition") for player in team.find("Players")
+                ]
+                home_teamsheet["tID"] = [home_id for _ in team.find("Players")]
+                home_teamsheet["team_name"] = [
+                    team.get("TeamName") for _ in team.find("Players")
+                ]
+            elif team.get("TeamId") == away_id:
+                away_teamsheet["player"] = [
+                    player.get("Shortname") for player in team.find("Players")
+                ]
+                away_teamsheet["pID"] = [
+                    player.get("PersonId") for player in team.find("Players")
+                ]
+                away_teamsheet["jID"] = [
+                    int(player.get("ShirtNumber")) for player in team.find("Players")
+                ]
+                away_teamsheet["position"] = [
+                    player.get("PlayingPosition") for player in team.find("Players")
+                ]
+                away_teamsheet["tID"] = [away_id for _ in team.find("Players")]
+                away_teamsheet["team_name"] = [
+                    team.get("TeamName") for _ in team.find("Players")
+                ]
+            else:
+                continue
+
+        return cls(home_teamsheet), cls(away_teamsheet)
