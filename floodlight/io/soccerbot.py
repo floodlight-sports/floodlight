@@ -337,4 +337,27 @@ def read_soccerbot_position_xml(
         ballstatus_ht2,
         pitch,
     )
-    return data_objects
+
+    new_ret_dict = {}
+    soccerbot_segment_links = {"firstHalf": "HT1", "secondHalf": "HT2"}
+    for segment in segments:
+        new_ret_objects = []
+        new_ret_objects.append(XY(xy=xydata["Home"][segment], framerate=framerate_est))
+        new_ret_objects.append(XY(xy=xydata["Away"][segment], framerate=framerate_est))
+        new_ret_objects.append(XY(xy=xydata["Ball"][segment], framerate=framerate_est))
+        new_ret_objects.append(Code(
+            code=np.array(codes["possession"][segment]),
+            name="possession",
+            definitions={"Home": "Home", "Away": "Away", "": None},
+            framerate=framerate_est,
+        ))
+        new_ret_objects.append(Code(
+            code=np.array(codes["ballstatus"][segment]),
+            name="ballstatus",
+            definitions={"Home": "Home", "Away": "Away", "": None},
+            framerate=framerate_est,
+        ))
+        global_segment_name = soccerbot_segment_links[segment]
+        new_ret_dict[global_segment_name] = new_ret_objects
+
+    return new_ret_dict  # data_objects
