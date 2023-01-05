@@ -1,3 +1,4 @@
+from copy import deepcopy
 import pytest
 import pandas as pd
 
@@ -86,3 +87,20 @@ def test_get_links(example_teamsheet_data) -> None:
 
     links = data.get_links("pID", "jID")
     assert links == {1: 1, 2: 13, 3: 99}
+
+
+@pytest.mark.unit
+def test_add_xIDs(example_teamsheet_data) -> None:
+    data = Teamsheet(example_teamsheet_data)
+    data.add_xIDs()
+    assert all(data.teamsheet["xID"].values == [0, 1, 2])
+
+
+@pytest.mark.unit
+def test_add_xIDs_overwrite(example_teamsheet_data) -> None:
+    example_teamsheet_data["xID"] = [2, 0, 1]
+    original_data = Teamsheet(example_teamsheet_data)
+    new_data = Teamsheet(deepcopy(example_teamsheet_data))
+    new_data.add_xIDs()
+    assert all(original_data.teamsheet["xID"].values == [2, 0, 1])
+    assert all(new_data.teamsheet["xID"].values == [0, 1, 2])
