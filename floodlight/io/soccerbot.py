@@ -155,7 +155,7 @@ def read_soccerbot_position_xml(
     filepath_mat_info: Union[str, Path],
     links_jID_to_xID: Dict[str, Dict[int, int]] = None,
     links_pID_to_jID: Dict[str, Dict[str, int]] = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
+) -> Dict[str, Tuple[XY, XY, XY, Code, Code, Pitch]]:
     """Parse SoccerBot XML files and extract position data, possession and ballstatus
     codes as well as pitch information.
 
@@ -163,9 +163,8 @@ def read_soccerbot_position_xml(
      file containing the actual data as well as a Match Information XML containing
      information about pitch size, players, teams, and start- and endframes of match
      periods. Since no information about framerate is delivered, it is estimated from
-     time difference between individual frames. This function provides a high-level
-     access to SoccerBot data by parsing "the full match" contained in the position
-     file.
+     time difference between individual frames. This function provides high-level access
+     to SoccerBot data by parsing "the full match" contained in the position file.
 
     Parameters
     ----------
@@ -186,10 +185,10 @@ def read_soccerbot_position_xml(
 
     Returns
     -------
-        data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]
-        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-         possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
+    data_objects: Dict[str, Tuple[XY, XY, XY, Code, Code, Pitch]]
+        XY-, Code-, and Pitch-objects for both teams for every segment included in
+        the data (for a regular match "HT1" and "HT2). The order is
+        (home_xy, away_xy, ball_xy, possession, ballstatus, pitch).
     """
     # read metadata
     pitch, kickoffs = _read_mat_info_xml(filepath_mat_info)
@@ -287,77 +286,32 @@ def read_soccerbot_position_xml(
                 xydata["Away"][segment][frame_num, x_col] = float(position.get("x"))
                 xydata["Away"][segment][frame_num, y_col] = float(position.get("y"))
 
-    # estimate framerate from the timedelta between frames and convert from fpms to fps
+    # estimate framerate from the timedelta between frames and convert from f/ms to fps
     framerate_est = int(1000 / timedelta)
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)
-    home_ht2 = XY(xy=xydata["Home"]["secondHalf"], framerate=framerate_est)
-    away_ht1 = XY(xy=xydata["Away"]["firstHalf"], framerate=framerate_est)
-    away_ht2 = XY(xy=xydata["Away"]["secondHalf"], framerate=framerate_est)
-    ball_ht1 = XY(xy=xydata["Ball"]["firstHalf"], framerate=framerate_est)
-    ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate_est)
-
-    # create Code objects
-    possession_ht1 = Code(
-        code=np.array(codes["possession"]["firstHalf"]),
-        name="possession",
-        definitions={"Home": "Home", "Away": "Away", "": None},
-        framerate=framerate_est,
-    )
-    possession_ht2 = Code(
-        code=np.array(codes["possession"]["firstHalf"]),
-        name="possession",
-        definitions={"Home": "Home", "Away": "Away", "": None},
-        framerate=framerate_est,
-    )
-    ballstatus_ht1 = Code(
-        code=np.array(codes["ballstatus"]["firstHalf"]),
-        name="ballstatus",
-        definitions={"dead": "Dead", "active": "Alive"},
-        framerate=framerate_est,
-    )
-    ballstatus_ht2 = Code(
-        code=np.array(codes["ballstatus"]["firstHalf"]),
-        name="ballstatus",
-        definitions={"dead": "Dead", "active": "Alive"},
-        framerate=framerate_est,
-    )
-
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
-        pitch,
-    )
-
-    new_ret_dict = {}
-    soccerbot_segment_links = {"firstHalf": "HT1", "secondHalf": "HT2"}
+    # create and assemble XY-, Code-, and Pitch-objects for every segment
+    data_objects = {}
+    links_soccerbot_to_global_segments = {"firstHalf": "HT1", "secondHalf": "HT2"}
     for segment in segments:
-        new_ret_objects = []
-        new_ret_objects.append(XY(xy=xydata["Home"][segment], framerate=framerate_est))
-        new_ret_objects.append(XY(xy=xydata["Away"][segment], framerate=framerate_est))
-        new_ret_objects.append(XY(xy=xydata["Ball"][segment], framerate=framerate_est))
-        new_ret_objects.append(Code(
-            code=np.array(codes["possession"][segment]),
-            name="possession",
-            definitions={"Home": "Home", "Away": "Away", "": None},
-            framerate=framerate_est,
-        ))
-        new_ret_objects.append(Code(
-            code=np.array(codes["ballstatus"][segment]),
-            name="ballstatus",
-            definitions={"Home": "Home", "Away": "Away", "": None},
-            framerate=framerate_est,
-        ))
-        global_segment_name = soccerbot_segment_links[segment]
-        new_ret_dict[global_segment_name] = new_ret_objects
+        segment_data_objects = (
+            XY(xy=xydata["Home"][segment], framerate=framerate_est),
+            XY(xy=xydata["Away"][segment], framerate=framerate_est),
+            XY(xy=xydata["Ball"][segment], framerate=framerate_est),
+            Code(
+                code=np.array(codes["possession"][segment]),
+                name="possession",
+                definitions={"Home": "Home", "Away": "Away", "": None},
+                framerate=framerate_est,
+            ),
+            Code(
+                code=np.array(codes["ballstatus"][segment]),
+                name="ballstatus",
+                definitions={"Home": "Home", "Away": "Away", "": None},
+                framerate=framerate_est,
+            ),
+            pitch,
+        )
+        global_segment_name = links_soccerbot_to_global_segments[segment]
+        data_objects[global_segment_name] = segment_data_objects
 
-    return new_ret_dict  # data_objects
+    return data_objects
