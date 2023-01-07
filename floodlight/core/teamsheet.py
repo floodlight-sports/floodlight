@@ -226,7 +226,15 @@ class Teamsheet:
         return links
 
     def add_xIDs(self):
-        """Adds a column xID by counting over all players in the teamsheet. Entries of
-        xID refer to the position of the players in the corresponding XY objects.
+        """Adds the column "xID" as an increasing index over all players.
+
+
+        The player index identifier ("xID") is used to enforce an order to the players
+        within a team. This identifier is primarily used for locating players in
+        respective XY objects, but can also be helpful iterating over or displaying all
+        players of a team. This function assigns the "xID" as an increasing index that
+        counts over all players in the inner teamsheet DataFrame, starting at 0
+        and ending at N_players - 1. Any existing entries for "xID" are overwritten by
+        this function.
         """
         self.teamsheet["xID"] = [i for i in range(len(self.teamsheet))]
