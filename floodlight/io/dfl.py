@@ -299,7 +299,7 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
     tree = etree.parse(str(filepath_mat_info))
     root = tree.getroot()
 
-    # initialize matchsheets
+    # initialize teamsheets
     teamsheets = {
         "Home": pd.DataFrame(
             columns=["player", "position", "team", "jID", "pID", "tID"]
@@ -345,10 +345,8 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
         teamsheets[team]["position"] = [
             player.get("PlayingPosition") for player in team_info.find("Players")
         ]
-        teamsheets[team]["tID"] = [away_id for _ in team_info.find("Players")]
-        teamsheets[team]["team"] = [
-            team_info.get("TeamName") for _ in team_info.find("Players")
-        ]
+        teamsheets[team]["tID"] = team_info.get("TeamId")
+        teamsheets[team]["team"] = team_info.get("TeamName")
 
     # create teamsheet objects
     for team in teamsheets:
