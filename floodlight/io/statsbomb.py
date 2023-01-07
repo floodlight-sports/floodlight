@@ -28,8 +28,7 @@ def read_teamsheets_from_open_statsperform_files(
     Returns
     -------
     teamsheets: Dict[str, Teamsheet]
-        Two class instances for the home team at the first position and the away
-        teams at the second position.
+        Dictionary with teamsheets for the home team and the away team.
     """
     # load json file into memory
     with open(filepath_match, "r", encoding="utf8") as f:
