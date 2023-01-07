@@ -8,8 +8,9 @@ import numpy as np
 import pandas as pd
 
 from floodlight.io.utils import extract_zip, download_from_url
-from floodlight.io.statsbomb import read_open_event_data_json
+from floodlight.io.statsbomb import read_open_statsperform_event_data_json
 from floodlight import XY, Pitch, Events, Code
+from floodlight.core.teamsheet import Teamsheet
 from floodlight.settings import DATA_DIR
 
 
@@ -493,7 +494,7 @@ class StatsBombOpenDataset:
         competition_name: str = "La Liga",
         season_name: str = "2020/2021",
         match_name: str = None,
-    ) -> Tuple[Events, Events, Events, Events]:
+    ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
         """Get events from one match of the StatsBomb open dataset.
 
         If `StatsBomb360data <https://statsbomb.com/articles/soccer/
@@ -519,9 +520,9 @@ class StatsBombOpenDataset:
 
         Returns
         -------
-        data_objects: Tuple[Events, Events, Events, Events]
-            Returns four Events objects of the form (events_home_ht1, events_home_ht2,
-            events_away_ht1, events_away_ht2) for the requested sample.
+        data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
+            Events-, and Teamsheet objects for both teams and both halves. The order
+            is (home_ht1, home_ht2, away_ht1, away_ht2, home_teamsheet, away_teamsheet).
         """
         # get identifiers from links
         cID = self._links_competition_to_cID[competition_name]
@@ -577,12 +578,28 @@ class StatsBombOpenDataset:
                 filepath_threesixty = None
 
         # read events from file
-        (home_ht1, home_ht2, away_ht1, away_ht2,) = read_open_event_data_json(
+        (
+            home_ht1,
+            home_ht2,
+            away_ht1,
+            away_ht2,
+            home_teamsheet,
+            away_teamsheet,
+        ) = read_open_statsperform_event_data_json(
             filepath_events, filepath_matches, filepath_threesixty
         )
-        event_objects = (home_ht1, home_ht2, away_ht1, away_ht2)
 
-        return event_objects
+        # assembly
+        data_objects = (
+            home_ht1,
+            home_ht2,
+            away_ht1,
+            away_ht2,
+            home_teamsheet,
+            away_teamsheet,
+        )
+
+        return data_objects
 
     @staticmethod
     def get_pitch() -> Pitch:
