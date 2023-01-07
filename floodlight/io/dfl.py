@@ -66,68 +66,6 @@ def _create_periods_from_dat(
     return periods, framerate_est
 
 
-def create_links_from_mat_info(
-    filepath_mat_info: Union[str, Path]
-) -> Tuple[Dict[str, Dict[int, int]], Dict[str, Dict[str, int]]]:
-    """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
-    creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
-    ascending order.
-
-    Parameters
-    ----------
-    filepath_mat_info: str or pathlib.Path
-        Full path to XML File where the Match Information data in DFL format is saved
-
-    Returns
-    -------
-    links_jID_to_xID: Dict[str, Dict[int, int]]
-        A link dictionary of the form `links[team][jID] = xID`.
-    links_pID_to_jID: Dict[str, Dict[str, int]]
-        A link dictionary of the form `links[team][pID] = jID`.
-    """
-    # set up XML tree
-    tree = etree.parse(str(filepath_mat_info))
-    root = tree.getroot()
-
-    # parse XML file and extract links from pID to xID for both teams
-    links_pID_to_jID = {}
-    teams = root.find("MatchInformation").find("Teams")
-    home = root.find("MatchInformation").find("General").get("HomeTeamId")
-    if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
-        away = root.find("MatchInformation").find("General").get("AwayTeamId")
-    elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
-        away = root.find("MatchInformation").find("General").get("GuestTeamId")
-    else:
-        away = None
-
-    for team in teams:
-        if team.get("TeamId") == home:
-            links_pID_to_jID["Home"] = {
-                player.get("PersonId"): int(player.get("ShirtNumber"))
-                for player in team.find("Players")
-            }
-        elif team.get("TeamId") == away:
-            links_pID_to_jID["Away"] = {
-                player.get("PersonId"): int(player.get("ShirtNumber"))
-                for player in team.find("Players")
-            }
-        else:
-            continue
-
-    links_jID_to_xID = {
-        "Home": {
-            int(links_pID_to_jID["Home"][pID]): xID
-            for xID, pID in enumerate(links_pID_to_jID["Home"])
-        },
-        "Away": {
-            int(links_pID_to_jID["Away"][pID]): xID
-            for xID, pID in enumerate(links_pID_to_jID["Away"])
-        },
-    }
-
-    return links_jID_to_xID, links_pID_to_jID
-
-
 def _get_event_description(
     elem: etree.Element,
 ) -> Tuple[str, Dict[str, Union[str, int]]]:
@@ -333,12 +271,17 @@ def read_pitch_from_mat_info_xml(filepath_mat_info: Union[str, Path]) -> Pitch:
     length = float(length) if length else None
     width = root.find("MatchInformation").find("Environment").get("PitchY")
     width = float(width) if width else None
-    pitch = Pitch.from_template("dfl", length=length, width=width, sport="football",)
+    pitch = Pitch.from_template(
+        "dfl",
+        length=length,
+        width=width,
+        sport="football",
+    )
 
     return pitch
 
 
-def read_teamsheets_from_mat_info_xml(filepath_mat_info):
+def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]:
     """Reads match_information XML file and returns two teamsheet objects for the home
     and the away team.
 
@@ -349,22 +292,25 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info):
 
     Returns
     -------
-    teamsheet_objects: Tuple[Teamsheet]
-        Two class instances for the home team at the first position and the away
-        teams at the second position.
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
     """
     # set up XML tree
     tree = etree.parse(str(filepath_mat_info))
     root = tree.getroot()
 
     # initialize matchsheets
-    home_teamsheet = pd.DataFrame(
-        columns=["player", "position", "team", "jID", "pID", "tID"]
-    )
-    away_teamsheet = pd.DataFrame()
+    teamsheets = {
+        "Home": pd.DataFrame(
+            columns=["player", "position", "team", "jID", "pID", "tID"]
+        ),
+        "Away": pd.DataFrame(
+            columns=["player", "position", "team", "jID", "pID", "tID"]
+        ),
+    }
 
     # find team ids
-    teams = root.find("MatchInformation").find("Teams")
+    team_information = root.find("MatchInformation").find("Teams")
     home_id = root.find("MatchInformation").find("General").get("HomeTeamId")
     if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
         away_id = root.find("MatchInformation").find("General").get("AwayTeamId")
@@ -374,47 +320,41 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info):
         away_id = None
 
     # parse player information
-    for team in teams:
-        if team.get("TeamId") == home_id:
-            home_teamsheet["player"] = [
-                player.get("Shortname") for player in team.find("Players")
-            ]
-            home_teamsheet["pID"] = [
-                player.get("PersonId") for player in team.find("Players")
-            ]
-            home_teamsheet["jID"] = [
-                int(player.get("ShirtNumber")) for player in team.find("Players")
-            ]
-            home_teamsheet["position"] = [
-                player.get("PlayingPosition") for player in team.find("Players")
-            ]
-            home_teamsheet["tID"] = [home_id for _ in team.find("Players")]
-            home_teamsheet["team"] = [
-                team.get("TeamName") for _ in team.find("Players")
-            ]
-        elif team.get("TeamId") == away_id:
-            away_teamsheet["player"] = [
-                player.get("Shortname") for player in team.find("Players")
-            ]
-            away_teamsheet["pID"] = [
-                player.get("PersonId") for player in team.find("Players")
-            ]
-            away_teamsheet["jID"] = [
-                int(player.get("ShirtNumber")) for player in team.find("Players")
-            ]
-            away_teamsheet["position"] = [
-                player.get("PlayingPosition") for player in team.find("Players")
-            ]
-            away_teamsheet["tID"] = [away_id for _ in team.find("Players")]
-            away_teamsheet["team"] = [
-                team.get("TeamName") for _ in team.find("Players")
-            ]
+    for team_info in team_information:
+        if team_info.get("TeamId") == home_id:
+            team = "Home"
+        elif team_info.get("TeamId") == away_id:
+            team = "Away"
         else:
+            team = None
+
+        # skip referees sometimes referred to as a team in new data formats
+        if team not in ["Home", "Away"]:
             continue
 
-    teamsheet_objects = (Teamsheet(home_teamsheet), Teamsheet(away_teamsheet))
+        # create teamsheets
+        teamsheets[team]["player"] = [
+            player.get("Shortname") for player in team_info.find("Players")
+        ]
+        teamsheets[team]["pID"] = [
+            player.get("PersonId") for player in team_info.find("Players")
+        ]
+        teamsheets[team]["jID"] = [
+            int(player.get("ShirtNumber")) for player in team_info.find("Players")
+        ]
+        teamsheets[team]["position"] = [
+            player.get("PlayingPosition") for player in team_info.find("Players")
+        ]
+        teamsheets[team]["tID"] = [away_id for _ in team_info.find("Players")]
+        teamsheets[team]["team"] = [
+            team_info.get("TeamName") for _ in team_info.find("Players")
+        ]
 
-    return teamsheet_objects
+    # create teamsheet objects
+    for team in teamsheets:
+        teamsheets[team] = Teamsheet(teamsheets[team])
+
+    return teamsheets
 
 
 def read_event_data_xml(
@@ -589,10 +529,18 @@ def read_event_data_xml(
         )
 
     # assembly
-    events_team1_ht1 = Events(events=team_dfs[segments[0]][team1],)
-    events_team1_ht2 = Events(events=team_dfs[segments[1]][team1],)
-    events_team2_ht1 = Events(events=team_dfs[segments[0]][team2],)
-    events_team2_ht2 = Events(events=team_dfs[segments[1]][team2],)
+    events_team1_ht1 = Events(
+        events=team_dfs[segments[0]][team1],
+    )
+    events_team1_ht2 = Events(
+        events=team_dfs[segments[1]][team1],
+    )
+    events_team2_ht1 = Events(
+        events=team_dfs[segments[0]][team2],
+    )
+    events_team2_ht2 = Events(
+        events=team_dfs[segments[1]][team2],
+    )
     data_objects = (
         events_team1_ht1,
         events_team1_ht2,
@@ -649,12 +597,15 @@ def read_position_data_xml(
 
     # create or check teamsheet objects
     if home_teamsheet is None and away_teamsheet is None:
-        teamsheet_objects = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        home_teamsheet, away_teamsheet = teamsheet_objects
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        home_teamsheet = teamsheets["Home"]
+        away_teamsheet = teamsheets["Away"]
     elif home_teamsheet is None:
-        home_teamsheet = read_teamsheets_from_mat_info_xml(filepath_mat_info)[0]
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        home_teamsheet = teamsheets["Home"]
     elif away_teamsheet is None:
-        away_teamsheet = read_teamsheets_from_mat_info_xml(filepath_mat_info)[1]
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        away_teamsheet = teamsheets["Away"]
     else:
         pass
         # potential check
