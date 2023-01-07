@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from floodlight.io.utils import extract_zip, download_from_url
-from floodlight.io.statsbomb import read_open_statsbomb_event_data_json
+from floodlight.io.statsbomb import read_open_event_data_json
 from floodlight import XY, Pitch, Events, Code
 from floodlight.settings import DATA_DIR
 
@@ -577,7 +577,7 @@ class StatsBombOpenDataset:
                 filepath_threesixty = None
 
         # read events from file
-        (home_ht1, home_ht2, away_ht1, away_ht2,) = read_open_statsbomb_event_data_json(
+        (home_ht1, home_ht2, away_ht1, away_ht2,) = read_open_event_data_json(
             filepath_events, filepath_matches, filepath_threesixty
         )
         event_objects = (home_ht1, home_ht2, away_ht1, away_ht2)

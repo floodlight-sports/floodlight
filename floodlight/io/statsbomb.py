@@ -9,7 +9,7 @@ import pandas as pd
 from floodlight.core.events import Events
 
 
-def read_open_statsbomb_event_data_json(
+def read_open_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
