@@ -45,7 +45,7 @@ def read_teamsheets_from_open_statsperform_files(
             matchinfo = info
             break
 
-    # initialize matchsheets
+    # initialize teamsheets
     teamsheets = {
         "Home": pd.DataFrame(
             columns=["player", "position", "team", "jID", "pID", "tID"]
