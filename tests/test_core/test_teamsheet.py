@@ -50,7 +50,7 @@ def test_protected_missing(
 ) -> None:
     data = Teamsheet(example_teamsheet_data)
     missing_protected_columns = data.protected_missing
-    assert len(missing_protected_columns) == 13
+    assert len(missing_protected_columns) == 14
 
 
 @pytest.mark.unit
