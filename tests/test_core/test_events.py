@@ -71,7 +71,7 @@ def test_essential_missing(
 
 
 @pytest.mark.unit
-@pytest.mark.filterwarnings("ignore: Floodlight Events column")
+@pytest.mark.filterwarnings("ignore: The 'gameclock' column")
 def test_essential_invalid(
     example_events_data_minimal_invalid_essential: pd.DataFrame,
 ) -> None:
