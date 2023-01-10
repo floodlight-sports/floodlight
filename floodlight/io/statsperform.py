@@ -128,15 +128,15 @@ def _read_open_event_csv_single_line(
     return event, team, segment
 
 
-def read_teamsheets_from_open_tracking_data_csv(
-    filepath_tracking: Union[str, Path]
+def read_teamsheets_from_open_data_csv(
+    filepath_csv: Union[str, Path]
 ) -> Dict[str, Teamsheet]:
-    """Parses the entire open StatsPerform event data csv file for unique jIDs
+    """Parses the entire open StatsPerform tracking data csv file for unique jIDs
     (jerseynumbers) and creates teamsheets for both teams.
 
     Parameters
     ----------
-    filepath_tracking: str or pathlib.Path
+    filepath_csv: str or pathlib.Path
         csv file where the position data in StatsPerform format is saved.
 
     Returns
@@ -145,16 +145,17 @@ def read_teamsheets_from_open_tracking_data_csv(
         Dictionary with teamsheets for the home team and the away team.
     """
     # read dat-file into pd.DataFrame
-    csv_df = pd.read_csv(str(filepath_tracking))
+    csv_df = pd.read_csv(str(filepath_csv))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
     ball_id = 4
 
     # check for additional tIDs
-    for ID in csv_df["team_id"].unique():
-        if not (ID in team_ids.values() or ID == ball_id):
-            warnings.warn(f"Team ID {ID} did not match any of the standard IDs!")
+    for tID in csv_df["team_id"].unique():
+        if not (tID in team_ids.values() or tID == ball_id or np.isnan(tID)):
+            warnings.warn(f"tID {tID} did not match any of the standard tIDs "
+                          f"({team_ids.values}) or the ball ID ({ball_id})!")
 
     # initialize teamsheets
     teamsheets = {
@@ -185,8 +186,11 @@ def read_teamsheets_from_open_tracking_data_csv(
 
 def read_open_event_data_csv(
     filepath_events: Union[str, Path],
-) -> Tuple[Events, Events, Events, Events]:
-    """Parses an open StatsPerform Match Event csv file and extracts the event data.
+    home_teamsheet: Teamsheet = None,
+    away_teamsheet: Teamsheet = None,
+) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
+    """Parses an open StatsPerform Match Event csv file and extracts the event data and
+    teamsheets.
 
     This function provides a high-level access to the particular openly published
     StatsPerform match events csv file (e.g. for the Pro Forum '22) and returns Event
@@ -197,9 +201,19 @@ def read_open_event_data_csv(
     filepath_events: str or pathlib.Path
         Full path to xml File where the Event data in StatsPerform csv format is
         saved
+    home_teamsheet: Teamsheet, optional
+        Teamsheet-object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
+        map players to a specific xID in the respective XY objects. Should be supplied
+        if that order matters. If given as None (default), teamsheet is extracted from
+        the Match Information XML file.
+    away_teamsheet: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the Match Information XML file.
+
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events]
+    data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
         Events-objects for both teams and both halves.
 
     Notes
@@ -211,10 +225,25 @@ def read_open_event_data_csv(
     """
     # initialize bin and variables
     events = {}
-    teams = ["1.0", "2.0"]
+    team_ids = {"Home": 1.0, "Away": 2.0}
     segments = ["1", "2"]
-    for team in teams:
+    for team in team_ids.values():
         events[team] = {segment: pd.DataFrame() for segment in segments}
+
+    # create or check teamsheet objects
+    if home_teamsheet is None and away_teamsheet is None:
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_events)
+        home_teamsheet = teamsheets["Home"]
+        away_teamsheet = teamsheets["Away"]
+    elif home_teamsheet is None:
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_events)
+        home_teamsheet = teamsheets["Home"]
+    elif away_teamsheet is None:
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_events)
+        away_teamsheet = teamsheets["Away"]
+    else:
+        pass
+        # potential check
 
     # parse event data
     with open(str(filepath_events), "r") as f:
@@ -234,29 +263,37 @@ def read_open_event_data_csv(
 
             # insert to bin
             if team:
+                team = float(team)
                 events[team][segment] = events[team][segment].append(
                     event, ignore_index=True
                 )
             else:  # if no clear assignment possible, insert to bins for both teams
-                for team in teams:
+                for team in team_ids.values():
                     events[team][segment] = events[team][segment].append(
                         event, ignore_index=True
                     )
 
     # assembly
-    t1_ht1 = Events(
-        events=events["1.0"]["1"],
+    home_ht1 = Events(
+        events=events[team_ids["Home"]]["1"],
     )
-    t1_ht2 = Events(
-        events=events["1.0"]["2"],
+    home_ht2 = Events(
+        events=events[team_ids["Home"]]["2"],
     )
-    t2_ht1 = Events(
-        events=events["2.0"]["1"],
+    away_ht1 = Events(
+        events=events[team_ids["Home"]]["1"],
     )
-    t2_ht2 = Events(
-        events=events["2.0"]["2"],
+    away_ht2 = Events(
+        events=events[team_ids["Home"]]["2"],
     )
-    data_objects = (t1_ht1, t1_ht2, t2_ht1, t2_ht2)
+    data_objects = (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        home_teamsheet,
+        away_teamsheet,
+    )
 
     return data_objects
 
@@ -265,7 +302,7 @@ def read_open_tracking_data_csv(
     filepath_tracking: Union[str, Path],
     home_teamsheet: Teamsheet = None,
     away_teamsheet: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Teamsheet, Teamsheet, Pitch]:
+) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch, Teamsheet, Teamsheet]:
     """Parses an open StatsPerform csv file and extract position data and possession
     codes as well as teamsheets and pitch information.
 
@@ -290,10 +327,10 @@ def read_open_tracking_data_csv(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Teamsheet, Teamsheet, Pitch]
+    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch, Teamsheet, Teamsheet]
         XY-, Code-, Teamsheet-, and Pitch-objects for both teams and both halves. The
         order is (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, home_teamsheet, away_teamsheet, pitch)
+        possession_ht1, possession_ht2, pitch, home_teamsheet, away_teamsheet)
     """
     # parse the csv file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath_tracking))
@@ -309,14 +346,14 @@ def read_open_tracking_data_csv(
 
     # create or check teamsheet objects
     if home_teamsheet is None and away_teamsheet is None:
-        teamsheets = read_teamsheets_from_open_tracking_data_csv(filepath_tracking)
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_tracking)
         home_teamsheet = teamsheets["Home"]
         away_teamsheet = teamsheets["Away"]
     elif home_teamsheet is None:
-        teamsheets = read_teamsheets_from_open_tracking_data_csv(filepath_tracking)
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_tracking)
         home_teamsheet = teamsheets["Home"]
     elif away_teamsheet is None:
-        teamsheets = read_teamsheets_from_open_tracking_data_csv(filepath_tracking)
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_tracking)
         away_teamsheet = teamsheets["Away"]
     else:
         pass
@@ -448,9 +485,9 @@ def read_open_tracking_data_csv(
         ball_ht2,
         poss_ht1,
         poss_ht2,
+        pitch,
         home_teamsheet,
         away_teamsheet,
-        pitch,
     )
     return data_objects
 
@@ -660,7 +697,7 @@ def _read_jersey_numbers_from_tracking_data_txt(
     return home_jIDs, away_jIDs
 
 
-def read_teamsheets_from_event_xml(
+def read_teamsheets_from_event_data_xml(
     filepath_events: Union[str, Path],
 ) -> Dict[str, Teamsheet]:
     """Parses the StatsPerform event file and returns two Teamsheet-objects with
@@ -683,10 +720,10 @@ def read_teamsheets_from_event_xml(
     # initialize teamsheets
     teamsheets = {
         "Home": pd.DataFrame(
-            columns=["player", "position", "team", "jID", "pID", "tID", "started"]
+            columns=["player", "position", "team_name", "jID", "pID", "tID", "started"]
         ),
         "Away": pd.DataFrame(
-            columns=["player", "position", "team", "jID", "pID", "tID", "started"]
+            columns=["player", "position", "team_name", "jID", "pID", "tID", "started"]
         ),
     }
 
@@ -726,7 +763,7 @@ def read_teamsheets_from_event_xml(
             get_and_convert(player, "IsStarter", bool) for player in players
         ]
         teamsheets[team]["tID"] = tID
-        teamsheets[team]["team"] = team_name
+        teamsheets[team]["team_name"] = team_name
 
     # create teamsheet objects
     for team in teamsheets:
@@ -769,7 +806,7 @@ def read_teamsheets_from_tracking_data_txt(
     }
     for team in teamsheets:
         teamsheets[team]["player"] = [f"player {i}" for i in range(len(jIDs[team]))]
-        teamsheets[team]["jID"] = [jID for jID in jIDs[team]]
+        teamsheets[team]["jID"] = [int(jID) for jID in jIDs[team]]
 
     # create teamsheet objects
     for team in teamsheets:
@@ -780,7 +817,9 @@ def read_teamsheets_from_tracking_data_txt(
 
 def read_event_data_xml(
     filepath_events: Union[str, Path],
-) -> Tuple[Events, Events, Events, Events, Pitch]:
+    home_teamsheet: Teamsheet = None,
+    away_teamsheet: Teamsheet = None,
+) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
     """Parses a StatsPerform .xml file and extracts event data and pitch information.
 
     This function provides a high-level access to the StatsPerform match events xml file
@@ -790,12 +829,22 @@ def read_event_data_xml(
     ----------
     filepath_events: str or pathlib.Path
         Full path to the xml file containing the event data.
+    home_teamsheet: Teamsheet, optional
+        Teamsheet-object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
+        map players to a specific xID in the respective XY objects. Should be supplied
+        if that order matters. If given as None (default), teamsheet is extracted from
+        the Match Information XML file.
+    away_teamsheet: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the Match Information XML file.
 
     Returns
     -------
     data_objects: Tuple[Events, Events, Events, Events, Pitch]
-        Events-objects for both teams and both halves and pitch information. The order
-        is (home_ht1, home_ht2, away_ht1, away_ht2, pitch).
+        Events-objects for both teams and both halves, pitch information, and
+        teamsheets. The order is (home_ht1, home_ht2, away_ht1, away_ht2, pitch,
+        home_teamsheet, away_teamsheet).
     """
     # load xml tree into memory
     tree = etree.parse(str(filepath_events))
@@ -820,18 +869,25 @@ def read_event_data_xml(
     ]
     teams = ["Home", "Away"]
 
+    # create or check teamsheet objects
+    if home_teamsheet is None and away_teamsheet is None:
+        teamsheets = read_teamsheets_from_event_data_xml(filepath_events)
+        home_teamsheet = teamsheets["Home"]
+        away_teamsheet = teamsheets["Away"]
+    elif home_teamsheet is None:
+        teamsheets = read_teamsheets_from_event_data_xml(filepath_events)
+        home_teamsheet = teamsheets["Home"]
+    elif away_teamsheet is None:
+        teamsheets = read_teamsheets_from_event_data_xml(filepath_events)
+        away_teamsheet = teamsheets["Away"]
+    else:
+        pass
+        # potential check
+
     # create links between pIDs and team
     links_pID_to_team = {}
-    for teamsheet in root.findall("MatchSheet/Team"):
-        # skip referees
-        if teamsheet.attrib["Type"] == "Referees":
-            continue
-        # read team
-        team = teamsheet.attrib["Type"][:-4]  # cut 'Team' of e.g. 'HomeTeam'
-        for actor in teamsheet.findall("Actor"):
-            if actor.attrib["Occupation"] != "Player":  # coaches etc.
-                continue
-            links_pID_to_team[get_and_convert(actor, "IdActor", int)] = team
+    links_pID_to_team["Home"] = {pID: "Home" for pID in home_teamsheet["pID"]}
+    links_pID_to_team["Away"] = {pID: "Away" for pID in away_teamsheet["pID"]}
 
     # bins
     event_lists = {
@@ -915,21 +971,28 @@ def read_event_data_xml(
         events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
     )
 
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    data_objects = (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        pitch,
+        home_teamsheet,
+        away_teamsheet,
+    )
 
     return data_objects
 
 
 def read_tracking_data_txt(
     filepath_tracking: Union[str, Path],
-    filepath_events: Union[str, Path] = None,
     home_teamsheet: Teamsheet = None,
     away_teamsheet: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]:
     """Parses a StatsPerform .txt file and extracts position data and teamsheets.
 
      Internal StatsPerform position data is stored as a .txt file containing all
-     position data (for both halves). This function provides a high-level access to
+     position data (for both halves). This function provides high-level access to
      StatsPerform data by parsing the txt file. Since no information about framerate is
      delivered in the data itself, it is estimated from time difference between
      individual frames. Teamsheets are extracted from the event data, if filepath_events
@@ -967,24 +1030,16 @@ def read_tracking_data_txt(
     )
     segments = list(periods.keys())
 
-    # assign teamsheet function based on if filepath_events is provided
-    if filepath_events is None:
-        read_teamsheets_func = read_teamsheets_from_tracking_data_txt
-        read_teamsheets_input = filepath_tracking
-    else:
-        read_teamsheets_func = read_teamsheets_from_event_xml
-        read_teamsheets_input = filepath_events
-
     # create or check teamsheet objects
     if home_teamsheet is None and away_teamsheet is None:
-        teamsheets = read_teamsheets_func(read_teamsheets_input)
+        teamsheets = read_teamsheets_from_tracking_data_txt(filepath_tracking)
         home_teamsheet = teamsheets["Home"]
         away_teamsheet = teamsheets["Away"]
     elif home_teamsheet is None:
-        teamsheets = read_teamsheets_func(read_teamsheets_input)
+        teamsheets = read_teamsheets_from_tracking_data_txt(filepath_tracking)
         home_teamsheet = teamsheets["Home"]
     elif away_teamsheet is None:
-        teamsheets = read_teamsheets_func(read_teamsheets_input)
+        teamsheets = read_teamsheets_from_tracking_data_txt(filepath_tracking)
         away_teamsheet = teamsheets["Away"]
     else:
         pass
@@ -998,9 +1053,6 @@ def read_tracking_data_txt(
     links_jID_to_xID = {}
     links_jID_to_xID["Home"] = home_teamsheet.get_links("jID", "xID")
     links_jID_to_xID["Away"] = away_teamsheet.get_links("jID", "xID")
-    links_pID_to_jID = {}
-    links_pID_to_jID["Home"] = home_teamsheet.get_links("pID", "jID")
-    links_pID_to_jID["Away"] = away_teamsheet.get_links("pID", "jID")
 
     # infer data array shapes
     number_of_home_players = max(links_jID_to_xID["Home"].values()) + 1
@@ -1089,9 +1141,11 @@ def read_tracking_data_txt(
 
 def read_event_data_from_url(
     url: str,
-) -> Tuple[Events, Events, Events, Events, Pitch]:
+    home_teamsheet: Teamsheet = None,
+    away_teamsheet: Teamsheet = None,
+) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
     """Reads a URL containing a StatsPerform events csv file and extracts the stored
-    event data and pitch information.
+    event data, pitch information, and teamsheets.
 
     The event data from the URL is downloaded into a temporary file stored in the
     repository's internal root ``.data``-folder and removed afterwards.
@@ -1100,12 +1154,22 @@ def read_event_data_from_url(
     ----------
     url: str
         URL to the xml file containing the event data.
+    home_teamsheet: Teamsheet, optional
+        Teamsheet-object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
+        map players to a specific xID in the respective XY objects. Should be supplied
+        if that order matters. If given as None (default), teamsheet is extracted from
+        the Match Information XML file.
+    away_teamsheet: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the Match Information XML file.
 
     Returns
     -------
     data_objects: Tuple[Events, Events, Events, Events, Pitch]
-        Events-objects for both teams and both halves and pitch information. The order
-        is (home_ht1, home_ht2, away_ht1, away_ht2, pitch).
+        Events-objects for both teams and both halves, pitch information, and
+        teamsheets. The order is (home_ht1, home_ht2, away_ht1, away_ht2, pitch,
+        home_teamsheet, away_teamsheet).
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     if not os.path.isdir(data_dir):
@@ -1113,10 +1177,28 @@ def read_event_data_from_url(
     temp_file = os.path.join(data_dir, "events_temp.xml")
     with open(temp_file, "wb") as binary_file:
         binary_file.write(download_from_url(url))
-    home_ht1, home_ht2, away_ht1, away_ht2, pitch = read_event_data_xml(
-        filepath_events=os.path.join(data_dir, temp_file)
+    (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        pitch,
+        home_teamsheet,
+        away_teamsheet,
+    ) = read_event_data_xml(
+        filepath_events=os.path.join(data_dir, temp_file),
+        home_teamsheet=home_teamsheet,
+        away_teamsheet=away_teamsheet,
     )
-    data_objects = home_ht1, home_ht2, away_ht1, away_ht2, pitch
+    data_objects = (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        pitch,
+        home_teamsheet,
+        away_teamsheet,
+    )
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
 
@@ -1125,9 +1207,9 @@ def read_tracking_data_from_url(
     url: str,
     home_teamsheet: Teamsheet = None,
     away_teamsheet: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY]:
+) -> Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]:
     """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a tracking
-    data txt file and extracts position data.
+    data txt file and extracts position data and teamsheets.
 
     The tracking data from the URL is downloaded into a temporary file stored in the
     repository's internal root ``.data``-folder and removed afterwards.
@@ -1148,9 +1230,9 @@ def read_tracking_data_from_url(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY]
-        XY- and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2, pitch)
+    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]
+        XY-objects for both teams and both halves. The order is (home_ht1, home_ht2,
+        away_ht1, away_ht2, ball_ht1, ball_ht2, home_teamsheet, away_teamsheet).
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     if not os.path.isdir(data_dir):
@@ -1170,6 +1252,15 @@ def read_tracking_data_from_url(
         home_teamsheet=home_teamsheet,
         away_teamsheet=away_teamsheet,
     )
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2)
+    data_objects = (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        ball_ht1,
+        ball_ht2,
+        home_teamsheet,
+        away_teamsheet,
+    )
     os.remove(os.path.join(data_dir, temp_file))
     return data_objects
