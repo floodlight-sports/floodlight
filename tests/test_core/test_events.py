@@ -94,9 +94,10 @@ def test_protected_missing(
 
     # Act
     missing_protected_columns = data.protected_missing
+    total_num_protected = len(protected_columns)
 
     # Assert
-    assert len(missing_protected_columns) == 15
+    assert len(missing_protected_columns) == total_num_protected - 2
 
 
 @pytest.mark.unit
