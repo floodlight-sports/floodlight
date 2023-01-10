@@ -356,23 +356,45 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
 
 
 def read_event_data_xml(
-    filepath_events: Union[str, Path]
-) -> Tuple[Events, Events, Events, Events]:
-    """Parses a DFL Match Event XML file and extracts the event data.
+    filepath_events: Union[str, Path],
+    filepath_mat_info: Union[str, Path],
+    home_teamsheet: Teamsheet = None,
+    away_teamsheet: Teamsheet = None,
+) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
+    """Parses a DFL Match Event XML file and extracts the event data as well as
+    teamsheets.
 
-    This function provides a high-level access to the particular DFL Match Event feed
-    and returns Event objects for both teams. The number of segments is inferred from
-    the data, yet data for each segment is stored in a separate object.
+    The structure of the official tracking system of the DFL (German Football League)
+    contains two separate xml files, one containing the actual data as well as a
+    metadata file containing information about teams, pitch size, and start- and
+    endframes of match periods. This function provides high-level access to DFL data by
+    parsing "the full match" and returning Events-objects parsed from the event data
+    xml-file as well as Teamsheet-objects parsed from the metadata xml-file. The number
+    of segments is inferred from the data, yet data for each segment is stored in a
+    separate object.
 
     Parameters
     ----------
     filepath_events: str or pathlib.Path
         Full path to XML File where the Event data in DFL format is saved.
+    filepath_mat_info: str or pathlib.Path
+        Full path to XML File where the Match Information data in DFL format is saved.
+    home_teamsheet: Teamsheet, optional
+        Teamsheet-object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
+        map players to a specific xID in the respective XY objects. Should be supplied
+        if that order matters. If given as None (default), teamsheet is extracted from
+        the Match Information XML file.
+    away_teamsheet: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the Match Information XML file.
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events]
-        Events- and Pitch-objects for both teams and both halves.
+    data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
+        Events- and Pitch-objects for both teams and both halves. The order is
+        (events_home_ht1, events_home_ht2, events_away_ht1, events_away_ht2,
+        home_teamsheet, away_teamsheet).
 
     Notes
     -----
@@ -387,6 +409,21 @@ def read_event_data_xml(
     # set up XML tree
     tree = etree.parse(str(filepath_events))
     root = tree.getroot()
+
+    # create or check teamsheet objects
+    if home_teamsheet is None and away_teamsheet is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        home_teamsheet = teamsheets["Home"]
+        away_teamsheet = teamsheets["Away"]
+    elif home_teamsheet is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        home_teamsheet = teamsheets["Home"]
+    elif away_teamsheet is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        away_teamsheet = teamsheets["Away"]
+    else:
+        pass
+        # potential check
 
     # find start of halves
     start_times = {}
@@ -526,24 +563,48 @@ def read_event_data_xml(
             f"other segment!"
         )
 
+    # link team1 and team2 to home and away
+    home_tID = home_teamsheet.teamsheet.at[0, "tID"]
+    away_tID = away_teamsheet.teamsheet.at[0, "tID"]
+    links_team_to_role = {
+        "Home": home_tID,
+        "Away": away_tID,
+    }
+
+    # check if home and away tIDs occur in event data
+    if team1 != home_tID and team2 != home_tID:
+        raise AttributeError(
+            f"The tIDs of teams in the event data ({team1} and {team2}) "
+            f"does not match the tID for the home team in the "
+            f"match information {home_tID}!"
+        )
+    if team1 != away_tID and team2 != away_tID:
+        raise AttributeError(
+            f"The tIDs of teams in the event data ({team1} and {team2}) "
+            f"does not match the tID for the home team in the "
+            f"match information ({away_tID})!"
+        )
+
     # assembly
-    events_team1_ht1 = Events(
-        events=team_dfs[segments[0]][team1],
+    events_home_ht1 = Events(
+        events=team_dfs[segments[0]][links_team_to_role["Home"]],
     )
-    events_team1_ht2 = Events(
-        events=team_dfs[segments[1]][team1],
+    events_home_ht2 = Events(
+        events=team_dfs[segments[1]][links_team_to_role["Home"]],
     )
-    events_team2_ht1 = Events(
-        events=team_dfs[segments[0]][team2],
+    events_away_ht1 = Events(
+        events=team_dfs[segments[0]][links_team_to_role["Away"]],
     )
-    events_team2_ht2 = Events(
-        events=team_dfs[segments[1]][team2],
+    events_away_ht2 = Events(
+        events=team_dfs[segments[1]][links_team_to_role["Away"]],
     )
     data_objects = (
-        events_team1_ht1,
-        events_team1_ht2,
-        events_team2_ht1,
-        events_team2_ht2,
+        events_home_ht1,
+        events_home_ht2,
+        events_away_ht1,
+        events_away_ht2,
+        home_teamsheet,
+        away_teamsheet,
     )
 
     return data_objects
@@ -556,14 +617,17 @@ def read_position_data_xml(
     away_teamsheet: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
     """Parse DFL files and extract position data, possession and ballstatus codes as
-    well as pitch information.
+    well as pitch information and teamsheets.
 
-    The official tracking system of the DFL (German Football League) delivers two
-    separate XML files, one containing the actual data as well as a metadata file
-    containing information about pitch size and start- and endframes of match periods.
-    Since no information about framerate is delivered, it is estimated from time
-    difference between individual frames. This function provides a high-level access to
-    DFL data by parsing "the full match" given both files.
+    The structure of the official tracking system of the DFL (German Football League)
+    contains two separate xml files, one containing the actual data as well as a
+    metadata file containing information about teams, pitch size, and start- and
+    endframes of match periods. However, since no information about framerate is
+    contained in the metadata, the framerate is estimated from the time difference
+    between individual frames. This function provides high-level access to DFL data by
+    parsing "the full match" and returning XY- and Code-objects parsed from the position
+    data xml-file as well as Pitch- and Teamsheet-objects parsed from the metadata
+    xml-file.
 
     Parameters
     ----------
