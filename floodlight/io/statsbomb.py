@@ -10,7 +10,7 @@ from floodlight.core.events import Events
 from floodlight.core.teamsheet import Teamsheet
 
 
-def read_teamsheets_from_open_statsperform_files(
+def read_teamsheets_from_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
 ) -> Dict[str, Teamsheet]:
@@ -129,7 +129,7 @@ def read_teamsheets_from_open_statsperform_files(
     return teamsheets
 
 
-def read_open_statsperform_event_data_json(
+def read_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
@@ -137,7 +137,7 @@ def read_open_statsperform_event_data_json(
     """Parses files for a single match from the StatsBomb open dataset and extracts the
     event data.
 
-    This function provides a high-level access to an events json file from the openly
+    This function provides high-level access to an events json file from the openly
     published StatsBomb open data and returns Event objects for both teams for the first
     two periods. A StatsBomb360 json file can be passed to the function to include
     `StatsBomb360 data <https://statsbomb.com/articles/soccer/
@@ -185,7 +185,7 @@ def read_open_statsperform_event_data_json(
         file_threesixty_list = None
 
     # 1. get teamsheets and match information
-    teamsheets = read_teamsheets_from_open_statsperform_files(
+    teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
         filepath_events, filepath_match
     )
     tID_links = {

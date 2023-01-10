@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from floodlight.io.utils import extract_zip, download_from_url
-from floodlight.io.statsbomb import read_open_statsperform_event_data_json
+from floodlight.io.statsbomb import read_open_statsbomb_event_data_json
 from floodlight import XY, Pitch, Events, Code
 from floodlight.core.teamsheet import Teamsheet
 from floodlight.settings import DATA_DIR
@@ -585,7 +585,7 @@ class StatsBombOpenDataset:
             away_ht2,
             home_teamsheet,
             away_teamsheet,
-        ) = read_open_statsperform_event_data_json(
+        ) = read_open_statsbomb_event_data_json(
             filepath_events, filepath_matches, filepath_threesixty
         )
 
