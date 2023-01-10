@@ -18,6 +18,9 @@ jobs:
         python-version: [3.8, 3.9, '3.10']
         poetry-version: [1.1.11]
 
+    env:
+      MPLBACKEND: Agg  # https://github.com/microsoft/azure-pipelines-tasks/issues/16426
+
     steps:
     - name: Check out source repository
       uses: actions/checkout@v2

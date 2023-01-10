@@ -112,6 +112,12 @@ protected_columns = {
         "dtypes": [float],
         "value_range": None
     },
+    "started": {
+        "definition": "Boolean indicating whether a player started the observation as"
+                      "an active player.",
+        "dtypes": [bool],
+        "value_range": None
+    }
 }
 
 # fmt:on
