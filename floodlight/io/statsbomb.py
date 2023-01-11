@@ -47,12 +47,14 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
     # initialize teamsheets
     teamsheets = {
         "Home": pd.DataFrame(
-            columns=["player", "position", "team", "jID", "pID", "tID"]
+            columns=["player", "position", "team_name", "jID", "pID", "tID"]
         ),
         "Away": pd.DataFrame(
-            columns=["player", "position", "team", "jID", "pID", "tID"]
+            columns=["player", "position", "team_name", "jID", "pID", "tID"]
         ),
     }
+
+    # check if home and away tIDs are contained
 
     # find team data in match info
     tIDs = {
@@ -70,9 +72,9 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
             continue
 
         # find team
-        if event["team"]["id"] == tIDs["Home"]:
+        if event["team_name"]["id"] == tIDs["Home"]:
             team = "Home"
-        elif event["team"]["id"] == tIDs["Away"]:
+        elif event["team_name"]["id"] == tIDs["Away"]:
             team = "Away"
         else:
             team = None
@@ -92,7 +94,7 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
             for player_data in event["tactics"]["lineup"]
         ]
         teamsheets[team]["tID"] = [tIDs[team] for _ in event["tactics"]["lineup"]]
-        teamsheets[team]["team"] = [
+        teamsheets[team]["team_name"] = [
             team_names[team] for _ in event["tactics"]["lineup"]
         ]
 
@@ -102,9 +104,9 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
             continue
 
         # find team
-        if event["team"]["id"] == tIDs["Home"]:
+        if event["team_name"]["id"] == tIDs["Home"]:
             team = "Home"
-        elif event["team"]["id"] == tIDs["Away"]:
+        elif event["team_name"]["id"] == tIDs["Away"]:
             team = "Away"
         else:
             team = None
@@ -117,7 +119,7 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
                 "jID": [pd.NA],
                 "position": [event["position"]["name"]],
                 "tID": [tIDs[team]],
-                "team": [team_names[team]],
+                "team_name": [team_names[team]],
             }
         )
         teamsheets[team] = pd.concat((teamsheets[team], player_data), ignore_index=True)
