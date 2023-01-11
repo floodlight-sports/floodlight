@@ -497,7 +497,7 @@ class StatsBombOpenDataset:
         home_teamsheet: Teamsheet = None,
         away_teamsheet: Teamsheet = None,
     ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
-        """Get events from one match of the StatsBomb open dataset.
+        """Get events and teamsheets from one match of the StatsBomb open dataset.
 
         If `StatsBomb360data <https://statsbomb.com/articles/soccer/
         statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_  are

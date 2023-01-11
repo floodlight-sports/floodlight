@@ -144,12 +144,12 @@ def read_open_statsbomb_event_data_json(
     away_teamsheet: Teamsheet = None,
 ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
     """Parses files for a single match from the StatsBomb open dataset and extracts the
-    event data.
+    event data and teamsheets.
 
     This function provides high-level access to an events json file from the openly
-    published StatsBomb open data and returns Event objects for both teams for the first
-    two periods. A StatsBomb360 json file can be passed to the function to include
-    `StatsBomb360 data <https://statsbomb.com/articles/soccer/
+    published StatsBomb open data and returns Event- and Teamsheet-objects for both
+    teams for the full match. A StatsBomb360 json file can be passed to the function to
+    include `StatsBomb360 data <https://statsbomb.com/articles/soccer/
     statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_ to the
     ``qualifier`` column. Requires the parsed files from the dataset to maintain their
     original names from the `official data repository
@@ -378,8 +378,6 @@ def read_open_statsbomb_event_data_json(
     away_ht2 = Events(
         events=pd.DataFrame(data=team_event_lists["Away"]["HT2"]),
     )
-    home_teamsheet = teamsheets["Home"]
-    away_teamsheet = teamsheets["Away"]
 
     data_objects = (
         home_ht1,
