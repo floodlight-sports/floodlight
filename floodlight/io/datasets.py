@@ -368,7 +368,7 @@ class StatsBombOpenDataset:
     >>> from floodlight.io.datasets import StatsBombOpenDataset
     >>> dataset = StatsBombOpenDataset()
     # get one sample of event data with StatsBomb360 data
-    >>> events = dataset.get("UEFA Euro", "2020", "England vs. Germany")
+    >>> single_match_data = dataset.get("UEFA Euro", "2020", "England vs. Germany")
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
     # get a summary of available matches in the dataset
