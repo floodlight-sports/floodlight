@@ -65,7 +65,8 @@ def read_sportradar_timeline(filepath_events):
     periods = set(
         [event["period_name"] for event in timeline if event["type"] == "period_start"]
     )
-    segments = [f"HT{period}" for period in periods]  ### seems unnecessary
+    # seems unnecessary
+    segments = [f"HT{period}" for period in periods]
 
     team_event_lists = {
         team: {segment: {col: [] for col in columns} for segment in segments}
@@ -75,13 +76,13 @@ def read_sportradar_timeline(filepath_events):
     period = None
     for event in timeline:
         # get period
-        if event["type"] == "match_started":
-            continue
-
-        if event["type"] == "period_start":
-            period = event["period_name"]
-            segment = f"HT{period}"
-            segment_start = datetime.datetime.fromisoformat(event["time"])
+        if not period:
+            if event["type"] == "period_start":
+                period = event["period_name"]
+                segment = f"HT{period}"
+                segment_start = datetime.datetime.fromisoformat(event["time"])
+            else:
+                continue
 
         eID = event["id"]
 
