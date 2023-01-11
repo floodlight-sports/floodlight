@@ -202,14 +202,11 @@ def read_open_event_data_csv(
         Full path to xml File where the Event data in StatsPerform csv format is
         saved
     home_teamsheet: Teamsheet, optional
-        Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        Teamsheet-object for the home team. If given as None (default), teamsheet is
+        extracted from the event data csv file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the event data csv file.
 
     Returns
     -------
@@ -317,13 +314,12 @@ def read_open_tracking_data_csv(
         Full path to the csv file.
     home_teamsheet: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        `links[team][jID] = xID`. The links are used to map players to a specific xID
+        in the respective XY objects. Should be supplied if that order matters. If given
+        as None (default), teamsheet is extracted from the tracking data csv file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the tracking data csv file.
 
     Returns
     -------
@@ -822,7 +818,7 @@ def read_event_data_xml(
 ) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
     """Parses a StatsPerform .xml file and extracts event data and pitch information.
 
-    This function provides a high-level access to the StatsPerform match events xml file
+    This function provides high-level access to the StatsPerform match events xml file
     and returns Events objects for both teams and information about the pitch.
 
     Parameters
@@ -831,13 +827,12 @@ def read_event_data_xml(
         Full path to the xml file containing the event data.
     home_teamsheet: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        `links[pID] = team`. The links are used to map players to the home and away
+        teams. If given as None (default), teamsheet is extracted from the event data
+        xml file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the event data xml file.
 
     Returns
     -------
@@ -886,8 +881,8 @@ def read_event_data_xml(
 
     # create links between pIDs and team
     links_pID_to_team = {}
-    links_pID_to_team["Home"] = {pID: "Home" for pID in home_teamsheet["pID"]}
-    links_pID_to_team["Away"] = {pID: "Away" for pID in away_teamsheet["pID"]}
+    links_pID_to_team.update({pID: "Home" for pID in home_teamsheet["pID"]})
+    links_pID_to_team.update({pID: "Away" for pID in away_teamsheet["pID"]})
 
     # bins
     event_lists = {
@@ -1003,20 +998,14 @@ def read_tracking_data_txt(
     ----------
     filepath_tracking: str or pathlib.Path
         Full path to the txt file containing the tracking data.
-    filepath_events: str or pathlib.Path, optional
-        Full path to the xml file containing the event data. Is used to create detailed
-        Teamsheet-objects for both teams. If not provided, teamsheet objects with
-        columns only containing player, pID, and jID are inferred from the tracking
-        data.
     home_teamsheet: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        `links[team][jID] = xID`. The links are used to map players to a specific xID in
+        the respective XY objects. Should be supplied if that order matters. If given as
+        None (default), teamsheet is extracted from the tracking data txt file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the tracking data txt file.
 
     Returns
     -------
@@ -1156,13 +1145,12 @@ def read_event_data_from_url(
         URL to the xml file containing the event data.
     home_teamsheet: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        `links[pID] = team`. The links are used to map players to the home and away
+        teams. If given as None (default), teamsheet is extracted from
+        the event data xml file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the event data xml file.
 
     Returns
     -------
@@ -1220,13 +1208,12 @@ def read_tracking_data_from_url(
         URL to the txt file containing the tracking data.
     home_teamsheet: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        `links[team][jID] = xID`. The links are used to map players to a specific xID in
+        the respective XY objects. Should be supplied if that order matters. If given as
+        None (default), teamsheet is extracted from the tracking data txt file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the tracking data txt file.
 
     Returns
     -------
