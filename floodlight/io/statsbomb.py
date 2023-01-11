@@ -46,8 +46,10 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
 
     # raise error if match is not contained in matchinfo
     if matchinfo is None:
-        raise KeyError(f"The match with mID {mID} was not found in the specified "
-                       f"File of match information ({filepath_match}).")
+        raise KeyError(
+            f"The match with mID {mID} was not found in the specified "
+            f"File of match information ({filepath_match})."
+        )
 
     # initialize teamsheets
     teamsheets = {
@@ -167,9 +169,7 @@ def read_open_statsbomb_event_data_json(
         stored as a string in the ``qualifier`` column.
     home_teamsheet: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
+        `links[pID] = team`. If given as None (default), teamsheet is extracted from
         the Match Information XML file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
@@ -202,14 +202,20 @@ def read_open_statsbomb_event_data_json(
 
     # create or check teamsheet objects
     if home_teamsheet is None and away_teamsheet is None:
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(filepath_events, filepath_match)
+        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+            filepath_events, filepath_match
+        )
         home_teamsheet = teamsheets["Home"]
         away_teamsheet = teamsheets["Away"]
     elif home_teamsheet is None:
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(filepath_events, filepath_match)
+        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+            filepath_events, filepath_match
+        )
         home_teamsheet = teamsheets["Home"]
     elif away_teamsheet is None:
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(filepath_events, filepath_match)
+        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+            filepath_events, filepath_match
+        )
         away_teamsheet = teamsheets["Away"]
     else:
         pass

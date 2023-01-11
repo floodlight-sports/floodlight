@@ -494,7 +494,8 @@ class StatsBombOpenDataset:
         competition_name: str = "La Liga",
         season_name: str = "2020/2021",
         match_name: str = None,
-
+        home_teamsheet: Teamsheet = None,
+        away_teamsheet: Teamsheet = None,
     ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
         """Get events from one match of the StatsBomb open dataset.
 
@@ -518,6 +519,13 @@ class StatsBombOpenDataset:
             Match name relating to the available matches in the chosen competition and
             season. If equal to None (default), the first available match of the
             given competition and season is chosen.
+        home_teamsheet: Teamsheet, optional
+            Teamsheet-object for the home team used to create link dictionaries of the
+            form `links[pID] = team`. If given as None (default), teamsheet is extracted
+            from the Match Information XML file.
+        away_teamsheet: Teamsheet, optional
+            Teamsheet-object for the away team. If given as None (default), teamsheet is
+            extracted from the Match Information XML file.
 
         Returns
         -------
@@ -587,7 +595,11 @@ class StatsBombOpenDataset:
             home_teamsheet,
             away_teamsheet,
         ) = read_open_statsbomb_event_data_json(
-            filepath_events, filepath_matches, filepath_threesixty
+            filepath_events,
+            filepath_matches,
+            filepath_threesixty,
+            home_teamsheet,
+            away_teamsheet,
         )
 
         # assembly
