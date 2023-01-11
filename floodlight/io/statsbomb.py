@@ -31,13 +31,13 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
         Dictionary with teamsheets for the home team and the away team.
     """
     # load json file into memory
-    with open(filepath_match, "r", encoding="utf8") as f:
+    with open(str(filepath_match), "r", encoding="utf8") as f:
         matchinfo_list = json.load(f)
-    with open(filepath_events, "r", encoding="utf8") as f:
+    with open(str(filepath_events), "r", encoding="utf8") as f:
         file_event_list = json.load(f)
 
     # retrieve match info from file
-    mID = int(filepath_events.split(os.path.sep)[-1][:-5])  # from filepath
+    mID = int(str(filepath_events).split(os.path.sep)[-1][:-5])  # from filepath
     matchinfo = None
     for info in matchinfo_list:
         if info["match_id"] == mID:
@@ -192,10 +192,10 @@ def read_open_statsbomb_event_data_json(
     """
 
     # load json files into memory
-    with open(filepath_events, "r", encoding="utf8") as f:
+    with open(str(filepath_events), "r", encoding="utf8") as f:
         file_event_list = json.load(f)
     if filepath_threesixty is not None:
-        with open(filepath_threesixty, "r", encoding="utf8") as f:
+        with open(str(filepath_threesixty), "r", encoding="utf8") as f:
             file_threesixty_list = json.load(f)
     else:
         file_threesixty_list = None
@@ -253,7 +253,7 @@ def read_open_statsbomb_event_data_json(
 
     team_event_lists = {
         team: {segment: {col: [] for col in columns} for segment in segments}
-        for team in teamsheets
+        for team in links_tID_to_team.values()
     }
 
     # parse events loop
