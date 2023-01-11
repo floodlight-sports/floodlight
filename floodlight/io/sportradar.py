@@ -117,7 +117,7 @@ def read_sportradar_timeline(
     # loop
     for event in timeline:
         if not period:
-            # get period
+            # get first period
             if event["type"] == "period_start":
                 period = event["period_name"]
                 segment = f"HT{period}"
@@ -125,6 +125,12 @@ def read_sportradar_timeline(
             else:
                 # skip events before first period starts
                 continue
+        # get new periods
+        else:
+            if event["type"] == "period_start":
+                period = event["period_name"]
+                segment = f"HT{period}"
+                segment_start = datetime.datetime.fromisoformat(event["time"])
 
         # extract event, player and team ids and names
         eID = event["id"]
