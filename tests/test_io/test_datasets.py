@@ -22,8 +22,7 @@ def test_eigd_transform(
 
 # Test get method from StatsBombDataset
 @pytest.mark.unit
-def test_statsbomb_get(
-) -> None:
+def test_statsbomb_get() -> None:
 
     dataset = StatsBombOpenDataset()
     data = dataset.get(
@@ -37,3 +36,118 @@ def test_statsbomb_get(
     assert isinstance(data[3], Events)
     assert isinstance(data[4], Teamsheet)
     assert isinstance(data[5], Teamsheet)
+
+
+# Test get_teamsheet method from StatsBombDataset
+@pytest.mark.unit
+def test_statsbomb_get_teamsheet() -> None:
+
+    dataset = StatsBombOpenDataset()
+    teamsheets = dataset.get_teamsheets(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+    )
+    assert isinstance(teamsheets["Home"], Teamsheet)
+    assert isinstance(teamsheets["Away"], Teamsheet)
+    assert teamsheets["Home"].teamsheet.at[0, "team_name"] == "AC Milan"
+    assert teamsheets["Away"].teamsheet.at[0, "team_name"] == "Liverpool"
+    assert len(teamsheets["Home"].teamsheet) == 14
+    assert len(teamsheets["Away"].teamsheet) == 14
+    assert len(teamsheets["Home"].teamsheet.columns) == 6
+    assert len(teamsheets["Away"].teamsheet.columns) == 6
+
+
+# Test passing custom home_teamsheet to get method
+@pytest.mark.unit
+def test_statsbomb_get_pass_custom_home_teamsheet() -> None:
+
+    # get teamsheets
+    dataset = StatsBombOpenDataset()
+    teamsheets = dataset.get_teamsheets(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+    )
+
+    # customize home teamsheet
+    teamsheets["Home"].teamsheet.at[0, "player"] = "Dida"  # custom entry
+    teamsheets["Home"].teamsheet.at[0, "pID"] = 999999  # custom entry
+    teamsheets["Home"]["custom_col"] = 99  # custom column passed to function
+    teamsheets["Away"]["my_col"] = 99  # custom column but not passed to function
+
+    # call get function with custom teamsheet
+    data = dataset.get(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+        home_teamsheet=teamsheets["Home"],
+    )
+
+    assert data[4].teamsheet.at[0, "player"] == "Dida"
+    assert data[4].teamsheet.at[0, "pID"] == 999999
+    assert "custom_col" in data[4].teamsheet.columns
+    assert "my_col" not in data[5].teamsheet.columns
+
+
+# Test passing custom away_teamsheet to get method
+@pytest.mark.unit
+def test_statsbomb_get_pass_custom_away_teamsheet() -> None:
+    # get teamsheets
+    dataset = StatsBombOpenDataset()
+    teamsheets = dataset.get_teamsheets(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+    )
+
+    # customize home teamsheet
+    teamsheets["Home"].teamsheet.at[0, "player"] = "Dida"  # custom entry but not passed
+    teamsheets["Home"].teamsheet.at[0, "pID"] = 999999  # custom entry but not passed
+    teamsheets["Home"]["custom_col"] = 99  # custom column but not passed to function
+    teamsheets["Away"]["my_col"] = 99  # custom column passed to function
+
+    # call get function with custom teamsheet
+    data = dataset.get(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+        away_teamsheet=teamsheets["Away"],
+    )
+
+    assert data[4].teamsheet.at[0, "player"] != "Dida"
+    assert data[4].teamsheet.at[0, "pID"] != 999999
+    assert "custom_col" not in data[4].teamsheet.columns
+    assert "my_col" in data[5].teamsheet.columns
+
+
+# Test passing custom away_teamsheet to get method
+@pytest.mark.unit
+def test_statsbomb_get_pass_custom_teamsheets() -> None:
+    # get teamsheets
+    dataset = StatsBombOpenDataset()
+    teamsheets = dataset.get_teamsheets(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+    )
+
+    # customize home teamsheet
+    teamsheets["Home"].teamsheet.at[0, "player"] = "Dida"  # custom entry
+    teamsheets["Home"].teamsheet.at[0, "pID"] = 999999  # custom entry
+    teamsheets["Home"]["custom_col"] = 99  # custom column but not passed to function
+    teamsheets["Away"]["my_col"] = 99  # custom column passed to function
+
+    # call get function with custom teamsheet
+    data = dataset.get(
+        "Champions League",
+        "2004/2005",
+        "AC Milan vs. Liverpool",
+        home_teamsheet=teamsheets["Home"],
+        away_teamsheet=teamsheets["Away"],
+    )
+
+    assert data[4].teamsheet.at[0, "player"] == "Dida"
+    assert data[4].teamsheet.at[0, "pID"] == 999999
+    assert "custom_col" in data[4].teamsheet.columns
+    assert "my_col" in data[5].teamsheet.columns
