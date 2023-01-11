@@ -494,6 +494,7 @@ class StatsBombOpenDataset:
         competition_name: str = "La Liga",
         season_name: str = "2020/2021",
         match_name: str = None,
+
     ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
         """Get events from one match of the StatsBomb open dataset.
 
