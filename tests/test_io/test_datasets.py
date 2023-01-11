@@ -6,6 +6,7 @@ from floodlight.io.datasets import StatsBombOpenDataset
 from floodlight import Events
 from floodlight.core.teamsheet import Teamsheet
 
+
 # Test _transform staticmethod from EIGDDataset
 @pytest.mark.unit
 def test_eigd_transform(
