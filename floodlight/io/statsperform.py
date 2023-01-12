@@ -756,7 +756,7 @@ def read_teamsheets_from_event_data_xml(
             get_and_convert(player, "Position", str) for player in players
         ]
         teamsheets[team]["started"] = [
-            get_and_convert(player, "IsStarter", bool) for player in players
+            player.get("IsStarter") == "True" for player in players
         ]
         teamsheets[team]["tID"] = tID
         teamsheets[team]["team_name"] = team_name
