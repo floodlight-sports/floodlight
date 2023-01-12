@@ -6,16 +6,17 @@ import json
 import pandas as pd
 
 from floodlight import Events
+from floodlight.io.utils import get_and_convert
 
 
 def read_sportradar_timeline(
     filepath_events: Union[str, Path]
 ) -> Dict[str, Dict[str, Dict]]:
-    """Parses the sport radar timeline files in json format and extracts the event data.
+    """Parses the Sportradar timeline files in json format and extracts the event data.
 
-    This function provides access to the `Sport Event Timeline
+    This function provides access to `Sport Event Timeline
     <https://developer.sportradar.com/docs/read/handball/
-    Handball_v2#sport-event-timeline>`_ file from the dataprovider `Sportradar
+    Handball_v2#sport-event-timeline>`_ files from the data provider `Sportradar
     <https://sportradar.com/>`_ exported in json format and returns Event objects for
     all teams and segments of the game.
 
@@ -27,35 +28,32 @@ def read_sportradar_timeline(
     Returns
     -------
     data_objects: Dict[str: Dict[str: Events]]
-        Dict with Events-objects for all teams and segments. For a usual league match
-        with two halves and two teams the order is:
-
-        {
-
-            1st_half: {team_a: Events, team_b: Events},
-
-            2nd_half: {team_a: Events, team_b: Events}
-
-        }
+        Nested dictionary with ``Events`` objects for all teams and segments. The
+        returned dictionary contains one dictionary per segment, which in return contain
+        one ``Events`` object per team. For a usual league match with two halves and
+        two teams this dictionary looks like:
+        ``{"HT1": {"Home": Events, "Away": Events}, "HT2": {Home: Events, Away:
+        Events}}``
 
     Notes
     -----
-    Sportradar provides different information based on the respective Event type.
-    We decided to parse the first "layer" of information for each possible event type
-    that is listed in the `Handball v2 documentation FAQ
+    Sportradar provides different information depending on the respective Event type.
+    This parser itemizes top-level information for each possible event type listed in
+    the `Handball v2 documentation FAQ
     <https://developer.sportradar.com/docs/read/handball/
-    Handball_v2#frequently-asked-questions>`_ (most recent check: 11.01.2023). This
-    involves for example individual columns for the  home and away score at the event
-    type score_change but no individual columns for the players involved in Events, like
-    seven_m_awarded or shots, as they can contain different information based on the
-    situation. However, we parse the raw information as dict or list of dicts in the
-    respective column so the user can access it if necessary.
+    Handball_v2#frequently-asked-questions>`_ (most recent check: 11.01.2023).
+
+    For example, this involves individual columns for the home and away score parsed
+    event type *score_change*. However, individual columns for players involved in
+    Events, like *seven_m_awarded* or *shots*, as they can contain different information
+    depending on the situation. More complex information that changes per event type
+    is instead included as dict or list of dicts in according column, so they can be
+    accessed if necessary.
     """
 
     # load full json into memory
     with open(str(filepath_events)) as f:
         events = json.load(f)
-        f.close()
 
     # check if timeline data exists
     if "timeline" not in events:
@@ -67,19 +65,28 @@ def read_sportradar_timeline(
     mID = events["sport_event"]["id"]
 
     # create links from home/away to team id and team name
-    teams = ["home", "away"]
+    teams = ["Home", "Away"]
 
-    tID_link = {}
     home_away_link = {}
     for competitor in events["statistics"]["totals"]["competitors"]:
-        tID_link.update({competitor["id"]: competitor["qualifier"]})
         home_away_link.update(
-            {competitor["qualifier"]: (competitor["id"], competitor["name"])}
+            {
+                competitor["qualifier"].capitalize(): (
+                    competitor["id"],
+                    competitor["name"],
+                )
+            }
         )
 
     # extract periods
-    periods = set(
-        [event["period_name"] for event in timeline if event["type"] == "period_start"]
+    periods = sorted(
+        set(
+            [
+                event["period_name"]
+                for event in timeline
+                if event["type"] == "period_start"
+            ]
+        )
     )
 
     # create team event dict
@@ -94,7 +101,6 @@ def read_sportradar_timeline(
         "tID",
         "team_name",
         "mID",
-        "event_name",
         "home_score",
         "away_score",
         "scorer",
@@ -105,8 +111,7 @@ def read_sportradar_timeline(
         "players",
     ]
 
-    # seems unnecessary
-    segments = [f"HT{period}" for period in periods]
+    segments = [f"HT{period[0]}" for period in periods]
 
     team_event_lists = {
         team: {segment: {col: [] for col in columns} for segment in segments}
@@ -114,13 +119,13 @@ def read_sportradar_timeline(
     }
 
     period = None
-    # loop
+    # loop through event timeline
     for event in timeline:
-        if not period:
+        if period is None:
             # get first period
             if event["type"] == "period_start":
                 period = event["period_name"]
-                segment = f"HT{period}"
+                segment = f"HT{period[0]}"
                 segment_start = datetime.datetime.fromisoformat(event["time"])
             else:
                 # skip events before first period starts
@@ -129,23 +134,23 @@ def read_sportradar_timeline(
         else:
             if event["type"] == "period_start":
                 period = event["period_name"]
-                segment = f"HT{period}"
+                segment = f"HT{period[0]}"
                 segment_start = datetime.datetime.fromisoformat(event["time"])
 
         # extract event, player and team ids and names
-        eID = event["id"]
+        eID = event["type"]
 
         # add all teams as competitors if no competitor is specified in event
-        competitor = [event["competitor"]] if "competitor" in event else teams
+        competitor = (
+            [event["competitor"].capitalize()] if "competitor" in event else teams
+        )
 
         tID = home_away_link[competitor[0]][0] if len(competitor) == 1 else None
         team_name = home_away_link[competitor[0]][1] if len(competitor) == 1 else None
         pID = event["player"]["id"] if "player" in event else None
-        player_name = event["player"]["name"] if pID else None
+        player_name = event["player"]["name"] if "player" in event else None
 
-        event_name = event["type"]
-
-        # extract time codes and matchclock
+        # extract time codes and match-clock
         time_stamp = datetime.datetime.fromisoformat(event["time"])
         time_delta = time_stamp - segment_start
         gameclock = time_delta.seconds
@@ -156,14 +161,14 @@ def read_sportradar_timeline(
             minute, second = (None, None)
 
         # extract optional event information
-        outcome = event["outcome"] if "outcome" in event else None
-        home_score = event["home_score"] if "home_score" in event else None
-        away_score = event["away_score"] if "away_score" in event else None
-        scorer = event["scorer"] if "scorer" in event else None
-        assists = event["assists"] if "assists" in event else None
-        zone = event["zone"] if "zone" in event else None
-        shot_type = event["shot_type"] if "shot_type" in event else None
-        players = event["players"] if "players" in event else None
+        outcome = get_and_convert(event, "outcome", str)
+        home_score = get_and_convert(event, "home_score", int)
+        away_score = get_and_convert(event, "away_score", int)
+        scorer = get_and_convert(event, "scorer", Dict)
+        assists = get_and_convert(event, "assists", list)
+        zone = get_and_convert(event, "zone", str)
+        shot_type = get_and_convert(event, "shot_type", str)
+        players = get_and_convert(event, "players", list)
 
         # add event to team event list
         for team in competitor:
@@ -177,7 +182,6 @@ def read_sportradar_timeline(
             team_event_lists[team][segment]["tID"].append(tID)
             team_event_lists[team][segment]["team_name"].append(team_name)
             team_event_lists[team][segment]["mID"].append(mID)
-            team_event_lists[team][segment]["event_name"].append(event_name)
             team_event_lists[team][segment]["home_score"].append(home_score)
             team_event_lists[team][segment]["away_score"].append(away_score)
             team_event_lists[team][segment]["scorer"].append(scorer)
@@ -187,13 +191,13 @@ def read_sportradar_timeline(
             team_event_lists[team][segment]["outcome"].append(outcome)
             team_event_lists[team][segment]["players"].append(players)
 
-        # flexible parser return for all segments and teams
-        data_objects = {
-            segment: {
-                team: Events(events=pd.DataFrame(data=team_event_lists[team][segment]))
-                for team in teams
-            }
-            for segment in segments
+    # flexible parser return for all segments and teams
+    data_objects = {
+        segment: {
+            team: Events(events=pd.DataFrame(data=team_event_lists[team][segment]))
+            for team in teams
         }
+        for segment in segments
+    }
 
     return data_objects
