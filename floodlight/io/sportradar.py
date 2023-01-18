@@ -49,6 +49,21 @@ def read_sportradar_timeline(
     depending on the situation. More complex information that changes per event type
     is instead included as dict or list of dicts in according column, so they can be
     accessed if necessary.
+
+    In the return, the following columns contain temporal information about the event:
+    ``("gameclock", "time_stamp", "minutes_gross", "seconds_gross", "minutes", "seconds"
+    )``. In handball, the match-clock determines the net playing time (60 minutes) and
+    diverges from the gross "real world" time passed. The "gameclock" column contains
+    the gross time passed in seconds in relation to the start of the respective segment.
+    The "minute_gross" and "second_gross" columns contain the "gameclock" converted to
+    minutes and seconds, respectively. The columns "minutes" and "seconds" contain the
+    information about the net match-clock. the column "time_stamp" contains the global
+    time-stamp of the respective event in the ISO 8601 standard format.
+
+    The column "outcome" in the return contains the "outcome" information in the raw
+    event data and not information obout the success {0, 1} of an event. The outcome in
+    terms of success can be inferred by the ``eID``. E.g. "score_change" implies, that a
+    shot lead to a goal, "shot_saved" implies that a goal was not scored.
     """
 
     # load full json into memory
@@ -94,6 +109,8 @@ def read_sportradar_timeline(
         "eID",
         "gameclock",
         "time_stamp",
+        "minute_gross",
+        "second_gross",
         "minute",
         "second",
         "pID",
@@ -154,6 +171,9 @@ def read_sportradar_timeline(
         time_stamp = datetime.datetime.fromisoformat(event["time"])
         time_delta = time_stamp - segment_start
         gameclock = time_delta.seconds
+        minute_gross = int(gameclock / 60)
+        second_gross = int(gameclock % 60)
+
         if "match_clock" in event:
             match_clock = event["match_clock"]
             minute, second = [int(x) for x in match_clock.split(":")]
@@ -175,6 +195,8 @@ def read_sportradar_timeline(
             team_event_lists[team][segment]["eID"].append(eID)
             team_event_lists[team][segment]["gameclock"].append(gameclock)
             team_event_lists[team][segment]["time_stamp"].append(time_stamp)
+            team_event_lists[team][segment]["minute_gross"].append(minute_gross)
+            team_event_lists[team][segment]["second_gross"].append(second_gross)
             team_event_lists[team][segment]["minute"].append(minute)
             team_event_lists[team][segment]["second"].append(second)
             team_event_lists[team][segment]["pID"].append(pID)
