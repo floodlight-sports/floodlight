@@ -45,10 +45,10 @@ def read_sportradar_timeline(
 
     For example, this involves individual columns for the home and away score parsed
     event type *score_change*. However, individual columns for players involved in
-    Events, like *seven_m_awarded* or *shots*, as they can contain different information
-    depending on the situation. More complex information that changes per event type
-    is instead included as dict or list of dicts in according column, so they can be
-    accessed if necessary.
+    Events, like *seven_m_awarded* or *shots* are not fully itemized, as they can
+    contain different information depending on the situation. More complex information
+    that changes per event type is instead included as dict or list of dicts in
+    according column, so they can be accessed if necessary.
 
     In the return, the following columns contain temporal information about the event:
     ``("gameclock", "time_stamp", "minutes_gross", "seconds_gross", "minutes", "seconds"
@@ -61,8 +61,8 @@ def read_sportradar_timeline(
     time-stamp of the respective event in the ISO 8601 standard format.
 
     The column "outcome" in the return contains the "outcome" information in the raw
-    event data and not information obout the success {0, 1} of an event. The outcome in
-    terms of success can be inferred by the ``eID``. E.g. "score_change" implies, that a
+    event data and not information about the success {0, 1} of an event. The outcome in
+    terms of success can be inferred by the ``eID``. E.g. "score_change" implies that a
     shot lead to a goal, "shot_saved" implies that a goal was not scored.
     """
 
