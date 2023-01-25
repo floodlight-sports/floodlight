@@ -23,12 +23,12 @@ def _create_metadata_from_open_csv_df(
     csv_df: pd.DataFrame,
 ) -> Tuple[Dict[int, tuple], Pitch]:
     """Creates meta information from a pd.DataFrame that results from parsing the open
-    StatsPerform event data csv file.
+    StatsPerform event data CSV file.
 
     Parameters
     ----------
     csv_df: pd.DataFrame
-        Data Frame with the parsed event data csv file.
+        Data Frame with the parsed event data CSV file.
 
     Returns
     -------
@@ -73,7 +73,7 @@ def _read_open_event_csv_single_line(
     Parameters
     ----------
     line: str
-        One full line from StatsPerform's Event csv file.
+        One full line from StatsPerform's Event CSV file.
 
     Returns
     -------
@@ -131,13 +131,13 @@ def _read_open_event_csv_single_line(
 def read_teamsheets_from_open_data_csv(
     filepath_csv: Union[str, Path]
 ) -> Dict[str, Teamsheet]:
-    """Parses the entire open StatsPerform tracking data csv file for unique jIDs
+    """Parses the entire open StatsPerform tracking data CSV file for unique jIDs
     (jerseynumbers) and creates teamsheets for both teams.
 
     Parameters
     ----------
     filepath_csv: str or pathlib.Path
-        csv file where the position data in StatsPerform format is saved.
+        CSV file where the position data in StatsPerform format is saved.
 
     Returns
     -------
@@ -163,17 +163,26 @@ def read_teamsheets_from_open_data_csv(
         "Away": pd.DataFrame(columns=["player", "jID", "pID", "tID"]),
     }
 
-    # parse player information
+    # loop over teams
     for team in team_ids:
+        # extract list with pID and jID information for all players in the team
         team_id = team_ids[team]
+        team_df = csv_df[csv_df["team_id"] == team_id]
+        jIDs = team_df["jersey_no"].unique()
+        pIDs = [
+            team_df[team_df["jersey_no"] == jID]["player_id"].unique() for jID in jIDs
+        ]
+        # possible check for multiple pIDs assgined to a single jID
+
+        # insert data to teamsheet
         teamsheets[team]["player"] = [
-            pID for pID in csv_df[csv_df["team_id"] == team_id]["player_id"].unique()
+            pID[0] for pID in pIDs
         ]
         teamsheets[team]["jID"] = [
-            jID for jID in csv_df[csv_df["team_id"] == team_id]["jersey_no"].unique()
+            jID for jID in jIDs
         ]
         teamsheets[team]["pID"] = [
-            pID for pID in csv_df[csv_df["team_id"] == team_id]["player_id"].unique()
+            pID[0] for pID in pIDs
         ]
         teamsheets[team]["tID"] = team_id
 
@@ -189,11 +198,11 @@ def read_open_event_data_csv(
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
 ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
-    """Parses an open StatsPerform Match Event csv file and extracts the event data and
+    """Parses an open StatsPerform Match Event CSV file and extracts the event data and
     teamsheets.
 
     This function provides high-level access to the particular openly published
-    StatsPerform match events csv file (e.g. for the Pro Forum '22) and returns Event
+    StatsPerform match events CSV file (e.g. for the Pro Forum '22) and returns Event
     objects for both teams.
 
     Parameters
@@ -203,10 +212,10 @@ def read_open_event_data_csv(
         saved
     teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team. If given as None (default), teamsheet is
-        extracted from the event data csv file.
+        extracted from the event data CSV file.
     teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the event data csv file.
+        extracted from the event data CSV file.
 
     Returns
     -------
@@ -305,14 +314,14 @@ def read_open_tracking_data_csv(
     codes as well as teamsheets and pitch information.
 
     Openly published StatsPerform position data (e.g. for the Pro Forum '22) is stored
-    in a csv file containing all position data (for both halves) as well as information
+    in a CSV file containing all position data (for both halves) as well as information
     about players, the pitch, and the ball possession. This function provides high-level
     access to StatsPerform data by parsing the CSV file.
 
     Parameters
     ----------
     filepath_tracking: str or pathlib.Path
-        Full path to the csv file.
+        Full path to the CSV file.
     teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID`. The links are used to map players to a specific xID in
@@ -330,7 +339,7 @@ def read_open_tracking_data_csv(
         order is (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
         possession_ht1, possession_ht2, pitch, teamsheet_home, teamsheet_away)
     """
-    # parse the csv file into pd.DataFrame
+    # parse the CSV file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath_tracking))
 
     # initialize team and ball ids
@@ -1135,7 +1144,7 @@ def read_event_data_from_url(
     home_teamsheet: Teamsheet = None,
     away_teamsheet: Teamsheet = None,
 ) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
-    """Reads a URL containing a StatsPerform events csv file and extracts the stored
+    """Reads a URL containing a StatsPerform events CSV file and extracts the stored
     event data, pitch information, and teamsheets.
 
     The event data from the URL is downloaded into a temporary file stored in the
