@@ -333,20 +333,14 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
             continue
 
         # create list of players
-        team_players = team_info.find("Players")
+        players = team_info.find("Players")
 
         # create teamsheets
-        teamsheets[team]["player"] = [
-            player.get("Shortname") for player in team_players
-        ]
-        teamsheets[team]["pID"] = [
-            player.get("PersonId") for player in team_players
-        ]
-        teamsheets[team]["jID"] = [
-            int(player.get("ShirtNumber")) for player in team_players
-        ]
+        teamsheets[team]["player"] = [player.get("Shortname") for player in players]
+        teamsheets[team]["pID"] = [player.get("PersonId") for player in players]
+        teamsheets[team]["jID"] = [int(player.get("ShirtNumber")) for player in players]
         teamsheets[team]["position"] = [
-            player.get("PlayingPosition") for player in team_players
+            player.get("PlayingPosition") for player in players
         ]
         teamsheets[team]["tID"] = team_info.get("TeamId")
         teamsheets[team]["team"] = team_info.get("TeamName")
@@ -363,7 +357,7 @@ def read_event_data_xml(
     filepath_mat_info: Union[str, Path],
     home_teamsheet: Teamsheet = None,
     away_teamsheet: Teamsheet = None,
-) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
+) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
     """Parses a DFL Match Event XML file and extracts the event data as well as
     teamsheets.
 
@@ -383,20 +377,18 @@ def read_event_data_xml(
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
     home_teamsheet: Teamsheet, optional
-        Teamsheet-object for the home team used to create link dictionaries of the form
-        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
-        map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        Teamsheet-object for the home team used to assign the tIDs of the teams to the
+        "Home" and "Away" position. If given as None (default), teamsheet is extracted
+        from the Match Information XML file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
         extracted from the Match Information XML file.
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
+    data_objects: Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]
         Events- and Pitch-objects for both teams and both halves. The order is
-        (events_home_ht1, events_home_ht2, events_away_ht1, events_away_ht2,
+        (events_home_ht1, events_home_ht2, events_away_ht1, events_away_ht2, pitch
         home_teamsheet, away_teamsheet).
 
     Notes
@@ -412,6 +404,9 @@ def read_event_data_xml(
     # set up XML tree
     tree = etree.parse(str(filepath_events))
     root = tree.getroot()
+
+    # read metadata
+    pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
 
     # create or check teamsheet objects
     if home_teamsheet is None and away_teamsheet is None:
@@ -606,6 +601,7 @@ def read_event_data_xml(
         events_home_ht2,
         events_away_ht1,
         events_away_ht2,
+        pitch,
         home_teamsheet,
         away_teamsheet,
     )
@@ -642,8 +638,8 @@ def read_position_data_xml(
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
         map players to a specific xID in the respective XY objects. Should be supplied
-        if that order matters. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        for custom ordering. If given as None (default), teamsheet is extracted from the
+        Match Information XML file and its xIDs are assigned in order of appearance.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
         extracted from the Match Information XML file.
