@@ -310,7 +310,7 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
     }
 
     # find team ids
-    team_information = root.find("MatchInformation").find("Teams")
+    team_informations = root.find("MatchInformation").find("Teams")
     home_id = root.find("MatchInformation").find("General").get("HomeTeamId")
     if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
         away_id = root.find("MatchInformation").find("General").get("AwayTeamId")
@@ -320,7 +320,7 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
         away_id = None
 
     # parse player information
-    for team_info in team_information:
+    for team_info in team_informations:
         if team_info.get("TeamId") == home_id:
             team = "Home"
         elif team_info.get("TeamId") == away_id:
@@ -332,18 +332,21 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
         if team not in ["Home", "Away"]:
             continue
 
+        # create list of players
+        team_players = team_info.find("Players")
+
         # create teamsheets
         teamsheets[team]["player"] = [
-            player.get("Shortname") for player in team_info.find("Players")
+            player.get("Shortname") for player in team_players
         ]
         teamsheets[team]["pID"] = [
-            player.get("PersonId") for player in team_info.find("Players")
+            player.get("PersonId") for player in team_players
         ]
         teamsheets[team]["jID"] = [
-            int(player.get("ShirtNumber")) for player in team_info.find("Players")
+            int(player.get("ShirtNumber")) for player in team_players
         ]
         teamsheets[team]["position"] = [
-            player.get("PlayingPosition") for player in team_info.find("Players")
+            player.get("PlayingPosition") for player in team_players
         ]
         teamsheets[team]["tID"] = team_info.get("TeamId")
         teamsheets[team]["team"] = team_info.get("TeamName")
