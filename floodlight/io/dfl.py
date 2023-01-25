@@ -355,8 +355,8 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
 def read_event_data_xml(
     filepath_events: Union[str, Path],
     filepath_mat_info: Union[str, Path],
-    home_teamsheet: Teamsheet = None,
-    away_teamsheet: Teamsheet = None,
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
 ) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
     """Parses a DFL Match Event XML file and extracts the event data as well as
     teamsheets.
@@ -376,20 +376,20 @@ def read_event_data_xml(
         Full path to XML File where the Event data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
-    home_teamsheet: Teamsheet, optional
+    teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to assign the tIDs of the teams to the
         "Home" and "Away" position. If given as None (default), teamsheet is extracted
         from the Match Information XML file.
-    away_teamsheet: Teamsheet, optional
+    teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file. See home_teamsheet for details.
+        extracted from the Match Information XML file. See teamsheet_home for details.
 
     Returns
     -------
     data_objects: Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]
         Events- and Pitch-objects for both teams and both halves. The order is
         (events_home_ht1, events_home_ht2, events_away_ht1, events_away_ht2, pitch
-        home_teamsheet, away_teamsheet).
+        teamsheet_home, teamsheet_away).
 
     Notes
     -----
@@ -409,16 +409,16 @@ def read_event_data_xml(
     pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
 
     # create or check teamsheet objects
-    if home_teamsheet is None and away_teamsheet is None:
+    if teamsheet_home is None and teamsheet_away is None:
         teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        home_teamsheet = teamsheets["Home"]
-        away_teamsheet = teamsheets["Away"]
-    elif home_teamsheet is None:
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
         teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        home_teamsheet = teamsheets["Home"]
-    elif away_teamsheet is None:
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
         teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        away_teamsheet = teamsheets["Away"]
+        teamsheet_away = teamsheets["Away"]
     else:
         pass
         # potential check
@@ -562,8 +562,8 @@ def read_event_data_xml(
         )
 
     # link team1 and team2 to home and away
-    home_tID = home_teamsheet.teamsheet.at[0, "tID"]
-    away_tID = away_teamsheet.teamsheet.at[0, "tID"]
+    home_tID = teamsheet_home.teamsheet.at[0, "tID"]
+    away_tID = teamsheet_away.teamsheet.at[0, "tID"]
     links_team_to_role = {
         "Home": home_tID,
         "Away": away_tID,
@@ -574,13 +574,13 @@ def read_event_data_xml(
         raise AttributeError(
             f"Neither tID of teams in the event data ({team1} and {team2}) "
             f"matches the tID of the home team from the "
-            f"home_teamsheet ({home_tID})!"
+            f"teamsheet_home ({home_tID})!"
         )
     if team1 != away_tID and team2 != away_tID:
         raise AttributeError(
             f"Neither tID of teams in the event data ({team1} and {team2}) "
             f"matches the tID of the away team from the "
-            f"away_teamsheet ({away_tID})!"
+            f"teamsheet_away ({away_tID})!"
         )
 
     # assembly
@@ -602,8 +602,8 @@ def read_event_data_xml(
         events_away_ht1,
         events_away_ht2,
         pitch,
-        home_teamsheet,
-        away_teamsheet,
+        teamsheet_home,
+        teamsheet_away,
     )
 
     return data_objects
@@ -612,8 +612,8 @@ def read_event_data_xml(
 def read_position_data_xml(
     filepath_positions: Union[str, Path],
     filepath_mat_info: Union[str, Path],
-    home_teamsheet: Teamsheet = None,
-    away_teamsheet: Teamsheet = None,
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
     """Parse DFL files and extract position data, possession and ballstatus codes as
     well as pitch information and teamsheets.
@@ -634,15 +634,15 @@ def read_position_data_xml(
         Full path to XML File where the Position data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
-    home_teamsheet: Teamsheet, optional
+    teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
         map players to a specific xID in the respective XY objects. Should be supplied
         for custom ordering. If given as None (default), teamsheet is extracted from the
         Match Information XML file and its xIDs are assigned in order of appearance.
-    away_teamsheet: Teamsheet, optional
+    teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file. See home_teamsheet for details.
+        extracted from the Match Information XML file. See teamsheet_home for details.
 
     Returns
     -------
@@ -651,38 +651,38 @@ def read_position_data_xml(
         XY-, Code-, Pitch-, and Teamsheet-objects for both teams and both halves. The
         order is (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
         possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch,
-        home_teamsheet, away_teamsheet).
+        teamsheet_home, teamsheet_away).
     """
     # read metadata
     pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
 
     # create or check teamsheet objects
-    if home_teamsheet is None and away_teamsheet is None:
+    if teamsheet_home is None and teamsheet_away is None:
         teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        home_teamsheet = teamsheets["Home"]
-        away_teamsheet = teamsheets["Away"]
-    elif home_teamsheet is None:
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
         teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        home_teamsheet = teamsheets["Home"]
-    elif away_teamsheet is None:
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
         teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
-        away_teamsheet = teamsheets["Away"]
+        teamsheet_away = teamsheets["Away"]
     else:
         pass
         # potential check
 
     # create links
-    if "xID" not in home_teamsheet.teamsheet.columns:
-        home_teamsheet.add_xIDs()
-    if "xID" not in away_teamsheet.teamsheet.columns:
-        away_teamsheet.add_xIDs()
+    if "xID" not in teamsheet_home.teamsheet.columns:
+        teamsheet_home.add_xIDs()
+    if "xID" not in teamsheet_away.teamsheet.columns:
+        teamsheet_away.add_xIDs()
     links_jID_to_xID = {
-        "Home": home_teamsheet.get_links("jID", "xID"),
-        "Away": away_teamsheet.get_links("jID", "xID"),
+        "Home": teamsheet_home.get_links("jID", "xID"),
+        "Away": teamsheet_away.get_links("jID", "xID"),
     }
     links_pID_to_jID = {
-        "Home": home_teamsheet.get_links("pID", "jID"),
-        "Away": away_teamsheet.get_links("pID", "jID"),
+        "Home": teamsheet_home.get_links("pID", "jID"),
+        "Away": teamsheet_away.get_links("pID", "jID"),
     }
 
     # create periods
@@ -819,8 +819,8 @@ def read_position_data_xml(
         ballstatus_ht1,
         ballstatus_ht2,
         pitch,
-        home_teamsheet,
-        away_teamsheet,
+        teamsheet_home,
+        teamsheet_away,
     )
 
     return data_objects
