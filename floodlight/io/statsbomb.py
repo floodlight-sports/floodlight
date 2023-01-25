@@ -14,8 +14,8 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
 ) -> Dict[str, Teamsheet]:
-    """Reads match_information XML file and returns two teamsheet objects for the home
-      and the away team.
+    """Reads match_information XML file and returns two Teamsheet-objects for the home
+    and the away team.
 
     Parameters
     ----------
@@ -84,24 +84,18 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
         else:
             team = None
 
+        # find list of players
+        players = event["tactics"]["lineup"]
+
         # add player data to teamsheets
-        teamsheets[team]["player"] = [
-            player_data["player"]["name"] for player_data in event["tactics"]["lineup"]
-        ]
-        teamsheets[team]["pID"] = [
-            player_data["player"]["id"] for player_data in event["tactics"]["lineup"]
-        ]
-        teamsheets[team]["jID"] = [
-            player_data["jersey_number"] for player_data in event["tactics"]["lineup"]
-        ]
+        teamsheets[team]["player"] = [player["player"]["name"] for player in players]
+        teamsheets[team]["pID"] = [player["player"]["id"] for player in players]
+        teamsheets[team]["jID"] = [player["jersey_number"] for player in players]
         teamsheets[team]["position"] = [
-            player_data["position"]["name"]
-            for player_data in event["tactics"]["lineup"]
+            player["position"]["name"] for player in players
         ]
-        teamsheets[team]["tID"] = [tIDs[team] for _ in event["tactics"]["lineup"]]
-        teamsheets[team]["team_name"] = [
-            team_names[team] for _ in event["tactics"]["lineup"]
-        ]
+        teamsheets[team]["tID"] = tIDs[team]
+        teamsheets[team]["team_name"] = team_names[team]
 
     # parse players coming in from substitutions
     for event in file_event_list:
@@ -121,7 +115,7 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
             {
                 "player": [event["substitution"]["replacement"]["name"]],
                 "pID": [event["substitution"]["replacement"]["id"]],
-                "jID": [pd.NA],
+                "jID": [pd.NA],  # unfortunately not included in substitution event
                 "position": [event["position"]["name"]],
                 "tID": [tIDs[team]],
                 "team_name": [team_names[team]],
@@ -140,8 +134,8 @@ def read_open_statsbomb_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
-    home_teamsheet: Teamsheet = None,
-    away_teamsheet: Teamsheet = None,
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
 ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
     """Parses files for a single match from the StatsBomb open dataset and extracts the
     event data and teamsheets.
@@ -167,19 +161,19 @@ def read_open_statsbomb_event_data_json(
         information about the area of the field where player positions are tracked
         (``visible_area``) and player positions at single events (``freeze frame``) are
         stored as a string in the ``qualifier`` column.
-    home_teamsheet: Teamsheet, optional
+    teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[pID] = team`. If given as None (default), teamsheet is extracted from
         the Match Information XML file.
-    away_teamsheet: Teamsheet, optional
+    teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the Match Information XML file. See teamsheet_home for details.
 
     Returns
     -------
     data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
         Events-, and Teamsheet objects for both teams and both halves. The order
-        is (home_ht1, home_ht2, away_ht1, away_ht2, home_teamsheet, away_teamsheet).
+        is (home_ht1, home_ht2, away_ht1, away_ht2, teamsheet_home, teamsheet_away).
 
     Notes
     -----
@@ -201,30 +195,30 @@ def read_open_statsbomb_event_data_json(
         file_threesixty_list = None
 
     # create or check teamsheet objects
-    if home_teamsheet is None and away_teamsheet is None:
+    if teamsheet_home is None and teamsheet_away is None:
         teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
             filepath_events, filepath_match
         )
-        home_teamsheet = teamsheets["Home"]
-        away_teamsheet = teamsheets["Away"]
-    elif home_teamsheet is None:
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
         teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
             filepath_events, filepath_match
         )
-        home_teamsheet = teamsheets["Home"]
-    elif away_teamsheet is None:
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
         teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
             filepath_events, filepath_match
         )
-        away_teamsheet = teamsheets["Away"]
+        teamsheet_away = teamsheets["Away"]
     else:
         pass
         # potential check
 
     # create links
     links_tID_to_team = {
-        home_teamsheet.teamsheet.at[0, "tID"]: "Home",
-        away_teamsheet.teamsheet.at[0, "tID"]: "Away",
+        teamsheet_home.teamsheet.at[0, "tID"]: "Home",
+        teamsheet_away.teamsheet.at[0, "tID"]: "Away",
     }
     periods = set([event["period"] for event in file_event_list])
     segments = [f"HT{period}" for period in periods]
@@ -384,8 +378,8 @@ def read_open_statsbomb_event_data_json(
         home_ht2,
         away_ht1,
         away_ht2,
-        home_teamsheet,
-        away_teamsheet,
+        teamsheet_home,
+        teamsheet_away,
     )
 
     return data_objects
