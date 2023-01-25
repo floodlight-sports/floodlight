@@ -382,7 +382,7 @@ def read_event_data_xml(
         from the Match Information XML file.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the Match Information XML file. See home_teamsheet for details.
 
     Returns
     -------
@@ -572,15 +572,15 @@ def read_event_data_xml(
     # check if home and away tIDs occur in event data
     if team1 != home_tID and team2 != home_tID:
         raise AttributeError(
-            f"The tIDs of teams in the event data ({team1} and {team2}) "
-            f"does not match the tID for the home team in the "
-            f"match information {home_tID}!"
+            f"Neither tID of teams in the event data ({team1} and {team2}) "
+            f"matches the tID of the home team from the "
+            f"home_teamsheet ({home_tID})!"
         )
     if team1 != away_tID and team2 != away_tID:
         raise AttributeError(
-            f"The tIDs of teams in the event data ({team1} and {team2}) "
-            f"does not match the tID for the home team in the "
-            f"match information ({away_tID})!"
+            f"Neither tID of teams in the event data ({team1} and {team2}) "
+            f"matches the tID of the away team from the "
+            f"away_teamsheet ({away_tID})!"
         )
 
     # assembly
@@ -642,7 +642,7 @@ def read_position_data_xml(
         Match Information XML file and its xIDs are assigned in order of appearance.
     away_teamsheet: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file.
+        extracted from the Match Information XML file. See home_teamsheet for details.
 
     Returns
     -------
@@ -676,12 +676,14 @@ def read_position_data_xml(
         home_teamsheet.add_xIDs()
     if "xID" not in away_teamsheet.teamsheet.columns:
         away_teamsheet.add_xIDs()
-    links_jID_to_xID = {}
-    links_jID_to_xID["Home"] = home_teamsheet.get_links("jID", "xID")
-    links_jID_to_xID["Away"] = away_teamsheet.get_links("jID", "xID")
-    links_pID_to_jID = {}
-    links_pID_to_jID["Home"] = home_teamsheet.get_links("pID", "jID")
-    links_pID_to_jID["Away"] = away_teamsheet.get_links("pID", "jID")
+    links_jID_to_xID = {
+        "Home": home_teamsheet.get_links("jID", "xID"),
+        "Away": away_teamsheet.get_links("jID", "xID"),
+    }
+    links_pID_to_jID = {
+        "Home": home_teamsheet.get_links("pID", "jID"),
+        "Away": away_teamsheet.get_links("pID", "jID"),
+    }
 
     # create periods
     periods, framerate_est = _create_periods_from_dat(filepath_positions)
