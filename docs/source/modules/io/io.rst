@@ -13,6 +13,7 @@ Collection of file parsing functionalities for different data providers as well 
    kinexon
    opta
    secondspectrum
+   sportradar
    statsbomb
    statsperform
    tracab
