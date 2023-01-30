@@ -1013,7 +1013,7 @@ def read_tracking_data_txt(
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID`. The links are used to map players to a specific xID in
         the respective XY objects. Should be supplied for custom ordering. If given as
-        None (default), teamsheet is extracted from the tracking data TXT file  and its
+        None (default), teamsheet is extracted from the tracking data TXT file and its
         xIDs are assigned in order of appearance.
     teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
@@ -1222,7 +1222,7 @@ def read_tracking_data_from_url(
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID`. The links are used to map players to a specific xID in
         the respective XY objects. Should be supplied for custom ordering. If given as
-        None (default), teamsheet is extracted from the tracking data TXT file  and its
+        None (default), teamsheet is extracted from the tracking data TXT file and its
         xIDs are assigned in order of appearance.
     teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
