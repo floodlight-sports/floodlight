@@ -12,6 +12,7 @@ from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
 from floodlight.core.teamsheet import Teamsheet
+from floodlight.io.utils import get_and_convert
 
 
 def _create_periods_from_dat(
@@ -336,11 +337,17 @@ def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]
         players = team_info.find("Players")
 
         # create teamsheets
-        teamsheets[team]["player"] = [player.get("Shortname") for player in players]
-        teamsheets[team]["pID"] = [player.get("PersonId") for player in players]
-        teamsheets[team]["jID"] = [int(player.get("ShirtNumber")) for player in players]
+        teamsheets[team]["player"] = [
+            get_and_convert(player, "Shortname", str) for player in players
+        ]
+        teamsheets[team]["pID"] = [
+            get_and_convert(player, "PersonId", str) for player in players
+        ]
+        teamsheets[team]["jID"] = [
+            get_and_convert(player, "ShirtNumber", int) for player in players
+        ]
         teamsheets[team]["position"] = [
-            player.get("PlayingPosition") for player in players
+            get_and_convert(player, "PlayingPosition", str) for player in players
         ]
         teamsheets[team]["tID"] = team_info.get("TeamId")
         teamsheets[team]["team"] = team_info.get("TeamName")
