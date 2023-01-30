@@ -497,8 +497,8 @@ class StatsBombOpenDataset:
         competition_name: str = "La Liga",
         season_name: str = "2020/2021",
         match_name: str = None,
-        home_teamsheet: Teamsheet = None,
-        away_teamsheet: Teamsheet = None,
+        teamsheet_home: Teamsheet = None,
+        teamsheet_away: Teamsheet = None,
     ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
         """Get events and teamsheets from one match of the StatsBomb open dataset.
 
@@ -522,11 +522,11 @@ class StatsBombOpenDataset:
             Match name relating to the available matches in the chosen competition and
             season. If equal to None (default), the first available match of the
             given competition and season is chosen.
-        home_teamsheet: Teamsheet, optional
+        teamsheet_home: Teamsheet, optional
             Teamsheet-object for the home team used to create link dictionaries of the
             form `links[pID] = team`. If given as None (default), teamsheet is extracted
             from the Match Information XML file.
-        away_teamsheet: Teamsheet, optional
+        teamsheet_away: Teamsheet, optional
             Teamsheet-object for the away team. If given as None (default), teamsheet is
             extracted from the Match Information XML file.
 
@@ -534,7 +534,7 @@ class StatsBombOpenDataset:
         -------
         data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
             Events-, and Teamsheet objects for both teams and both halves. The order
-            is (home_ht1, home_ht2, away_ht1, away_ht2, home_teamsheet, away_teamsheet).
+            is (home_ht1, home_ht2, away_ht1, away_ht2, teamsheet_home, teamsheet_away).
         """
         # get identifiers from links
         cID = self._links_competition_to_cID[competition_name]
@@ -595,14 +595,14 @@ class StatsBombOpenDataset:
             home_ht2,
             away_ht1,
             away_ht2,
-            home_teamsheet,
-            away_teamsheet,
+            teamsheet_home,
+            teamsheet_away,
         ) = read_open_statsbomb_event_data_json(
             filepath_events,
             filepath_matches,
             filepath_threesixty,
-            home_teamsheet,
-            away_teamsheet,
+            teamsheet_home,
+            teamsheet_away,
         )
 
         # assembly
@@ -611,8 +611,8 @@ class StatsBombOpenDataset:
             home_ht2,
             away_ht1,
             away_ht2,
-            home_teamsheet,
-            away_teamsheet,
+            teamsheet_home,
+            teamsheet_away,
         )
 
         return data_objects

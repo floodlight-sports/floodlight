@@ -81,7 +81,7 @@ def test_statsbomb_get_pass_custom_home_teamsheet() -> None:
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
-        home_teamsheet=teamsheets["Home"],
+        teamsheet_home=teamsheets["Home"],
     )
 
     assert data[4].teamsheet.at[0, "player"] == "Dida"
@@ -112,7 +112,7 @@ def test_statsbomb_get_pass_custom_away_teamsheet() -> None:
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
-        away_teamsheet=teamsheets["Away"],
+        teamsheet_away=teamsheets["Away"],
     )
 
     assert data[4].teamsheet.at[0, "player"] != "Dida"
@@ -143,8 +143,8 @@ def test_statsbomb_get_pass_custom_teamsheets() -> None:
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
-        home_teamsheet=teamsheets["Home"],
-        away_teamsheet=teamsheets["Away"],
+        teamsheet_home=teamsheets["Home"],
+        teamsheet_away=teamsheets["Away"],
     )
 
     assert data[4].teamsheet.at[0, "player"] == "Dida"
