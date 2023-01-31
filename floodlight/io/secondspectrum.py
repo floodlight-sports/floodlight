@@ -11,6 +11,7 @@ from floodlight.core.events import Events
 from floodlight.core.code import Code
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
+from floodlight.core.teamsheet import Teamsheet
 from floodlight.io.utils import get_and_convert
 
 
@@ -116,11 +117,11 @@ def _read_metajson(
     return metadata, periods, directions, pitch
 
 
-def create_links_from_metajson(
+def read_teamsheets_from_metajson(
     filepath_metadata: Union[str, Path]
-) -> Dict[str, Dict[int, int]]:
-    """Parses the Second Spectrum meta.json-file for unique jIDs (jerseynumbers) and
-    creates a dictionary linking jIDs to xIDs ordered by position precedence.
+) -> Dict[str, Teamsheet]:
+    """Parses the Second Spectrum meta.json-file and creates respective teamsheets for
+    the home and the away team.
 
     Parameters
     ----------
@@ -129,13 +130,13 @@ def create_links_from_metajson(
 
     Returns
     -------
-    links: Dict[str, Dict[int, int]]
-        Link-dictionary of the form `links[team][jID] = xID`.
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
 
     Notes
     -----
-    The ordering is determined by position precedence, with the following precedence
-    values assigned to Second Spectrum's player position information::
+    The ordering of players is determined by position precedence, with the following
+    precedence values assigned to Second Spectrum's player position information::
 
         {
             'GK': 1,
@@ -169,36 +170,51 @@ def create_links_from_metajson(
     with open(str(filepath_metadata), "r") as f:
         metajson = json.load(f)
 
+    # param
+    key_map = {"Home": "homePlayers", "Away": "awayPlayers"}
+
     # bin
-    links_jID_to_xID = {}
+    teamsheets = {team: None for team in ["Home", "Away"]}
 
     # loop through teams
-    key_map = {"Home": "homePlayers", "Away": "awayPlayers"}
     for team in ["Home", "Away"]:
-        # bin (team)
-        links = []
+        # bin
+        teamsheet = {
+            column: [] for column in ["precedence", "player", "jID", "pID", "position"]
+        }
         # query team player list
         player_list = metajson[key_map[team]]
         # add players to list
         for player in player_list:
-            number = player["number"]
-            position = player["position"]
+            # query
+            name = get_and_convert(player, "name", str)
+            position = get_and_convert(player, "position", str)
+            jID = get_and_convert(player, "number", int)
+            pID = get_and_convert(player, "optaId", int)
             precedence = _get_position_precedence(position)
-            links.append((number, precedence))
+            # assign
+            teamsheet["player"].append(name)
+            teamsheet["position"].append(position)
+            teamsheet["jID"].append(jID)
+            teamsheet["pID"].append(pID)
+            teamsheet["precedence"].append(precedence)
+        # curate
+        teamsheet = pd.DataFrame(teamsheet)
+        teamsheet.sort_values("precedence", inplace=True)
+        teamsheet.drop(["precedence"], axis=1, inplace=True)
+        teamsheet.reset_index(drop=True, inplace=True)
+        teamsheet = Teamsheet(teamsheet)
+        teamsheets[team] = teamsheet
 
-        # sort link list by position precedence
-        links.sort(key=lambda p: p[1])
-        # create and add link dict from sorted list
-        links = {player[0]: idx for idx, player in enumerate(links)}
-        links_jID_to_xID[team] = links
-
-    return links_jID_to_xID
+    return teamsheets
 
 
 def read_secspec_files(
     filepath_tracking: Union[str, Path],
     filepath_metadata: Union[str, Path],
-):
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
+) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
     """Parse Second Spectrum files and extract position data, possession and ballstatus
     codes, as well as pitch information.
 
@@ -214,22 +230,60 @@ def read_secspec_files(
         Full path to .jsonl-file.
     filepath_metadata: str or pathlib.Path
         Full path to _meta.json file.
+    teamsheet_home: Teamsheet, optional
+        Teamsheet object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID`. The links are used to map players to a specific xID
+        in the respective XY objects. Should be supplied for custom ordering. If given
+        as None (default), teamsheet is extracted from the meta.json file and xIDs are
+        assigned based on the ordering determined by the
+        ``read_teamsheets_from_metajson`` function (see for details).
+    teamsheet_away: Teamsheet, optional
+        Teamsheet object for the away team. If given as None (default), teamsheet is
+        extracted from the meta.json-file. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]
-        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
+    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch,
+                        Teamsheet, Teamsheet]
+        XY-, Code-, Pitch- and Teamsheet-objects for both teams and both halves. The
+        order is
         (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
+        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch,
+        teamsheet_home, teamsheet_away)
+
     """
     # setup
     metadata, periods, directions, pitch = _read_metajson(str(filepath_metadata))
-    links = create_links_from_metajson(str(filepath_metadata))
     segments = list(periods.keys())
-    teams = list(links.keys())
+    teams = ["Home", "Away"]
     fps = int(metadata["framerate"])
     status_link = {True: "A", False: "D"}
     key_map = {"Home": "homePlayers", "Away": "awayPlayers"}
+
+    # create or check teamsheet objects
+    if teamsheet_home is None and teamsheet_away is None:
+        teamsheets = read_teamsheets_from_metajson(filepath_metadata)
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
+        teamsheets = read_teamsheets_from_metajson(filepath_metadata)
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
+        teamsheets = read_teamsheets_from_metajson(filepath_metadata)
+        teamsheet_away = teamsheets["Away"]
+    else:
+        pass
+        # potential check
+
+    # create links
+    if "xID" not in teamsheet_home.teamsheet.columns:
+        teamsheet_home.add_xIDs()
+    if "xID" not in teamsheet_away.teamsheet.columns:
+        teamsheet_away.add_xIDs()
+    links_jID_to_xID = {
+        "Home": teamsheet_home.get_links("jID", "xID"),
+        "Away": teamsheet_away.get_links("jID", "xID"),
+    }
 
     # bins
     xydata = {
@@ -237,7 +291,7 @@ def read_secspec_files(
             segment: np.full(
                 [
                     periods[segment][1] - periods[segment][0],  # T frames in segment
-                    len(links[team]) * 2,  # N players in team
+                    len(links_jID_to_xID[team]) * 2,  # N players in team
                 ],
                 np.nan,
             )
@@ -281,8 +335,8 @@ def read_secspec_files(
                 for player in player_data:
                     # map jersey number to array index and infer respective columns
                     jID = player["number"]
-                    x_col = (links[team][jID]) * 2
-                    y_col = (links[team][jID]) * 2 + 1
+                    x_col = (links_jID_to_xID[team][jID]) * 2
+                    y_col = (links_jID_to_xID[team][jID]) * 2 + 1
                     xydata[team][segment][frame_rel, (x_col, y_col)] = player["xyz"][:2]
 
             # get ball data
@@ -354,6 +408,8 @@ def read_secspec_files(
         ballstatus_ht1,
         ballstatus_ht2,
         pitch,
+        teamsheet_home,
+        teamsheet_away,
     )
 
     return data_objects
@@ -523,27 +579,27 @@ def read_secspec_insight(
                 qual_dict[qual_id] = qual_value
             event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-        # assembly
-        home_ht1 = Events(
-            events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
-            direction=directions["Home"]["HT1"],
-        )
-        home_ht2 = Events(
-            events=pd.DataFrame(data=event_lists["Home"]["HT2"]),
-            direction=directions["Home"]["HT2"],
-        )
-        away_ht1 = Events(
-            events=pd.DataFrame(data=event_lists["Away"]["HT1"]),
-            direction=directions["Away"]["HT1"],
-        )
-        away_ht2 = Events(
-            events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
-            direction=directions["Away"]["HT2"],
-        )
-        pitch = Pitch.from_template(
-            "opta", length=metadata["length"], width=metadata["width"], sport="football"
-        )
+    # assembly
+    home_ht1 = Events(
+        events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
+        direction=directions["Home"]["HT1"],
+    )
+    home_ht2 = Events(
+        events=pd.DataFrame(data=event_lists["Home"]["HT2"]),
+        direction=directions["Home"]["HT2"],
+    )
+    away_ht1 = Events(
+        events=pd.DataFrame(data=event_lists["Away"]["HT1"]),
+        direction=directions["Away"]["HT1"],
+    )
+    away_ht2 = Events(
+        events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
+        direction=directions["Away"]["HT2"],
+    )
+    pitch = Pitch.from_template(
+        "opta", length=metadata["length"], width=metadata["width"], sport="football"
+    )
 
-        data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
 
-        return data_objects
+    return data_objects
