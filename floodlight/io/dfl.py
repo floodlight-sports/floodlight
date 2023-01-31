@@ -364,7 +364,7 @@ def read_event_data_xml(
     filepath_mat_info: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]:
     """Parses a DFL Match Event XML file and extracts the event data as well as
     teamsheets.
 
@@ -393,10 +393,20 @@ def read_event_data_xml(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]
-        Events- and Pitch-objects for both teams and both halves. The order is
-        (events_home_ht1, events_home_ht2, events_away_ht1, events_away_ht2, pitch
-        teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets, pitch).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
 
     Notes
     -----
@@ -590,28 +600,21 @@ def read_event_data_xml(
             f"teamsheet_away ({away_tID})!"
         )
 
-    # assembly
-    events_home_ht1 = Events(
-        events=team_dfs[segments[0]][links_team_to_role["Home"]],
-    )
-    events_home_ht2 = Events(
-        events=team_dfs[segments[1]][links_team_to_role["Home"]],
-    )
-    events_away_ht1 = Events(
-        events=team_dfs[segments[0]][links_team_to_role["Away"]],
-    )
-    events_away_ht2 = Events(
-        events=team_dfs[segments[1]][links_team_to_role["Away"]],
-    )
-    data_objects = (
-        events_home_ht1,
-        events_home_ht2,
-        events_away_ht1,
-        events_away_ht2,
-        pitch,
-        teamsheet_home,
-        teamsheet_away,
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=team_dfs[segment][links_team_to_role[team]],
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
+
+    # pack objects
+    data_objects = (events_objects, teamsheets, pitch)
 
     return data_objects
 
@@ -621,7 +624,13 @@ def read_position_data_xml(
     filepath_mat_info: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[
+    Dict[str, Dict[str, XY]],
+    Dict[str, Code],
+    Dict[str, Code],
+    Dict[str, Teamsheet],
+    Pitch,
+]:
     """Parse DFL files and extract position data, possession and ballstatus codes as
     well as pitch information and teamsheets.
 
@@ -653,12 +662,28 @@ def read_position_data_xml(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch,
-                        Teamsheet, Teamsheet]
-        XY-, Code-, Pitch-, and Teamsheet-objects for both teams and both halves. The
-        order is (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch,
-        teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Code], \
+     Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        possession_objects, ballstatus_objects, teamsheets, pitch).
+
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``possession_objects`` is a dictionary containing ``Code`` objects with
+        possession information (home or away) for each segment of the form
+        ``possession_objects[segment] = Code``.
+
+        ``ballstatus_objects`` is a dictionary containing ``Code`` objects with
+        ballstatus information (dead or alive) for each segment of the form
+        ``ballstatus_objects[segment] = Code``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
     """
     # read metadata
     pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
@@ -780,54 +805,41 @@ def read_position_data_xml(
 
         frame_set.clear()
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)
-    home_ht2 = XY(xy=xydata["Home"]["secondHalf"], framerate=framerate_est)
-    away_ht1 = XY(xy=xydata["Away"]["firstHalf"], framerate=framerate_est)
-    away_ht2 = XY(xy=xydata["Away"]["secondHalf"], framerate=framerate_est)
-    ball_ht1 = XY(xy=xydata["Ball"]["firstHalf"], framerate=framerate_est)
-    ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate_est)
+    # create objects
+    xy_objects = {}
+    possession_objects = {}
+    ballstatus_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        possession_objects[segment] = Code(
+            code=np.array(codes["possession"][segment]),
+            name="possession",
+            definitions={1: "Home", 2: "Away"},
+            framerate=framerate_est,
+        )
+        ballstatus_objects[segment] = Code(
+            code=np.array(codes["ballstatus"][segment]),
+            name="ballstatus",
+            definitions={0: "Dead", 1: "Alive"},
+            framerate=framerate_est,
+        )
+        for team in ["Home", "Away", "Ball"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment],
+                framerate=framerate_est,
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    # create Code objects
-    possession_ht1 = Code(
-        code=np.array(codes["possession"]["firstHalf"]),
-        name="possession",
-        definitions={1: "Home", 2: "Away"},
-        framerate=framerate_est,
-    )
-    possession_ht2 = Code(
-        code=np.array(codes["possession"]["secondHalf"]),
-        name="possession",
-        definitions={1: "Home", 2: "Away"},
-        framerate=framerate_est,
-    )
-    ballstatus_ht1 = Code(
-        code=np.array(codes["ballstatus"]["firstHalf"]),
-        name="ballstatus",
-        definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate_est,
-    )
-    ballstatus_ht2 = Code(
-        code=np.array(codes["ballstatus"]["secondHalf"]),
-        name="ballstatus",
-        definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate_est,
-    )
-
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
+        xy_objects,
+        possession_objects,
+        ballstatus_objects,
+        teamsheets,
         pitch,
-        teamsheet_home,
-        teamsheet_away,
     )
 
     return data_objects

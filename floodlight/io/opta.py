@@ -64,7 +64,7 @@ def read_event_data_xml(
     -------
     data_objects: Tuple[Dict[str, Dict[str, Events]], Pitch]
         Tuple of (nested) floodlight core objects with shape (events_objects,
-        teamsheets).
+        pitch).
 
         ``events_objects`` is a nested dictionary containing ``Events`` objects for
         each team and segment of the form ``events_objects[segment][team] = Events``.
