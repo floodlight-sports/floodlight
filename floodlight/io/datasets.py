@@ -9,8 +9,8 @@ import pandas as pd
 
 from floodlight.io.utils import extract_zip, download_from_url
 from floodlight.io.statsbomb import (
-    read_open_statsbomb_event_data_json,
-    read_teamsheets_from_open_statsbomb_event_data_json,
+    read_open_event_data_json,
+    read_teamsheets_from_open_event_data_json,
 )
 from floodlight import XY, Pitch, Events, Code
 from floodlight.core.teamsheet import Teamsheet
@@ -597,7 +597,7 @@ class StatsBombOpenDataset:
             away_ht2,
             teamsheet_home,
             teamsheet_away,
-        ) = read_open_statsbomb_event_data_json(
+        ) = read_open_event_data_json(
             filepath_events,
             filepath_matches,
             filepath_threesixty,
@@ -681,7 +681,7 @@ class StatsBombOpenDataset:
                 binary_file.write(download_from_url(events_host_url))
 
         # read teamsheets from file
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+        teamsheets = read_teamsheets_from_open_event_data_json(
             filepath_events,
             filepath_matches,
         )
