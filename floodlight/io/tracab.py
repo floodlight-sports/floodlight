@@ -333,14 +333,14 @@ def read_teamsheets_from_meta_json(
     return teamsheets
 
 
-def read_tracab_files(
+def read_position_data_dat(
     filepath_dat: Union[str, Path],
     filepath_metadata: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
-    """Parse TRACAB files and extract position data, possession and ballstatus codes,
-    teamsheets as well as pitch information.
+    """Parse TRACAB .dat-files (ASCII) and metadata (xml or json) and extract position
+    data, possession and ballstatus codes, teamsheets as well as pitch information.
 
     ChyronHego's TRACAB system delivers two separate files, a .dat file containing the
     actual data as well as a metadata.xml containing information about pitch size,

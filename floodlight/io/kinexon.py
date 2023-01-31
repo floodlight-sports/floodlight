@@ -334,8 +334,8 @@ def create_links_from_meta_data(
     return links
 
 
-def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
-    """Parse Kinexon files and extract position data.
+def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
+    """Parses a Kinexon csv file and extracts position data.
 
     Kinexon's local positioning system delivers one .csv file containing the position
     data. This function provides a high-level access to Kinexon data by parsing "the
@@ -344,7 +344,7 @@ def read_kinexon_file(filepath_data: Union[str, Path]) -> List[XY]:
     Parameters
     ----------
     filepath_data: str or pathlib.Path
-        Full path to Kinexon.csv-file.
+        Full path to Kinexon .csv-file.
 
     Returns
     -------

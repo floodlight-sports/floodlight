@@ -131,13 +131,13 @@ def _read_open_event_csv_single_line(
 def read_teamsheets_from_open_data_csv(
     filepath_csv: Union[str, Path]
 ) -> Dict[str, Teamsheet]:
-    """Parses the entire open StatsPerform tracking data CSV file for unique jIDs
+    """Parses the entire open StatsPerform position data CSV file for unique jIDs
     (jerseynumbers) and creates teamsheets for both teams.
 
     Parameters
     ----------
     filepath_csv: str or pathlib.Path
-        CSV file where the position data in StatsPerform format is saved.
+        CSV file containing either open position or open event data.
 
     Returns
     -------
@@ -309,8 +309,8 @@ def read_open_event_data_csv(
     return data_objects
 
 
-def read_open_tracking_data_csv(
-    filepath_tracking: Union[str, Path],
+def read_open_position_data_csv(
+    filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch, Teamsheet, Teamsheet]:
@@ -324,7 +324,7 @@ def read_open_tracking_data_csv(
 
     Parameters
     ----------
-    filepath_tracking: str or pathlib.Path
+    filepath_position: str or pathlib.Path
         Full path to the CSV file.
     teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
@@ -344,7 +344,7 @@ def read_open_tracking_data_csv(
         possession_ht1, possession_ht2, pitch, teamsheet_home, teamsheet_away)
     """
     # parse the CSV file into pd.DataFrame
-    dat_df = pd.read_csv(str(filepath_tracking))
+    dat_df = pd.read_csv(str(filepath_position))
 
     # initialize team and ball ids
     team_ids = {"Home": 1.0, "Away": 2.0}
@@ -357,14 +357,14 @@ def read_open_tracking_data_csv(
 
     # create or check teamsheet objects
     if teamsheet_home is None and teamsheet_away is None:
-        teamsheets = read_teamsheets_from_open_data_csv(filepath_tracking)
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_position)
         teamsheet_home = teamsheets["Home"]
         teamsheet_away = teamsheets["Away"]
     elif teamsheet_home is None:
-        teamsheets = read_teamsheets_from_open_data_csv(filepath_tracking)
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_position)
         teamsheet_home = teamsheets["Home"]
     elif teamsheet_away is None:
-        teamsheets = read_teamsheets_from_open_data_csv(filepath_tracking)
+        teamsheets = read_teamsheets_from_open_data_csv(filepath_position)
         teamsheet_away = teamsheets["Away"]
     else:
         pass
@@ -506,7 +506,7 @@ def read_open_tracking_data_csv(
 # ----------------------------- StatsPerform Format ---------------------------
 
 
-def _read_tracking_data_txt_single_line(
+def _read_position_data_txt_single_line(
     line: str,
 ) -> Tuple[
     int,
@@ -514,7 +514,7 @@ def _read_tracking_data_txt_single_line(
     Dict[str, Dict[str, Tuple[float, float, float]]],
     Dict[str, Union[str, tuple]],
 ]:
-    """Extracts all relevant information from a single line of StatsPerform's tracking
+    """Extracts all relevant information from a single line of StatsPerform's position
     data TXT file (i.e. one frame of data).
 
     Parameters
@@ -591,17 +591,17 @@ def _read_tracking_data_txt_single_line(
     return gameclock, segment, positions, ball
 
 
-def _read_time_information_from_tracking_data_txt(
-    filepath_tracking: Union[str, Path],
+def _read_time_information_from_position_data_txt(
+    filepath_position: Union[str, Path],
 ) -> Tuple[Dict, Union[int, None]]:
-    """Reads StatsPerform's tracking TXT file and extracts information about the first
+    """Reads StatsPerform's position TXT file and extracts information about the first
     and last frame of periods. Also, a framerate is estimated from the
     gameclock difference between samples.
 
     Parameters
     ----------
-    filepath_tracking: str or pathlib.Path
-        Full path to the TXT file containing the tracking data.
+    filepath_position: str or pathlib.Path
+        Full path to the TXT file containing the position data.
 
     Returns
     -------
@@ -618,7 +618,7 @@ def _read_time_information_from_tracking_data_txt(
     framerate_est = None
 
     # read TXT file from disk
-    file_txt = open(filepath_tracking, "r")
+    file_txt = open(filepath_position, "r")
 
     # loop
     last_gameclock = None
@@ -626,7 +626,7 @@ def _read_time_information_from_tracking_data_txt(
     for line in file_txt.readlines():
 
         # read gameclock and segment
-        gameclock, segment, _, _ = _read_tracking_data_txt_single_line(line)
+        gameclock, segment, _, _ = _read_position_data_txt_single_line(line)
 
         # update periods
         if segment not in startframes:
@@ -668,16 +668,16 @@ def _read_time_information_from_tracking_data_txt(
     return periods, framerate_est
 
 
-def _read_jersey_numbers_from_tracking_data_txt(
+def _read_jersey_numbers_from_position_data_txt(
     file_location_txt: Union[str, Path],
 ) -> Tuple[set, set]:
-    """Reads StatsPerform's tracking TXT file and extracts unique set of jIDs
+    """Reads StatsPerform's position TXT file and extracts unique set of jIDs
     (jerseynumbers) for both teams.
 
     Parameters
     ----------
     file_location_txt: str or pathlib.Path
-        Full path to the TXT file containing the tracking data.
+        Full path to the TXT file containing the position data.
 
     Returns
     -------
@@ -696,7 +696,7 @@ def _read_jersey_numbers_from_tracking_data_txt(
     for package in file_txt.readlines():
 
         # read line
-        _, _, positions, _ = _read_tracking_data_txt_single_line(package)
+        _, _, positions, _ = _read_position_data_txt_single_line(package)
 
         # extract jersey numbers
         home_jIDs |= set(positions["Home"].keys())
@@ -783,16 +783,16 @@ def read_teamsheets_from_event_data_xml(
     return teamsheets
 
 
-def read_teamsheets_from_tracking_data_txt(
-    filepath_tracking: Union[str, Path],
+def read_teamsheets_from_position_data_txt(
+    filepath_position: Union[str, Path],
 ) -> Dict[str, Teamsheet]:
-    """Parses the StatsPerform tracking file and returns two simple Teamsheet-objects
+    """Parses the StatsPerform position file and returns two simple Teamsheet-objects
     containing only two columns "player" and "jID" for the home and the away team.
 
     Parameters
     ----------
-    filepath_tracking: str or pathlib.Path
-        Full path to the TXT file containing the tracking data.
+    filepath_position: str or pathlib.Path
+        Full path to the TXT file containing the position data.
 
     Returns
     -------
@@ -800,7 +800,7 @@ def read_teamsheets_from_tracking_data_txt(
         Dictionary with teamsheets for the home team and the away team.
     """
     # create list of jIDs
-    homejrsy, awayjrsy = _read_jersey_numbers_from_tracking_data_txt(filepath_tracking)
+    homejrsy, awayjrsy = _read_jersey_numbers_from_position_data_txt(filepath_position)
     homejrsy = list(homejrsy)
     awayjrsy = list(awayjrsy)
     homejrsy.sort()
@@ -994,8 +994,8 @@ def read_event_data_xml(
     return data_objects
 
 
-def read_tracking_data_txt(
-    filepath_tracking: Union[str, Path],
+def read_position_data_txt(
+    filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]:
@@ -1006,22 +1006,22 @@ def read_tracking_data_txt(
      StatsPerform data by parsing the TXT file. Since no information about framerate is
      delivered in the data itself, it is estimated from time difference between
      individual frames. Teamsheets are extracted from the event data, if filepath_events
-     is provided. Otherwise, minimal Teamsheet-objects are inferred from the tracking
+     is provided. Otherwise, minimal Teamsheet-objects are inferred from the position
      data.
 
     Parameters
     ----------
-    filepath_tracking: str or pathlib.Path
-        Full path to the TXT file containing the tracking data.
+    filepath_position: str or pathlib.Path
+        Full path to the TXT file containing the position data.
     teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID`. The links are used to map players to a specific xID in
         the respective XY objects. Should be supplied for custom ordering. If given as
-        None (default), teamsheet is extracted from the tracking data TXT file and its
+        None (default), teamsheet is extracted from the position data TXT file and its
         xIDs are assigned in order of appearance.
     teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the tracking data TXT file. See teamsheet_home for details.
+        extracted from the position data TXT file. See teamsheet_home for details.
 
     Returns
     -------
@@ -1031,28 +1031,28 @@ def read_tracking_data_txt(
 
     Notes
     -----
-    Statsperform tracking data does not contain any player information expect jersey
+    Statsperform position data does not contain any player information expect jersey
     numbers by default. Thus, the teamsheet objects generated by this method will name
     players 'Player i' with i starting at 1. To identify players, use the jersey numbers
     of players or provide custom teamsheets (e.g. by parsing teamsheets from the
     Statsperform event data or another data provider).
     """
     # parse TXT file for periods and estimate framerate if not contained in filepath
-    periods, framerate_est = _read_time_information_from_tracking_data_txt(
-        filepath_tracking
+    periods, framerate_est = _read_time_information_from_position_data_txt(
+        filepath_position
     )
     segments = list(periods.keys())
 
     # create or check teamsheet objects
     if teamsheet_home is None and teamsheet_away is None:
-        teamsheets = read_teamsheets_from_tracking_data_txt(filepath_tracking)
+        teamsheets = read_teamsheets_from_position_data_txt(filepath_position)
         teamsheet_home = teamsheets["Home"]
         teamsheet_away = teamsheets["Away"]
     elif teamsheet_home is None:
-        teamsheets = read_teamsheets_from_tracking_data_txt(filepath_tracking)
+        teamsheets = read_teamsheets_from_position_data_txt(filepath_position)
         teamsheet_home = teamsheets["Home"]
     elif teamsheet_away is None:
-        teamsheets = read_teamsheets_from_tracking_data_txt(filepath_tracking)
+        teamsheets = read_teamsheets_from_position_data_txt(filepath_position)
         teamsheet_away = teamsheets["Away"]
     else:
         pass
@@ -1095,7 +1095,7 @@ def read_tracking_data_txt(
     }
 
     # read TXT file from disk
-    with open(filepath_tracking, "r") as f:
+    with open(filepath_position, "r") as f:
         tracking_data_lines = f.readlines()
 
     # loop
@@ -1107,7 +1107,7 @@ def read_tracking_data_txt(
             segment,
             positions,
             ball,
-        ) = _read_tracking_data_txt_single_line(package)
+        ) = _read_position_data_txt_single_line(package)
 
         # check if frame is in any segment
         if segment is None:
@@ -1215,30 +1215,30 @@ def read_event_data_from_url(
     return data_objects
 
 
-def read_tracking_data_from_url(
+def read_position_data_from_url(
     url: str,
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
 ) -> Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]:
-    """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a tracking
+    """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a position
     data TXT file and extracts position data and teamsheets.
 
-    The tracking data from the URL is downloaded into a temporary file stored in the
+    The position data from the URL is downloaded into a temporary file stored in the
     repository's internal root ``.data``-folder and removed afterwards.
 
     Parameters
     ----------
     url: str or pathlib.Path
-        URL to the TXT file containing the tracking data.
+        URL to the TXT file containing the position data.
     teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID`. The links are used to map players to a specific xID in
         the respective XY objects. Should be supplied for custom ordering. If given as
-        None (default), teamsheet is extracted from the tracking data TXT file and its
+        None (default), teamsheet is extracted from the position data TXT file and its
         xIDs are assigned in order of appearance.
     teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the tracking data TXT file. See teamsheet_home for details.
+        extracted from the position data TXT file. See teamsheet_home for details.
 
     Returns
     -------
@@ -1248,7 +1248,7 @@ def read_tracking_data_from_url(
 
     Notes
     -----
-    Statsperform tracking data does not contain any player information expect jersey
+    Statsperform position data does not contain any player information expect jersey
     numbers by default. Thus, the teamsheet objects generated by this method will name
     players 'Player i' with i starting at 1. To identify players, use the jersey numbers
     of players or provide custom teamsheets (e.g. by parsing teamsheets from the
@@ -1267,8 +1267,8 @@ def read_tracking_data_from_url(
         away_ht2,
         ball_ht1,
         ball_ht2,
-    ) = read_tracking_data_txt(
-        filepath_tracking=os.path.join(data_dir, temp_file),
+    ) = read_position_data_txt(
+        filepath_position=os.path.join(data_dir, temp_file),
         teamsheet_home=teamsheet_home,
         teamsheet_away=teamsheet_away,
     )

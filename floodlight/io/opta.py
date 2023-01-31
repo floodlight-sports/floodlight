@@ -45,7 +45,7 @@ def get_opta_feedtype(filepath: Union[str, Path]) -> Union[str, None]:
     return feedtype
 
 
-def read_f24(
+def read_event_data_xml(
     filepath: Union[str, Path]
 ) -> Tuple[Events, Events, Events, Events, Pitch]:
     """Parse Opta's f24 feed (containing match events) and extract event data and pitch
