@@ -25,17 +25,15 @@ def test_eigd_transform(
 def test_statsbomb_get() -> None:
 
     dataset = StatsBombOpenDataset()
-    data = dataset.get(
+    events, teamsheets = dataset.get(
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
     )
-    assert isinstance(data[0], Events)
-    assert isinstance(data[1], Events)
-    assert isinstance(data[2], Events)
-    assert isinstance(data[3], Events)
-    assert isinstance(data[4], Teamsheet)
-    assert isinstance(data[5], Teamsheet)
+    assert isinstance(events["HT1"]["Home"], Events)
+    assert isinstance(events["HT4"]["Away"], Events)
+    assert isinstance(teamsheets["Home"], Teamsheet)
+    assert isinstance(teamsheets["Away"], Teamsheet)
 
 
 # Test get_teamsheet method from StatsBombDataset
@@ -77,17 +75,17 @@ def test_statsbomb_get_pass_custom_home_teamsheet() -> None:
     teamsheets["Away"]["my_col"] = 99  # custom column but not passed to function
 
     # call get function with custom teamsheet
-    data = dataset.get(
+    events, teamsheets = dataset.get(
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
         teamsheet_home=teamsheets["Home"],
     )
 
-    assert data[4].teamsheet.at[0, "player"] == "Dida"
-    assert data[4].teamsheet.at[0, "pID"] == 999999
-    assert "custom_col" in data[4].teamsheet.columns
-    assert "my_col" not in data[5].teamsheet.columns
+    assert teamsheets["Home"].teamsheet.at[0, "player"] == "Dida"
+    assert teamsheets["Home"].teamsheet.at[0, "pID"] == 999999
+    assert "custom_col" in teamsheets["Home"].teamsheet.columns
+    assert "my_col" not in teamsheets["Away"].teamsheet.columns
 
 
 # Test passing custom away_teamsheet to get method
@@ -108,17 +106,17 @@ def test_statsbomb_get_pass_custom_away_teamsheet() -> None:
     teamsheets["Away"]["my_col"] = 99  # custom column passed to function
 
     # call get function with custom teamsheet
-    data = dataset.get(
+    events, teamsheets = dataset.get(
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
         teamsheet_away=teamsheets["Away"],
     )
 
-    assert data[4].teamsheet.at[0, "player"] != "Dida"
-    assert data[4].teamsheet.at[0, "pID"] != 999999
-    assert "custom_col" not in data[4].teamsheet.columns
-    assert "my_col" in data[5].teamsheet.columns
+    assert teamsheets["Home"].teamsheet.at[0, "player"] != "Dida"
+    assert teamsheets["Home"].teamsheet.at[0, "pID"] != 999999
+    assert "custom_col" not in teamsheets["Home"].teamsheet.columns
+    assert "my_col" in teamsheets["Away"].teamsheet.columns
 
 
 # Test passing custom away_teamsheet to get method
@@ -139,7 +137,7 @@ def test_statsbomb_get_pass_custom_teamsheets() -> None:
     teamsheets["Away"]["my_col"] = 99  # custom column passed to function
 
     # call get function with custom teamsheet
-    data = dataset.get(
+    events, teamsheets = dataset.get(
         "Champions League",
         "2004/2005",
         "AC Milan vs. Liverpool",
@@ -147,7 +145,7 @@ def test_statsbomb_get_pass_custom_teamsheets() -> None:
         teamsheet_away=teamsheets["Away"],
     )
 
-    assert data[4].teamsheet.at[0, "player"] == "Dida"
-    assert data[4].teamsheet.at[0, "pID"] == 999999
-    assert "custom_col" in data[4].teamsheet.columns
-    assert "my_col" in data[5].teamsheet.columns
+    assert teamsheets["Home"].teamsheet.at[0, "player"] == "Dida"
+    assert teamsheets["Home"].teamsheet.at[0, "pID"] == 999999
+    assert "custom_col" in teamsheets["Home"].teamsheet.columns
+    assert "my_col" in teamsheets["Away"].teamsheet.columns
