@@ -338,7 +338,13 @@ def read_position_data_dat(
     filepath_metadata: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[
+    Dict[str, Dict[str, XY]],
+    Dict[str, Code],
+    Dict[str, Code],
+    Dict[str, Teamsheet],
+    Pitch,
+]:
     """Parse TRACAB .dat-files (ASCII) and metadata (xml or json) and extract position
     data, possession and ballstatus codes, teamsheets as well as pitch information.
 
@@ -357,21 +363,37 @@ def read_position_data_dat(
         Teamsheet object for the home team used to create link dictionaries of the form
         `links[team][jID] = xID`. The links are used to map players to a specific xID
         in the respective XY objects. Should be supplied for custom ordering. If given
-        as None (default), teamsheet is extracted from the .dat file and xIDs are
-        assigned ascendingly to the player's jersey numbers.
+        as None (default), teamsheet is extracted from the .dat or .json file (see
+        Notes) and xIDs are assigned to the player's jersey numbers ascendingly (dat
+        case) or in order of appearance (json case).
     teamsheet_away: Teamsheet, optional
         Teamsheet object for the away team. If given as None (default), teamsheet is
-        extracted from the .dat file. See teamsheet_home for details.
+        extracted from the .dat or -json file. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch,
-                        Teamsheet, Teamsheet]
-        XY-, Code-, Pitch- and Teamsheet-objects for both teams and both halves. The
-        order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch,
-        teamsheet_home, teamsheet_away)
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Code], \
+     Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        possession_objects, ballstatus_objects, teamsheets, pitch).
+
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``possession_objects`` is a dictionary containing ``Code`` objects with
+        possession information (home or away) for each segment of the form
+        ``possession_objects[segment] = Code``.
+
+        ``ballstatus_objects`` is a dictionary containing ``Code`` objects with
+        ballstatus information (dead or alive) for each segment of the form
+        ``ballstatus_objects[segment] = Code``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
 
     Notes
     -----
@@ -496,54 +518,40 @@ def read_position_data_dat(
             codes["possession"][segment].append(ball.get("possession", np.nan))
             codes["ballstatus"][segment].append(ball.get("ballstatus", np.nan))
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"]["HT1"], framerate=metadata["framerate"])
-    home_ht2 = XY(xy=xydata["Home"]["HT2"], framerate=metadata["framerate"])
-    away_ht1 = XY(xy=xydata["Away"]["HT1"], framerate=metadata["framerate"])
-    away_ht2 = XY(xy=xydata["Away"]["HT2"], framerate=metadata["framerate"])
-    ball_ht1 = XY(xy=xydata["Ball"]["HT1"], framerate=metadata["framerate"])
-    ball_ht2 = XY(xy=xydata["Ball"]["HT2"], framerate=metadata["framerate"])
+    # create objects
+    xy_objects = {}
+    possession_objects = {}
+    ballstatus_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        possession_objects[segment] = Code(
+            code=np.array(codes["possession"][segment]),
+            name="possession",
+            definitions={"H": "Home", "A": "Away"},
+            framerate=metadata["framerate"],
+        )
+        ballstatus_objects[segment] = Code(
+            code=np.array(codes["ballstatus"][segment]),
+            name="ballstatus",
+            definitions={"D": "Dead", "A": "Alive"},
+            framerate=metadata["framerate"],
+        )
+        for team in ["Home", "Away", "Ball"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment], framerate=metadata["framerate"]
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    # create Code objects
-    possession_ht1 = Code(
-        code=np.array(codes["possession"]["HT1"]),
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-        framerate=metadata["framerate"],
-    )
-    possession_ht2 = Code(
-        code=np.array(codes["possession"]["HT2"]),
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-        framerate=metadata["framerate"],
-    )
-    ballstatus_ht1 = Code(
-        code=np.array(codes["ballstatus"]["HT1"]),
-        name="ballstatus",
-        definitions={"D": "Dead", "A": "Alive"},
-        framerate=metadata["framerate"],
-    )
-    ballstatus_ht2 = Code(
-        code=np.array(codes["ballstatus"]["HT2"]),
-        name="ballstatus",
-        definitions={"D": "Dead", "A": "Alive"},
-        framerate=metadata["framerate"],
-    )
-
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
+        xy_objects,
+        possession_objects,
+        ballstatus_objects,
+        teamsheets,
         pitch,
-        teamsheet_home,
-        teamsheet_away,
     )
 
     return data_objects

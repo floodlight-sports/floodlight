@@ -201,7 +201,7 @@ def read_open_event_data_csv(
     filepath_events: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]:
     """Parses an open StatsPerform Match Event CSV file and extracts the event data and
     teamsheets.
 
@@ -223,9 +223,18 @@ def read_open_event_data_csv(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
-        Events-objects for both teams and both halves. The order is (home_ht1, home_ht2,
-        away_ht1, away_ht2, teamsheet_home, teamsheet_away)
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
 
     Notes
     -----
@@ -284,27 +293,21 @@ def read_open_event_data_csv(
                         event, ignore_index=True
                     )
 
-    # assembly
-    home_ht1 = Events(
-        events=events[team_ids["Home"]]["1"],
-    )
-    home_ht2 = Events(
-        events=events[team_ids["Home"]]["2"],
-    )
-    away_ht1 = Events(
-        events=events[team_ids["Home"]]["1"],
-    )
-    away_ht2 = Events(
-        events=events[team_ids["Home"]]["2"],
-    )
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        teamsheet_home,
-        teamsheet_away,
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=pd.DataFrame(data=events[team_ids[team]][segment]),
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
+
+    # pack objects
+    data_objects = (events_objects, teamsheets)
 
     return data_objects
 
@@ -313,7 +316,7 @@ def read_open_position_data_csv(
     filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Teamsheet], Pitch]:
     """Parses an open StatsPerform CSV file and extract position data and possession
     codes as well as teamsheets and pitch information.
 
@@ -338,10 +341,24 @@ def read_open_position_data_csv(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Pitch, Teamsheet, Teamsheet]
-        XY-, Code-, Teamsheet-, and Pitch-objects for both teams and both halves. The
-        order is (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, pitch, teamsheet_home, teamsheet_away)
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], \
+     Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        possession_objects, teamsheets, pitch).
+
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``possession_objects`` is a dictionary containing ``Code`` objects with
+        possession information (home or away) for each segment of the form
+        ``possession_objects[segment] = Code``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
     """
     # parse the CSV file into pd.DataFrame
     dat_df = pd.read_csv(str(filepath_position))
@@ -465,41 +482,35 @@ def read_open_position_data_csv(
         # update codes
         codes["possession"][segment] = ball_df["possession"].values[appearance]
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"][0], framerate=10)
-    home_ht2 = XY(xy=xydata["Home"][1], framerate=10)
-    away_ht1 = XY(xy=xydata["Away"][0], framerate=10)
-    away_ht2 = XY(xy=xydata["Away"][1], framerate=10)
-    ball_ht1 = XY(xy=xydata["Ball"][0], framerate=10)
-    ball_ht2 = XY(xy=xydata["Ball"][1], framerate=10)
+    # create objects
+    xy_objects = {}
+    possession_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        possession_objects[segment] = Code(
+            code=codes["possession"][segment],
+            name="possession",
+            definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
+            framerate=10,
+        )
+        for team in ["Home", "Away", "Ball"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment],
+                framerate=10,
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    # create Code objects
-    poss_ht1 = Code(
-        name="possession",
-        code=codes["possession"][0],
-        definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
-        framerate=10,
-    )
-    poss_ht2 = Code(
-        name="possession",
-        code=codes["possession"][1],
-        definitions=dict([(team_id, team) for team, team_id in team_ids.items()]),
-        framerate=10,
-    )
-
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        poss_ht1,
-        poss_ht2,
+        xy_objects,
+        possession_objects,
+        teamsheets,
         pitch,
-        teamsheet_home,
-        teamsheet_away,
     )
+
     return data_objects
 
 
@@ -830,7 +841,7 @@ def read_event_data_xml(
     filepath_events: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]:
     """Parses a StatsPerform XML file and extracts event data and pitch information.
 
     This function provides high-level access to the StatsPerform match events XML file
@@ -851,10 +862,20 @@ def read_event_data_xml(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Pitch]
-        Events-objects for both teams and both halves, pitch information, and
-        teamsheets. The order is (home_ht1, home_ht2, away_ht1, away_ht2, pitch,
-        teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets, pitch).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
     """
     # load xml tree into memory
     tree = etree.parse(str(filepath_events))
@@ -967,29 +988,21 @@ def read_event_data_xml(
         sport="football",
     )
 
-    # assembly
-    home_ht1 = Events(
-        events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
-    )
-    home_ht2 = Events(
-        events=pd.DataFrame(data=event_lists["Home"]["HT2"]),
-    )
-    away_ht1 = Events(
-        events=pd.DataFrame(data=event_lists["Away"]["HT1"]),
-    )
-    away_ht2 = Events(
-        events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=pd.DataFrame(data=event_lists[team][segment]),
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        pitch,
-        teamsheet_home,
-        teamsheet_away,
-    )
+    # pack objects
+    data_objects = (events_objects, teamsheets, pitch)
 
     return data_objects
 
@@ -998,7 +1011,7 @@ def read_position_data_txt(
     filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]:
     """Parses a StatsPerform TXT file and extracts position data and teamsheets.
 
      Internal StatsPerform position data is stored as a TXT file containing all
@@ -1025,9 +1038,17 @@ def read_position_data_txt(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]
-        XY-objects for both teams and both halves. The order is (home_ht1, home_ht2,
-        away_ht1, away_ht2, ball_ht1, ball_ht2, teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        teamsheets).
+
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
 
     Notes
     -----
@@ -1130,23 +1151,24 @@ def read_position_data_txt(
         # get ball data
         xydata["Ball"][segment][frame_rel] = ball.get("position", np.nan)
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"][1], framerate=framerate_est)
-    home_ht2 = XY(xy=xydata["Home"][2], framerate=framerate_est)
-    away_ht1 = XY(xy=xydata["Away"][1], framerate=framerate_est)
-    away_ht2 = XY(xy=xydata["Away"][2], framerate=framerate_est)
-    ball_ht1 = XY(xy=xydata["Ball"][1], framerate=framerate_est)
-    ball_ht2 = XY(xy=xydata["Ball"][2], framerate=framerate_est)
+    # create objects
+    xy_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        for team in ["Home", "Away", "Ball"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment],
+                framerate=framerate_est,
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        teamsheet_home,
-        teamsheet_away,
+        xy_objects,
+        teamsheets,
     )
 
     return data_objects
@@ -1156,7 +1178,7 @@ def read_event_data_from_url(
     url: str,
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Events, Events, Events, Events, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]:
     """Reads a URL containing a StatsPerform events CSV file and extracts the stored
     event data, pitch information, and teamsheets.
 
@@ -1178,10 +1200,20 @@ def read_event_data_from_url(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Pitch]
-        Events-objects for both teams and both halves, pitch information, and
-        teamsheets. The order is (home_ht1, home_ht2, away_ht1, away_ht2, pitch,
-        teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets, pitch).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
     """
     data_dir = os.path.join(DATA_DIR, "statsperform")
     if not os.path.isdir(data_dir):
@@ -1189,29 +1221,15 @@ def read_event_data_from_url(
     temp_file = os.path.join(data_dir, "events_temp.xml")
     with open(temp_file, "wb") as binary_file:
         binary_file.write(download_from_url(url))
-    (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        pitch,
-        teamsheet_home,
-        teamsheet_away,
-    ) = read_event_data_xml(
+
+    events_objects, teamsheets, pitch = read_event_data_xml(
         filepath_events=os.path.join(data_dir, temp_file),
         teamsheet_home=teamsheet_home,
         teamsheet_away=teamsheet_away,
     )
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        pitch,
-        teamsheet_home,
-        teamsheet_away,
-    )
+    data_objects = (events_objects, teamsheets, pitch)
     os.remove(os.path.join(data_dir, temp_file))
+
     return data_objects
 
 
@@ -1219,7 +1237,7 @@ def read_position_data_from_url(
     url: str,
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]:
     """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a position
     data TXT file and extracts position data and teamsheets.
 
@@ -1242,9 +1260,17 @@ def read_position_data_from_url(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Teamsheet, Teamsheet]
-        XY-objects for both teams and both halves. The order is (home_ht1, home_ht2,
-        away_ht1, away_ht2, ball_ht1, ball_ht2, teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        teamsheets).
+
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
 
     Notes
     -----
@@ -1260,27 +1286,13 @@ def read_position_data_from_url(
     temp_file = os.path.join(data_dir, "tracking_temp.txt")
     with open(temp_file, "wb") as binary_file:
         binary_file.write(download_from_url(url))
-    (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-    ) = read_position_data_txt(
+
+    xy_objects, teamsheets = read_position_data_txt(
         filepath_position=os.path.join(data_dir, temp_file),
         teamsheet_home=teamsheet_home,
         teamsheet_away=teamsheet_away,
     )
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        teamsheet_home,
-        teamsheet_away,
-    )
+    data_objects = (xy_objects, teamsheets)
     os.remove(os.path.join(data_dir, temp_file))
+
     return data_objects
