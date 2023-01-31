@@ -210,11 +210,17 @@ def read_teamsheets_from_meta_json(
 
 
 def read_position_data_jsonl(
-    filepath_tracking: Union[str, Path],
+    filepath_position: Union[str, Path],
     filepath_metadata: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
+) -> Tuple[
+    Dict[str, Dict[str, XY]],
+    Dict[str, Code],
+    Dict[str, Code],
+    Dict[str, Teamsheet],
+    Pitch,
+]:
     """Parse Second Spectrum files and extract position data, possession and ballstatus
     codes, as well as pitch information.
 
@@ -226,7 +232,7 @@ def read_position_data_jsonl(
 
     Parameters
     ----------
-    filepath_tracking: str or pathlib.Path
+    filepath_position: str or pathlib.Path
         Full path to .jsonl-file.
     filepath_metadata: str or pathlib.Path
         Full path to _meta.json file.
@@ -243,14 +249,28 @@ def read_position_data_jsonl(
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch,
-                        Teamsheet, Teamsheet]
-        XY-, Code-, Pitch- and Teamsheet-objects for both teams and both halves. The
-        order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch,
-        teamsheet_home, teamsheet_away)
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Code], \
+     Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        possession_objects, ballstatus_objects, teamsheets, pitch).
 
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``possession_objects`` is a dictionary containing ``Code`` objects with
+        possession information (home or away) for each segment of the form
+        ``possession_objects[segment] = Code``.
+
+        ``ballstatus_objects`` is a dictionary containing ``Code`` objects with
+        ballstatus information (dead or alive) for each segment of the form
+        ``ballstatus_objects[segment] = Code``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
     """
     # setup
     metadata, periods, directions, pitch = _read_metajson(str(filepath_metadata))
@@ -314,7 +334,7 @@ def read_position_data_jsonl(
     }
 
     # loop
-    with open(str(filepath_tracking), "r") as f:
+    with open(str(filepath_position), "r") as f:
         while True:
             # get one line of file
             dataline = f.readline()
@@ -355,61 +375,43 @@ def read_position_data_jsonl(
                 ballstatus = None
             codes["ballstatus"][segment][frame_rel] = ballstatus
 
-    # assemble core objects
-    home_ht1 = XY(
-        xy=xydata["Home"]["HT1"], framerate=fps, direction=directions["HT1"]["Home"]
-    )
-    home_ht2 = XY(
-        xy=xydata["Home"]["HT2"], framerate=fps, direction=directions["HT2"]["Home"]
-    )
-    away_ht1 = XY(
-        xy=xydata["Away"]["HT1"], framerate=fps, direction=directions["HT1"]["Away"]
-    )
-    away_ht2 = XY(
-        xy=xydata["Away"]["HT2"], framerate=fps, direction=directions["HT2"]["Away"]
-    )
-    ball_ht1 = XY(xy=xydata["Ball"]["HT1"], framerate=fps)
-    ball_ht2 = XY(xy=xydata["Ball"]["HT2"], framerate=fps)
+    # create objects
+    xy_objects = {}
+    possession_objects = {}
+    ballstatus_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        possession_objects[segment] = Code(
+            code=codes["possession"][segment],
+            name="possession",
+            definitions={"H": "Home", "A": "Away"},
+            framerate=fps,
+        )
+        ballstatus_objects[segment] = Code(
+            code=codes["ballstatus"][segment],
+            name="ballstatus",
+            definitions={"D": "Dead", "A": "Alive"},
+            framerate=fps,
+        )
+        for team in ["Home", "Away"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment],
+                framerate=fps,
+                direction=directions[segment][team],
+            )
+        xy_objects[segment]["Ball"] = XY(xy=xydata["Ball"][segment], framerate=fps)
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    possession_ht1 = Code(
-        code=codes["possession"]["HT1"],
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-        framerate=fps,
-    )
-    possession_ht2 = Code(
-        code=codes["possession"]["HT2"],
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-        framerate=fps,
-    )
-    ballstatus_ht1 = Code(
-        code=codes["ballstatus"]["HT1"],
-        name="ballstatus",
-        definitions={"D": "Dead", "A": "Alive"},
-        framerate=fps,
-    )
-    ballstatus_ht2 = Code(
-        code=codes["ballstatus"]["HT2"],
-        name="ballstatus",
-        definitions={"D": "Dead", "A": "Alive"},
-        framerate=fps,
-    )
-
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
+        xy_objects,
+        possession_objects,
+        ballstatus_objects,
+        teamsheets,
         pitch,
-        teamsheet_home,
-        teamsheet_away,
     )
 
     return data_objects
@@ -418,7 +420,7 @@ def read_position_data_jsonl(
 def read_event_data_jsonl(
     filepath_insight: Union[str, Path],
     filepath_metadata: Union[str, Path],
-) -> Tuple[Events, Events, Events, Events, Pitch]:
+) -> Tuple[Dict[str, Dict[str, Events]], Pitch]:
     """Parse Second Spectrums's Insight file (containing match events) and extract
     event data and pitch information.
 
@@ -435,9 +437,17 @@ def read_event_data_jsonl(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Pitch]
-        Events- and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Pitch]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
 
     Notes
     -----
@@ -579,27 +589,20 @@ def read_event_data_jsonl(
                 qual_dict[qual_id] = qual_value
             event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-    # assembly
-    home_ht1 = Events(
-        events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
-        direction=directions["Home"]["HT1"],
-    )
-    home_ht2 = Events(
-        events=pd.DataFrame(data=event_lists["Home"]["HT2"]),
-        direction=directions["Home"]["HT2"],
-    )
-    away_ht1 = Events(
-        events=pd.DataFrame(data=event_lists["Away"]["HT1"]),
-        direction=directions["Away"]["HT1"],
-    )
-    away_ht2 = Events(
-        events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
-        direction=directions["Away"]["HT2"],
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=pd.DataFrame(data=event_lists[team][segment]),
+                direction=directions[team][segment],
+            )
     pitch = Pitch.from_template(
         "opta", length=metadata["length"], width=metadata["width"], sport="football"
     )
 
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    # pack objects
+    data_objects = (events_objects, pitch)
 
     return data_objects
