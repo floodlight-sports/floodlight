@@ -2,11 +2,13 @@ from pathlib import Path
 from typing import Dict, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from lxml import etree
 
 from floodlight.core.code import Code
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
+from floodlight.core.teamsheet import Teamsheet
 
 
 def _read_metadata(filepath_metadata: Union[str, Path]) -> Tuple[Dict, Dict, Pitch]:
@@ -187,9 +189,9 @@ def _read_dat_jersey_numbers(filepath_dat: Union[str, Path]):
     return home_jIDs, away_jIDs
 
 
-def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
-    """Parses the entire TRACAB .dat file for unique jIDs (jerseynumbers) and creates a
-    dictionary linking jIDs to xIDs in ascending order.
+def read_teamsheets_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Teamsheet]:
+    """Parses the entire TRACAB .dat file for unique jIDs (jerseynumbers) and creates
+    respective teamsheets for the home and the away team.
 
     Parameters
     ----------
@@ -198,32 +200,40 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
 
     Returns
     -------
-    links: Dict[str, Dict[int, int]]
-        Link-dictionary of the form `links[team][jID] = xID`.
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
     """
+    # bin
+    teamsheets = {}
+
+    # get jerseynumbers (jIDs)
     homejrsy, awayjrsy = _read_dat_jersey_numbers(filepath_dat)
 
-    homejrsy = list(homejrsy)
-    awayjrsy = list(awayjrsy)
+    # loop through teams
+    for team, jIDs in zip(("Home", "Away"), (homejrsy, awayjrsy)):
+        jIDs = list(jIDs)
+        jIDs.sort()
+        player = [f"Player {i+1}" for i in range(len(jIDs))]
+        teamsheet = pd.DataFrame(
+            data={
+                "player": player,
+                "jID": jIDs,
+            }
+        )
+        teamsheet = Teamsheet(teamsheet)
+        teamsheets[team] = teamsheet
 
-    homejrsy.sort()
-    awayjrsy.sort()
-
-    links = {
-        "Home": {jID: xID for xID, jID in enumerate(homejrsy)},
-        "Away": {jID: xID for xID, jID in enumerate(awayjrsy)},
-    }
-
-    return links
+    return teamsheets
 
 
 def read_tracab_files(
     filepath_dat: Union[str, Path],
     filepath_metadata: Union[str, Path],
-    links: Dict[str, Dict[int, int]] = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
-    """Parse TRACAB files and extract position data, possession and ballstatus codes as
-    well as pitch information.
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
+) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch, Teamsheet, Teamsheet]:
+    """Parse TRACAB files and extract position data, possession and ballstatus codes,
+    teamsheets as well as pitch information.
 
     ChyronHego's TRACAB system delivers two separate files, a .dat file containing the
     actual data as well as a metadata.xml containing information about pitch size,
@@ -236,34 +246,66 @@ def read_tracab_files(
         Full path to dat-file.
     filepath_metadata: str or pathlib.Path
         Full path to metadata.xml file.
-    links: Dict[str, Dict[int, int]], optional
-        A link dictionary of the form `links[team][jID] = xID`. Player's are identified
-        in TRACAB files via jID, and this dictionary is used to map them to a specific
-        xID in the respective XY objects. Should be supplied if that order matters. If
-        None is given (default), the links are automatically extracted from the .dat
-        file at the cost of a second pass through the entire file.
+    teamsheet_home: Teamsheet, optional
+        Teamsheet object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID`. The links are used to map players to a specific xID
+        in the respective XY objects. Should be supplied for custom ordering. If given
+        as None (default), teamsheet is extracted from the .dat file and xIDs are
+        assigned ascendingly to the player's jersey numbers.
+    teamsheet_away: Teamsheet, optional
+        Teamsheet object for the away team. If given as None (default), teamsheet is
+        extracted from the .dat file. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]
-        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
+    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch,
+                        Teamsheet, Teamsheet]
+        XY-, Code-, Pitch- and Teamsheet-objects for both teams and both halves. The
+        order is
         (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
+        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch,
+        teamsheet_home, teamsheet_away)
+
+    Notes
+    -----
+    Tracab data does not contain any player information except jersey numbers by
+    default. Thus, the teamsheet objects generated by this method will name players
+    'Player i' with i starting at 1. To identify players, use the jersey numbers of
+    provide custom teamsheets generated by a different parser if Tracab data is used in
+    combination with other data providers.
     """
     # read metadata
     metadata, periods, pitch = _read_metadata(filepath_metadata)
     segments = list(periods.keys())
 
-    # create or check links
-    if links is None:
-        links = create_links_from_dat(filepath_dat)
+    # create or check teamsheet objects
+    if teamsheet_home is None and teamsheet_away is None:
+        teamsheets = read_teamsheets_from_dat(filepath_dat)
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
+        teamsheets = read_teamsheets_from_dat(filepath_dat)
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
+        teamsheets = read_teamsheets_from_dat(filepath_dat)
+        teamsheet_away = teamsheets["Away"]
     else:
         pass
-        # potential check vs jerseys in dat file
+        # potential check
+
+    # create links
+    if "xID" not in teamsheet_home.teamsheet.columns:
+        teamsheet_home.add_xIDs()
+    if "xID" not in teamsheet_away.teamsheet.columns:
+        teamsheet_away.add_xIDs()
+    links_jID_to_xID = {
+        "Home": teamsheet_home.get_links("jID", "xID"),
+        "Away": teamsheet_away.get_links("jID", "xID"),
+    }
 
     # infer data array shapes
-    number_of_home_players = max(links["Home"].values()) + 1
-    number_of_away_players = max(links["Away"].values()) + 1
+    number_of_home_players = max(links_jID_to_xID["Home"].values()) + 1
+    number_of_away_players = max(links_jID_to_xID["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -315,8 +357,8 @@ def read_tracab_files(
             for team in ["Home", "Away"]:
                 for jID in positions[team].keys():
                     # map jersey number to array index and infer respective columns
-                    x_col = (links[team][jID]) * 2
-                    y_col = (links[team][jID]) * 2 + 1
+                    x_col = (links_jID_to_xID[team][jID]) * 2
+                    y_col = (links_jID_to_xID[team][jID]) * 2 + 1
                     xydata[team][segment][frame_rel, x_col] = positions[team][jID][0]
                     xydata[team][segment][frame_rel, y_col] = positions[team][jID][1]
 
@@ -373,6 +415,8 @@ def read_tracab_files(
         ballstatus_ht1,
         ballstatus_ht2,
         pitch,
+        teamsheet_home,
+        teamsheet_away,
     )
 
     return data_objects
