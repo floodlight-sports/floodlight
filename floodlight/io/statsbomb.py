@@ -173,7 +173,7 @@ def read_open_event_data_json(
     -------
     data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]
         Tuple of (nested) floodlight core objects with shape (events_objects,
-        teamsheets)
+        teamsheets).
 
         ``events_objects`` is a nested dictionary containing ``Events`` objects for
         each team and segment of the form ``events_objects[segment][team] = Events``.
