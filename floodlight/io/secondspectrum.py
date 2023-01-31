@@ -117,7 +117,7 @@ def _read_metajson(
     return metadata, periods, directions, pitch
 
 
-def read_teamsheets_from_metajson(
+def read_teamsheets_from_meta_json(
     filepath_metadata: Union[str, Path]
 ) -> Dict[str, Teamsheet]:
     """Parses the Second Spectrum meta.json-file and creates respective teamsheets for
@@ -209,7 +209,7 @@ def read_teamsheets_from_metajson(
     return teamsheets
 
 
-def read_secspec_files(
+def read_position_data_jsonl(
     filepath_tracking: Union[str, Path],
     filepath_metadata: Union[str, Path],
     teamsheet_home: Teamsheet = None,
@@ -262,14 +262,14 @@ def read_secspec_files(
 
     # create or check teamsheet objects
     if teamsheet_home is None and teamsheet_away is None:
-        teamsheets = read_teamsheets_from_metajson(filepath_metadata)
+        teamsheets = read_teamsheets_from_meta_json(filepath_metadata)
         teamsheet_home = teamsheets["Home"]
         teamsheet_away = teamsheets["Away"]
     elif teamsheet_home is None:
-        teamsheets = read_teamsheets_from_metajson(filepath_metadata)
+        teamsheets = read_teamsheets_from_meta_json(filepath_metadata)
         teamsheet_home = teamsheets["Home"]
     elif teamsheet_away is None:
-        teamsheets = read_teamsheets_from_metajson(filepath_metadata)
+        teamsheets = read_teamsheets_from_meta_json(filepath_metadata)
         teamsheet_away = teamsheets["Away"]
     else:
         pass
@@ -415,7 +415,7 @@ def read_secspec_files(
     return data_objects
 
 
-def read_secspec_insight(
+def read_event_data_jsonl(
     filepath_insight: Union[str, Path],
     filepath_metadata: Union[str, Path],
 ) -> Tuple[Events, Events, Events, Events, Pitch]:

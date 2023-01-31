@@ -9,7 +9,7 @@ from floodlight import Events
 from floodlight.io.utils import get_and_convert
 
 
-def read_sportradar_timeline(
+def read_event_data_json(
     filepath_events: Union[str, Path]
 ) -> Dict[str, Dict[str, Dict]]:
     """Parses the Sportradar timeline files in json format and extracts the event data.

@@ -10,7 +10,7 @@ from floodlight.core.events import Events
 from floodlight.core.teamsheet import Teamsheet
 
 
-def read_teamsheets_from_open_statsbomb_event_data_json(
+def read_teamsheets_from_open_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
 ) -> Dict[str, Teamsheet]:
@@ -130,7 +130,7 @@ def read_teamsheets_from_open_statsbomb_event_data_json(
     return teamsheets
 
 
-def read_open_statsbomb_event_data_json(
+def read_open_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
@@ -196,18 +196,18 @@ def read_open_statsbomb_event_data_json(
 
     # create or check teamsheet objects
     if teamsheet_home is None and teamsheet_away is None:
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+        teamsheets = read_teamsheets_from_open_event_data_json(
             filepath_events, filepath_match
         )
         teamsheet_home = teamsheets["Home"]
         teamsheet_away = teamsheets["Away"]
     elif teamsheet_home is None:
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+        teamsheets = read_teamsheets_from_open_event_data_json(
             filepath_events, filepath_match
         )
         teamsheet_home = teamsheets["Home"]
     elif teamsheet_away is None:
-        teamsheets = read_teamsheets_from_open_statsbomb_event_data_json(
+        teamsheets = read_teamsheets_from_open_event_data_json(
             filepath_events, filepath_match
         )
         teamsheet_away = teamsheets["Away"]
