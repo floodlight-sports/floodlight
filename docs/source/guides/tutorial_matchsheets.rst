@@ -16,7 +16,14 @@ First we need some data to work with. The open StatsBomb dataset contains (among
 
     # load a match from the UEFA Euro 2020
     dataset = StatsBombOpenDataset()
-    home_ht1, home_ht2, away_ht1, away_ht2 = dataset.get("UEFA Euro", "2020", "Croatia vs. Spain")
+    (
+        home_ht1,
+        home_ht2,
+        away_ht1,
+        away_ht2,
+        home_teamsheet,
+        away_teamsheet,
+    ) = dataset.get("UEFA Euro", "2020", "Croatia vs. Spain")
     pitch = dataset.get_pitch()
 
 The variables ``home_ht1``, ``home_ht2``, ``away_ht1``, and ``away_ht2`` are Events objects containing the events of the teams during the first and second half. These will be used to create the match sheets. The ``pitch`` variable is a Pitch object that contains information regarding the pitch specification and coordinate system our data live in.

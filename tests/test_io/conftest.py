@@ -164,3 +164,9 @@ def eigd_sample_data_floodlight_shape() -> np.ndarray:
     )
 
     return data
+
+
+@pytest.fixture()
+def filepath_empty() -> str:
+    path = ".data\\EMPTY"
+    return path
