@@ -154,8 +154,10 @@ def read_teamsheets_from_open_data_csv(
     # check for additional tIDs
     for tID in csv_df["team_id"].unique():
         if not (tID in team_ids.values() or tID == ball_id or np.isnan(tID)):
-            warnings.warn(f"tID {tID} did not match any of the standard tIDs "
-                          f"({team_ids.values}) or the ball ID ({ball_id})!")
+            warnings.warn(
+                f"tID {tID} did not match any of the standard tIDs "
+                f"({team_ids.values}) or the ball ID ({ball_id})!"
+            )
 
     # initialize teamsheets
     teamsheets = {
@@ -175,15 +177,9 @@ def read_teamsheets_from_open_data_csv(
         # possible check for multiple pIDs assgined to a single jID
 
         # insert data to teamsheet
-        teamsheets[team]["player"] = [
-            pID[0] for pID in pIDs
-        ]
-        teamsheets[team]["jID"] = [
-            jID for jID in jIDs
-        ]
-        teamsheets[team]["pID"] = [
-            pID[0] for pID in pIDs
-        ]
+        teamsheets[team]["player"] = [f"Player {i}" for i in range(len(pIDs))]
+        teamsheets[team]["jID"] = [jID for jID in jIDs]
+        teamsheets[team]["pID"] = [pID[0] for pID in pIDs]
         teamsheets[team]["tID"] = team_id
 
     # create teamsheet objects
@@ -812,7 +808,7 @@ def read_teamsheets_from_tracking_data_txt(
         "Away": pd.DataFrame(columns=["player", "jID"]),
     }
     for team in teamsheets:
-        teamsheets[team]["player"] = [f"player {i}" for i in range(len(jIDs[team]))]
+        teamsheets[team]["player"] = [f"Player {i}" for i in range(len(jIDs[team]))]
         teamsheets[team]["jID"] = [int(jID) for jID in jIDs[team]]
 
     # create teamsheet objects
