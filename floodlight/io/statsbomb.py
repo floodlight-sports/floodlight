@@ -14,7 +14,7 @@ def read_teamsheets_from_open_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
 ) -> Dict[str, Teamsheet]:
-    """Reads match_information XML file and returns two Teamsheet-objects for the home
+    """Reads open events and match files and returns Teamsheet objects for the home
     and the away team.
 
     Parameters
@@ -136,7 +136,7 @@ def read_open_event_data_json(
     filepath_threesixty: Union[str, Path] = None,
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]:
     """Parses files for a single match from the StatsBomb open dataset and extracts the
     event data and teamsheets.
 
@@ -164,16 +164,25 @@ def read_open_event_data_json(
     teamsheet_home: Teamsheet, optional
         Teamsheet-object for the home team used to create link dictionaries of the form
         `links[pID] = team`. If given as None (default), teamsheet is extracted from
-        the Match Information XML file.
+        the events and match json files.
     teamsheet_away: Teamsheet, optional
         Teamsheet-object for the away team. If given as None (default), teamsheet is
-        extracted from the Match Information XML file. See teamsheet_home for details.
+        extracted from the events and match json files. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
-        Events-, and Teamsheet objects for both teams and both halves. The order
-        is (home_ht1, home_ht2, away_ht1, away_ht2, teamsheet_home, teamsheet_away).
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
 
     Notes
     -----
@@ -359,27 +368,20 @@ def read_open_event_data_json(
                 )
         team_event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-    # assembly
-    home_ht1 = Events(
-        events=pd.DataFrame(data=team_event_lists["Home"]["HT1"]),
-    )
-    home_ht2 = Events(
-        events=pd.DataFrame(data=team_event_lists["Home"]["HT2"]),
-    )
-    away_ht1 = Events(
-        events=pd.DataFrame(data=team_event_lists["Away"]["HT1"]),
-    )
-    away_ht2 = Events(
-        events=pd.DataFrame(data=team_event_lists["Away"]["HT2"]),
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=pd.DataFrame(data=team_event_lists[team][segment]),
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        teamsheet_home,
-        teamsheet_away,
-    )
+    # pack objects
+    data_objects = (events_objects, teamsheets)
 
     return data_objects

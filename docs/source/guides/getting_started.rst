@@ -35,34 +35,35 @@ Let's look at a quick example loading Tracab position and Opta event data:
 
 .. code-block:: python
 
-    from floodlight.io.tracab import read_tracab_files
-    from floodlight.io.opta import read_f24
+    from floodlight.io.tracab import read_position_data_dat
+    from floodlight.io.opta import read_event_data_xml
 
     filepath_dat = <filepath_to_tracab_dat_file>
     filepath_meta = <filepath_to_tracab_metadata_file>
     filepath_f24 = <filepath_to_opta_f24_feed>
 
     (
-        xy_home_ht1,
-        xy_home_ht2,
-        xy_away_ht1,
-        xy_away_ht2,
-        xy_ball_ht1,
-        xy_ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
-        pitch_xy,
-    ) = read_tracab_files(filepath_dat, filepath_meta)
+        xy_objects,
+        possession_objects,
+        ballstatus_objects,
+        teamsheets,
+        pitch_xy
+    ) = read_position_data_dat(filepath_dat, filepath_meta)
 
-    (
-        events_home_ht1,
-        events_home_ht2,
-        events_away_ht1,
-        events_away_ht2,
-        pitch_events
-    ) = read_f24(filepath_f24)
+    events_objects, pitch_events = read_event_data_xml(filepath_f24)
+
+
+The data returned by both parsers is stored in nested dictionaries because the number of match segments can differ (due to overtime). We can unpack some of them to be more explicit:
+
+.. code-block:: python
+
+    xy_home_ht1 = xy_objects["HT1"]["Home"]
+    xy_away_ht1 = xy_objects["HT1"]["Away"]
+    possession_ht1 = possession_objects["HT1"]
+    ballstatus_ht1 = ballstatus_objects["HT1"]
+
+    events_home_ht1 = events_objects["HT1"]["Home"]
+    events_away_ht1 = events_objects["HT1"]["Away"]
 
 
 Sample Data

@@ -47,7 +47,7 @@ class EIGDDataset:
             'e0e547': ['00-00-00', '00-08-00', '00-15-00', '00-50-00', '01-00-00'],
             'e8a35a': ['00-02-00', '00-07-00', '00-14-00', '01-05-00', '01-14-00'],
             'ec7a6a': ['00-30-00', '00-53-00', '01-19-00', '01-30-00', '01-40-00'],
-            }
+        }
 
     Examples
     --------
@@ -211,14 +211,14 @@ class ToyDataset:
 
         Parameters
         ----------
-        segment : str, optional
-            Segment identifier for the first ("HT1") or the second ("HT2") half.
-            Defaults to the first half ("HT1").
+        segment : {'HT1', 'HT2'}, optional
+            Segment identifier for the first ("HT1", default)) or the second ("HT2")
+            half.
 
         Returns
         -------
         toy_dataset:  Tuple[XY, XY, XY, Events, Events, Code, Code]
-            Returns seven XY objects of the form (xy_home, xy_away, xy_ball,
+            Returns seven core objects of the form (xy_home, xy_away, xy_ball,
             events_home, events_away, possession, ballstatus) for the requested segment.
         """
 
@@ -371,7 +371,7 @@ class StatsBombOpenDataset:
     >>> from floodlight.io.datasets import StatsBombOpenDataset
     >>> dataset = StatsBombOpenDataset()
     # get one sample of event data with StatsBomb360 data
-    >>> single_match_data = dataset.get("UEFA Euro", "2020", "England vs. Germany")
+    >>> events, teamsheets = dataset.get("UEFA Euro", "2020", "England vs. Germany")
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
     # get a summary of available matches in the dataset
@@ -386,6 +386,7 @@ class StatsBombOpenDataset:
     >>> for _, clasico in clasicos.iterrows():
     >>>     data = dataset.get("La Liga", clasico["season_name"], clasico["match_name"])
     >>>     clasico_events.append(data)
+
     """
 
     def __init__(self, dataset_dir_name="statsbomb_dataset"):
@@ -499,7 +500,7 @@ class StatsBombOpenDataset:
         match_name: str = None,
         teamsheet_home: Teamsheet = None,
         teamsheet_away: Teamsheet = None,
-    ) -> Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]:
+    ) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]:
         """Get events and teamsheets from one match of the StatsBomb open dataset.
 
         If `StatsBomb360data <https://statsbomb.com/articles/soccer/
@@ -525,16 +526,27 @@ class StatsBombOpenDataset:
         teamsheet_home: Teamsheet, optional
             Teamsheet-object for the home team used to create link dictionaries of the
             form `links[pID] = team`. If given as None (default), teamsheet is extracted
-            from the Match Information XML file.
+            from the data.
         teamsheet_away: Teamsheet, optional
             Teamsheet-object for the away team. If given as None (default), teamsheet is
-            extracted from the Match Information XML file.
+            extracted from data.
 
         Returns
         -------
-        data_objects: Tuple[Events, Events, Events, Events, Teamsheet, Teamsheet]
-            Events-, and Teamsheet objects for both teams and both halves. The order
-            is (home_ht1, home_ht2, away_ht1, away_ht2, teamsheet_home, teamsheet_away).
+        data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]
+            Tuple of (nested) floodlight core objects with shape (events_objects,
+            teamsheets).
+
+            ``events_objects`` is a nested dictionary containing ``Events`` objects for
+            each team and segment of the form
+            ``events_objects[segment][team] = Events``.
+            For a typical league match with two halves and teams this dictionary looks
+            like:
+            ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+            Events}}``.
+
+            ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each
+            team of the form ``teamsheets[team] = Teamsheet``.
         """
         # get identifiers from links
         cID = self._links_competition_to_cID[competition_name]
@@ -590,14 +602,7 @@ class StatsBombOpenDataset:
                 filepath_threesixty = None
 
         # read events from file
-        (
-            home_ht1,
-            home_ht2,
-            away_ht1,
-            away_ht2,
-            teamsheet_home,
-            teamsheet_away,
-        ) = read_open_event_data_json(
+        events_objects, teamsheets = read_open_event_data_json(
             filepath_events,
             filepath_matches,
             filepath_threesixty,
@@ -606,14 +611,7 @@ class StatsBombOpenDataset:
         )
 
         # assembly
-        data_objects = (
-            home_ht1,
-            home_ht2,
-            away_ht1,
-            away_ht2,
-            teamsheet_home,
-            teamsheet_away,
-        )
+        data_objects = (events_objects, teamsheets)
 
         return data_objects
 
