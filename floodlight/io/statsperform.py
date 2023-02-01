@@ -1011,7 +1011,7 @@ def read_position_data_txt(
     filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]:
+) -> Tuple[Dict[int, Dict[str, XY]], Dict[int, Teamsheet]]:
     """Parses a StatsPerform TXT file and extracts position data and teamsheets.
 
      Internal StatsPerform position data is stored as a TXT file containing all
@@ -1038,14 +1038,14 @@ def read_position_data_txt(
 
     Returns
     -------
-    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]
+    data_objects: Tuple[Dict[int, Dict[str, XY]], Dict[int, Teamsheet]]
         Tuple of (nested) floodlight core objects with shape (xy_objects,
         teamsheets).
 
         ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
         and segment of the form ``xy_objects[segment][team] = XY``. For a typical
         league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+        ``{1: {'Home': XY, 'Away': XY}, 2: {'Home': XY, 'Away': XY}}``.
 
         ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
         of the form ``teamsheets[team] = Teamsheet``.
