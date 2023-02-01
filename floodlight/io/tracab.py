@@ -122,8 +122,8 @@ def _read_metadata_from_json(
     # create pitch
     pitch = Pitch.from_template(
         "tracab",
-        length=length,
-        width=width,
+        length=metadata["length"],
+        width=metadata["width"],
         sport="football",
     )
 
