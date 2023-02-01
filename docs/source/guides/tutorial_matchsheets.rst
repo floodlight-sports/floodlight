@@ -216,9 +216,9 @@ Now we create the match sheet by iterating over all goals and updating the respe
 
     row, col, home_score, away_score = 0, 0, 0, 0
     colors = {"Croatia": "white", "Spain": "red"}
-    for i in all_goals.index:
+    for idx in all_goals.index:
         # display meta information
-        scoring_team, scoring_player, xG = get_goal_info(all_goals.loc[i])
+        scoring_team, scoring_player, xG = get_goal_info(all_goals.loc[idx])
         if scoring_team == "Croatia":
             conceding_team = "Spain"
             home_score += 1
@@ -231,7 +231,7 @@ Now we create the match sheet by iterating over all goals and updating the respe
             fontdict={"size": 10},
         )
         # get position data
-        xy_ball, xy_off, xy_def = get_xy_data(all_goals.loc[i])
+        xy_ball, xy_off, xy_def = get_xy_data(all_goals.loc[idx])
         # rotate position data towards left goal for Spain
         if scoring_team == "Spain" and xy_off.xy is not None and xy_def.xy is not None:
             xy_off.rotate(180)
