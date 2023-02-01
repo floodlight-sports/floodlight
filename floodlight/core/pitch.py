@@ -168,6 +168,7 @@ class Pitch:
                 boundaries="flexible",
                 length=kwargs.get("length"),
                 width=kwargs.get("width"),
+                sport=kwargs.get("sport"),
             )
         elif template_name == "statsperform_tracking":
             if "length" not in kwargs or "width" not in kwargs:
