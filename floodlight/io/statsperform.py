@@ -230,8 +230,8 @@ def read_open_event_data_csv(
         ``events_objects`` is a nested dictionary containing ``Events`` objects for
         each team and segment of the form ``events_objects[segment][team] = Events``.
         For a typical league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
-        Events}}``.
+        ``{'1': {'Home': Events, 'Away': Events}, '2': {'Home': Events, 'Away': Events}
+        }``.
 
         ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
         of the form ``teamsheets[team] = Teamsheet``.
