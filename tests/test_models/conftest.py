@@ -61,5 +61,29 @@ def example_equivalent_mass() -> np.ndarray:
 
 @pytest.fixture()
 def example_pitch_dfl():
-    pitch = Pitch.from_template("dfl", length=100, width=50)
+    pitch = Pitch.from_template("dfl", length=100, width=50, sport="football")
     return pitch
+
+
+@pytest.fixture()
+def example_xy_objects_space_control() -> XY:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-30, 0, 0, 0, 0, 10),
+                (-31, 0, 0, 0, 1, 11),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (30, 0, 0, 0, 4, -10),
+                (31, 0, np.nan, np.nan, 5, -11),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
