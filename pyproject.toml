@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "floodlight"
-version = "0.3.3"
+version = "0.4.0"
 description = "A high-level framework for sports data analysis"
 authors = ["draabe <draabx@posteo.org>"]
 license = "MIT"
