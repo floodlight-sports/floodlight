@@ -11,6 +11,7 @@ Collection of data models grouped by category. Each submodule contains model cla
    geometry
    kinematics
    kinetics
+   space
 
 
 .. rubric:: All Available Models
@@ -24,6 +25,7 @@ Collection of data models grouped by category. Each submodule contains model cla
    kinematics.AccelerationModel
    geometry.CentroidModel
    kinetics.MetabolicPowerModel
+   space.DiscreteVoronoiModel
 
 
 For quick reference, the following computations are available after calling the respective model's ``.fit(...)``-method
@@ -61,3 +63,14 @@ For quick reference, the following computations are available after calling the 
    MetabolicPowerModel.cumulative_metabolic_power
    MetabolicPowerModel.equivalent_distance
    MetabolicPowerModel.cumulative_equivalent_distance
+
+.. rubric:: Space
+
+.. currentmodule:: floodlight.models.space
+.. autosummary::
+   :nosignatures:
+
+   DiscreteVoronoiModel.player_controls
+   DiscreteVoronoiModel.team_controls
+   DiscreteVoronoiModel.plot
+   DiscreteVoronoiModel.plot_mesh
