@@ -3,6 +3,7 @@ from .core.events import Events
 from .core.pitch import Pitch
 from .core.xy import XY
 from .core.property import DyadicProperty, PlayerProperty, TeamProperty
+from .core.teamsheet import Teamsheet
 
 __all__ = [
     "__version__",
@@ -13,6 +14,7 @@ __all__ = [
     "Pitch",
     "PlayerProperty",
     "TeamProperty",
+    "Teamsheet",
     "XY",
 ]
 

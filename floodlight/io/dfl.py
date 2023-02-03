@@ -400,8 +400,10 @@ def read_event_data_xml(
         ``events_objects`` is a nested dictionary containing ``Events`` objects for
         each team and segment of the form ``events_objects[segment][team] = Events``.
         For a typical league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
-        Events}}``.
+        ``{
+        'firstHalf': {'Home': Events, 'Away': Events},
+        'secondHalf': {'Home': Events,'Away': Events}
+        }``.
 
         ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
         of the form ``teamsheets[team] = Teamsheet``.
@@ -670,7 +672,10 @@ def read_position_data_xml(
         ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
         and segment of the form ``xy_objects[segment][team] = XY``. For a typical
         league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+        ``{
+            'firstHalf': {'Home': XY, 'Away': XY},
+            'secondHalf': {'Home': XY, 'Away': XY}
+            }``.
 
         ``possession_objects`` is a dictionary containing ``Code`` objects with
         possession information (home or away) for each segment of the form
