@@ -588,7 +588,7 @@ def test_team_controls_hex(example_xy_objects_space_control, example_pitch_dfl) 
 
 
 # test plotting
-@pytest.mark.unit
+@pytest.mark.plot
 def test_plot_square(example_xy_objects_space_control, example_pitch_dfl) -> None:
     # get data
     xy1, xy2 = example_xy_objects_space_control
@@ -615,7 +615,7 @@ def test_plot_square(example_xy_objects_space_control, example_pitch_dfl) -> Non
     plt.close()
 
 
-@pytest.mark.unit
+@pytest.mark.plot
 def test_plot_hex(example_xy_objects_space_control, example_pitch_dfl) -> None:
     # get data
     xy1, xy2 = example_xy_objects_space_control
@@ -642,7 +642,7 @@ def test_plot_hex(example_xy_objects_space_control, example_pitch_dfl) -> None:
     plt.close()
 
 
-@pytest.mark.unit
+@pytest.mark.plot
 def test_plot_mesh(example_xy_objects_space_control, example_pitch_dfl) -> None:
     # get data
     xy1, xy2 = example_xy_objects_space_control
