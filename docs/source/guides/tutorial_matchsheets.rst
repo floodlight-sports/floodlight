@@ -125,30 +125,31 @@ Next, we deal with the previously mentioned StatsBomb360 position data. The appr
 
     def get_xy_data(goal):
         # read positions at event
-        freeze_frame = ast.literal_eval(goal["qualifier"])["360_freeze_frame"]
-
+        qualifier = ast.literal_eval(goal["qualifier"])
+        freeze_frame = None
+        if "360_freeze_frame" in qualifier:
+            freeze_frame = qualifier["360_freeze_frame"]
         # set "to-location" to goal center if not available
         at_x, at_y, to_x, to_y = goal["at_x"], goal["at_y"], goal["to_x"], goal["to_y"]
         if np.isnan(goal["to_x"]):
             to_x = 120
         if np.isnan(goal["to_y"]):
             to_y = 40
-
-        # create arrays
         xy_ball = np.array([[at_x, at_y], [to_x, to_y]])
-        xy_off = np.array(
-            [player["location"] for player in freeze_frame if player["teammate"]]
-        )
-        xy_def = np.array(
-            [player["location"] for player in freeze_frame if not player["teammate"]]
-        )
-
-        # reshape arrays to represent a single frame
-        xy_off = xy_off.flatten()
-        xy_off = xy_off.reshape((1, len(xy_off)))
-        xy_def = xy_def.flatten()
-        xy_def = xy_def.reshape((1, len(xy_def)))
-
+        xy_off, xy_def = None, None
+        if freeze_frame is not None:
+            # create arrays
+            xy_off = np.array(
+                [player["location"] for player in freeze_frame if player["teammate"]]
+            )
+            xy_def = np.array(
+                [player["location"] for player in freeze_frame if not player["teammate"]]
+            )
+            # reshape arrays to represent a single frame
+            xy_off = xy_off.flatten()
+            xy_off = xy_off.reshape((1, len(xy_off)))
+            xy_def = xy_def.flatten()
+            xy_def = xy_def.reshape((1, len(xy_def)))
         # return XY objects
         return XY(xy=xy_ball), XY(xy=xy_off), XY(xy=xy_def)
 
@@ -160,20 +161,16 @@ Now we can use the predefined functions to create a plot of a single goal (e.g. 
 .. code-block:: python
 
     import matplotlib.pyplot as plt
-
     goal = all_goals.loc[all_goals.index[-1]]
-
     fig, ax = plt.subplots()
     scoring_team, scoring_player, xG = get_goal_info(goal)
     ax.set_title(
         f"Goal for {scoring_team} by {str(scoring_player)} "
         f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
-        fontdict={'size': 9}
+        fontdict={"size": 9},
     )
     pitch.plot(ax=ax)
     xy_ball, xy_off, xy_def = get_xy_data(goal)
-    xy_off.plot(t=0, ax=ax, color="red")
-    xy_def.plot(t=0, ax=ax, color="white")
     xy_ball.plot(
         t=(0, 2),
         plot_type="trajectories",
@@ -185,6 +182,9 @@ Now we can use the predefined functions to create a plot of a single goal (e.g. 
         markevery=[0],
         ax=ax,
     )
+    if xy_off.xy is not None and xy_def.xy is not None:
+        xy_off.plot(t=0, ax=ax, color="red")
+        xy_def.plot(t=0, ax=ax, color="white")
 
 .. image:: ../_img/tutorial_matchsheets_singlegoal.png
 
@@ -216,11 +216,9 @@ Now we create the match sheet by iterating over all goals and updating the respe
 
     row, col, home_score, away_score = 0, 0, 0, 0
     colors = {"Croatia": "white", "Spain": "red"}
-
-    for i in all_goals.index:
-
+    for idx in all_goals.index:
         # display meta information
-        scoring_team, scoring_player, xG = get_goal_info(all_goals.loc[i])
+        scoring_team, scoring_player, xG = get_goal_info(all_goals.loc[idx])
         if scoring_team == "Croatia":
             conceding_team = "Spain"
             home_score += 1
@@ -232,11 +230,10 @@ Now we create the match sheet by iterating over all goals and updating the respe
             f"|| xG: {round(xG, 2) if xG is not None else 'NA'}",
             fontdict={"size": 10},
         )
-
         # get position data
-        xy_ball, xy_off, xy_def = get_xy_data(all_goals.loc[i])
+        xy_ball, xy_off, xy_def = get_xy_data(all_goals.loc[idx])
         # rotate position data towards left goal for Spain
-        if scoring_team == "Spain":
+        if scoring_team == "Spain" and xy_off.xy is not None and xy_def.xy is not None:
             xy_off.rotate(180)
             xy_off.translate((pitch.xlim[1], pitch.ylim[1]))
             xy_def.rotate(180)
@@ -245,8 +242,6 @@ Now we create the match sheet by iterating over all goals and updating the respe
             xy_ball.translate((pitch.xlim[1], pitch.ylim[1]))
         # plot pitch and position data
         pitch.plot(ax=ax[row, col])
-        xy_off.plot(t=0, ax=ax[row, col], color=colors[scoring_team])
-        xy_def.plot(t=0, ax=ax[row, col], color=colors[conceding_team])
         xy_ball.plot(
             t=(0, 2),
             plot_type="trajectories",
@@ -258,14 +253,16 @@ Now we create the match sheet by iterating over all goals and updating the respe
             markevery=[0],
             ax=ax[row, col],
         )
-
+        if xy_off.xy is not None and xy_def.xy is not None:
+            xy_off.plot(t=0, ax=ax[row, col], color=colors[scoring_team])
+            xy_def.plot(t=0, ax=ax[row, col], color=colors[conceding_team])
         # update grid position
         col += 1
         if col == cols:
             col = 0
             row += 1
 
-The result should look like below. However, keep in mind that the StatsBomb360 data does only contain the positions from some players at the event (extracted from the camera angle). That's why you can not see the player responsible for the own goal in the first plot.
+The result should look similar to the image below. However, due to an update in the StatsBomb dataset the FreezeFrame for the OwnGoal is no longer available. Thus, there will only be the trajectory of the ball in this plot. Also, keep in mind that the StatsBomb360 data does only contain the positions from some players at the event (extracted from the camera angle). That's why you can not see the player responsible for the own goal in the first plot.
 
 .. image:: ../_img/tutorial_matchsheets_allgoals.png
 

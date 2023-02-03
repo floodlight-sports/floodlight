@@ -230,8 +230,8 @@ def read_open_event_data_csv(
         ``events_objects`` is a nested dictionary containing ``Events`` objects for
         each team and segment of the form ``events_objects[segment][team] = Events``.
         For a typical league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
-        Events}}``.
+        ``{'1': {'Home': Events, 'Away': Events}, '2': {'Home': Events, 'Away': Events}
+        }``.
 
         ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
         of the form ``teamsheets[team] = Teamsheet``.
@@ -316,7 +316,7 @@ def read_open_position_data_csv(
     filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Teamsheet], Pitch]:
+) -> Tuple[Dict[int, Dict[str, XY]], Dict[int, Code], Dict[str, Teamsheet], Pitch]:
     """Parses an open StatsPerform CSV file and extract position data and possession
     codes as well as teamsheets and pitch information.
 
@@ -341,7 +341,7 @@ def read_open_position_data_csv(
 
     Returns
     -------
-    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], \
+    data_objects: Tuple[Dict[int, Dict[str, XY]], Dict[int, Code], \
      Dict[str, Teamsheet], Pitch]
         Tuple of (nested) floodlight core objects with shape (xy_objects,
         possession_objects, teamsheets, pitch).
@@ -349,7 +349,7 @@ def read_open_position_data_csv(
         ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
         and segment of the form ``xy_objects[segment][team] = XY``. For a typical
         league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+        ``{0: {'Home': XY, 'Away': XY}, 1: {'Home': XY, 'Away': XY}}``.
 
         ``possession_objects`` is a dictionary containing ``Code`` objects with
         possession information (home or away) for each segment of the form
@@ -1011,7 +1011,7 @@ def read_position_data_txt(
     filepath_position: Union[str, Path],
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]:
+) -> Tuple[Dict[int, Dict[str, XY]], Dict[int, Teamsheet]]:
     """Parses a StatsPerform TXT file and extracts position data and teamsheets.
 
      Internal StatsPerform position data is stored as a TXT file containing all
@@ -1038,14 +1038,14 @@ def read_position_data_txt(
 
     Returns
     -------
-    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]
+    data_objects: Tuple[Dict[int, Dict[str, XY]], Dict[int, Teamsheet]]
         Tuple of (nested) floodlight core objects with shape (xy_objects,
         teamsheets).
 
         ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
         and segment of the form ``xy_objects[segment][team] = XY``. For a typical
         league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+        ``{1: {'Home': XY, 'Away': XY}, 2: {'Home': XY, 'Away': XY}}``.
 
         ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
         of the form ``teamsheets[team] = Teamsheet``.
@@ -1237,7 +1237,7 @@ def read_position_data_from_url(
     url: str,
     teamsheet_home: Teamsheet = None,
     teamsheet_away: Teamsheet = None,
-) -> Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]:
+) -> Tuple[Dict[int, Dict[str, XY]], Dict[int, Teamsheet]]:
     """Reads a URL from the StatsPerform API (StatsEdgeViewer) containing a position
     data TXT file and extracts position data and teamsheets.
 
@@ -1260,14 +1260,14 @@ def read_position_data_from_url(
 
     Returns
     -------
-    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Teamsheet]]
+    data_objects: Tuple[Dict[int, Dict[str, XY]], Dict[int, Teamsheet]]
         Tuple of (nested) floodlight core objects with shape (xy_objects,
         teamsheets).
 
         ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
         and segment of the form ``xy_objects[segment][team] = XY``. For a typical
         league match with two halves and teams this dictionary looks like:
-        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+        ``{1: {'Home': XY, 'Away': XY}, 2: {'Home': XY, 'Away': XY}}``.
 
         ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
         of the form ``teamsheets[team] = Teamsheet``.

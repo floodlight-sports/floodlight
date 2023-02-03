@@ -479,8 +479,12 @@ class StatsBombOpenDataset:
                         f"vs. "
                         f"{info['away_team']['away_team_name']}",
                         "score": f"{info['home_score']}:{info['away_score']}",
-                        "stadium": info["stadium"]["name"],
-                        "country": info["stadium"]["country"]["name"],
+                        "stadium": info["stadium"]["name"]
+                        if "stadium" in info
+                        else None,
+                        "country": info["stadium"]["country"]["name"]
+                        if "stadium" in info
+                        else None,
                         "sex": "f"
                         if competition
                         in ["FA Women's Super League", "NWSL", "Women's World Cup"]

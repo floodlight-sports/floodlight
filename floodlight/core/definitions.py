@@ -41,11 +41,11 @@ protected_columns = {
     },
     "xID": {
         "definition": "Index ID - a players index in the list of all players of a team"
-                      "for a given match (starts counting at 1). This is primarily used"
-                      " for locating players data in XY objects, but can also be "
-                      "helpful iterating or displaying all players of a team",
+                      "for a given match. This is primarily used for locating players "
+                      "data in XY objects, but can also be helpful iterating or "
+                      "displaying all players of a team",
         "dtypes": [int],
-        "value_range": [1, np.inf]
+        "value_range": [0, np.inf]
     },
     "tID": {
         "definition": "Team ID - unique number or string for team identification ",
