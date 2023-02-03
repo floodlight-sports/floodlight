@@ -672,10 +672,8 @@ def read_position_data_xml(
         ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
         and segment of the form ``xy_objects[segment][team] = XY``. For a typical
         league match with two halves and teams this dictionary looks like:
-        ``{
-            'firstHalf': {'Home': XY, 'Away': XY},
-            'secondHalf': {'Home': XY, 'Away': XY}
-            }``.
+        ``{'firstHalf': {'Home': XY, 'Away': XY}, 'secondHalf': {'Home': XY, 'Away':
+        XY}}``.
 
         ``possession_objects`` is a dictionary containing ``Code`` objects with
         possession information (home or away) for each segment of the form
