@@ -11,6 +11,8 @@ from floodlight.core.code import Code
 from floodlight.core.events import Events
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
+from floodlight.core.teamsheet import Teamsheet
+from floodlight.io.utils import get_and_convert
 
 
 def _create_periods_from_dat(
@@ -63,68 +65,6 @@ def _create_periods_from_dat(
         frame_set.clear()
 
     return periods, framerate_est
-
-
-def create_links_from_mat_info(
-    filepath_mat_info: Union[str, Path]
-) -> Tuple[Dict[str, Dict[int, int]], Dict[str, Dict[str, int]]]:
-    """Parses the DFL Match Information XML file for unique jIDs (jerseynumbers) and
-    creates two dictionaries, one linking pIDs to jIDs and one linking jIDs to xIDs in
-    ascending order.
-
-    Parameters
-    ----------
-    filepath_mat_info: str or pathlib.Path
-        Full path to XML File where the Match Information data in DFL format is saved
-
-    Returns
-    -------
-    links_jID_to_xID: Dict[str, Dict[int, int]]
-        A link dictionary of the form `links[team][jID] = xID`.
-    links_pID_to_jID: Dict[str, Dict[str, int]]
-        A link dictionary of the form `links[team][pID] = jID`.
-    """
-    # set up XML tree
-    tree = etree.parse(str(filepath_mat_info))
-    root = tree.getroot()
-
-    # parse XML file and extract links from pID to xID for both teams
-    links_pID_to_jID = {}
-    teams = root.find("MatchInformation").find("Teams")
-    home = root.find("MatchInformation").find("General").get("HomeTeamId")
-    if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
-        away = root.find("MatchInformation").find("General").get("AwayTeamId")
-    elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
-        away = root.find("MatchInformation").find("General").get("GuestTeamId")
-    else:
-        away = None
-
-    for team in teams:
-        if team.get("TeamId") == home:
-            links_pID_to_jID["Home"] = {
-                player.get("PersonId"): int(player.get("ShirtNumber"))
-                for player in team.find("Players")
-            }
-        elif team.get("TeamId") == away:
-            links_pID_to_jID["Away"] = {
-                player.get("PersonId"): int(player.get("ShirtNumber"))
-                for player in team.find("Players")
-            }
-        else:
-            continue
-
-    links_jID_to_xID = {
-        "Home": {
-            int(links_pID_to_jID["Home"][pID]): xID
-            for xID, pID in enumerate(links_pID_to_jID["Home"])
-        },
-        "Away": {
-            int(links_pID_to_jID["Away"][pID]): xID
-            for xID, pID in enumerate(links_pID_to_jID["Away"])
-        },
-    }
-
-    return links_jID_to_xID, links_pID_to_jID
 
 
 def _get_event_description(
@@ -342,24 +282,133 @@ def read_pitch_from_mat_info_xml(filepath_mat_info: Union[str, Path]) -> Pitch:
     return pitch
 
 
-def read_event_data_xml(
-    filepath_events: Union[str, Path]
-) -> Tuple[Events, Events, Events, Events]:
-    """Parses a DFL Match Event XML file and extracts the event data.
+def read_teamsheets_from_mat_info_xml(filepath_mat_info) -> Dict[str, Teamsheet]:
+    """Reads match_information XML file and returns two teamsheet objects for the home
+    and the away team.
 
-    This function provides a high-level access to the particular DFL Match Event feed
-    and returns Event objects for both teams. The number of segments is inferred from
-    the data, yet data for each segment is stored in a separate object.
+    Parameters
+    ----------
+    filepath_mat_info: str or pathlib.Path
+        Full path to XML File where the Match Information data in DFL format is saved.
+
+    Returns
+    -------
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
+    """
+    # set up XML tree
+    tree = etree.parse(str(filepath_mat_info))
+    root = tree.getroot()
+
+    # initialize teamsheets
+    teamsheets = {
+        "Home": pd.DataFrame(
+            columns=["player", "position", "team", "jID", "pID", "tID"]
+        ),
+        "Away": pd.DataFrame(
+            columns=["player", "position", "team", "jID", "pID", "tID"]
+        ),
+    }
+
+    # find team ids
+    team_informations = root.find("MatchInformation").find("Teams")
+    home_id = root.find("MatchInformation").find("General").get("HomeTeamId")
+    if "AwayTeamId" in root.find("MatchInformation").find("General").attrib:
+        away_id = root.find("MatchInformation").find("General").get("AwayTeamId")
+    elif "GuestTeamId" in root.find("MatchInformation").find("General").attrib:
+        away_id = root.find("MatchInformation").find("General").get("GuestTeamId")
+    else:
+        away_id = None
+
+    # parse player information
+    for team_info in team_informations:
+        if team_info.get("TeamId") == home_id:
+            team = "Home"
+        elif team_info.get("TeamId") == away_id:
+            team = "Away"
+        else:
+            team = None
+
+        # skip referees sometimes referred to as a team in new data formats
+        if team not in ["Home", "Away"]:
+            continue
+
+        # create list of players
+        players = team_info.find("Players")
+
+        # create teamsheets
+        teamsheets[team]["player"] = [
+            get_and_convert(player, "Shortname", str) for player in players
+        ]
+        teamsheets[team]["pID"] = [
+            get_and_convert(player, "PersonId", str) for player in players
+        ]
+        teamsheets[team]["jID"] = [
+            get_and_convert(player, "ShirtNumber", int) for player in players
+        ]
+        teamsheets[team]["position"] = [
+            get_and_convert(player, "PlayingPosition", str) for player in players
+        ]
+        teamsheets[team]["tID"] = team_info.get("TeamId")
+        teamsheets[team]["team"] = team_info.get("TeamName")
+
+    # create teamsheet objects
+    for team in teamsheets:
+        teamsheets[team] = Teamsheet(teamsheets[team])
+
+    return teamsheets
+
+
+def read_event_data_xml(
+    filepath_events: Union[str, Path],
+    filepath_mat_info: Union[str, Path],
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]:
+    """Parses a DFL Match Event XML file and extracts the event data as well as
+    teamsheets.
+
+    The structure of the official tracking system of the DFL (German Football League)
+    contains two separate xml files, one containing the actual data as well as a
+    metadata file containing information about teams, pitch size, and start- and
+    endframes of match periods. This function provides high-level access to DFL data by
+    parsing "the full match" and returning Events-objects parsed from the event data
+    xml-file as well as Teamsheet-objects parsed from the metadata xml-file. The number
+    of segments is inferred from the data, yet data for each segment is stored in a
+    separate object.
 
     Parameters
     ----------
     filepath_events: str or pathlib.Path
         Full path to XML File where the Event data in DFL format is saved.
+    filepath_mat_info: str or pathlib.Path
+        Full path to XML File where the Match Information data in DFL format is saved.
+    teamsheet_home: Teamsheet, optional
+        Teamsheet-object for the home team used to assign the tIDs of the teams to the
+        "Home" and "Away" position. If given as None (default), teamsheet is extracted
+        from the Match Information XML file.
+    teamsheet_away: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the Match Information XML file. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events]
-        Events- and Pitch-objects for both teams and both halves.
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets, pitch).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{
+        'firstHalf': {'Home': Events, 'Away': Events},
+        'secondHalf': {'Home': Events,'Away': Events}
+        }``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
 
     Notes
     -----
@@ -374,6 +423,24 @@ def read_event_data_xml(
     # set up XML tree
     tree = etree.parse(str(filepath_events))
     root = tree.getroot()
+
+    # read metadata
+    pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
+
+    # create or check teamsheet objects
+    if teamsheet_home is None and teamsheet_away is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        teamsheet_away = teamsheets["Away"]
+    else:
+        pass
+        # potential check
 
     # find start of halves
     start_times = {}
@@ -513,25 +580,43 @@ def read_event_data_xml(
             f"other segment!"
         )
 
-    # assembly
-    events_team1_ht1 = Events(
-        events=team_dfs[segments[0]][team1],
-    )
-    events_team1_ht2 = Events(
-        events=team_dfs[segments[1]][team1],
-    )
-    events_team2_ht1 = Events(
-        events=team_dfs[segments[0]][team2],
-    )
-    events_team2_ht2 = Events(
-        events=team_dfs[segments[1]][team2],
-    )
-    data_objects = (
-        events_team1_ht1,
-        events_team1_ht2,
-        events_team2_ht1,
-        events_team2_ht2,
-    )
+    # link team1 and team2 to home and away
+    home_tID = teamsheet_home.teamsheet.at[0, "tID"]
+    away_tID = teamsheet_away.teamsheet.at[0, "tID"]
+    links_team_to_role = {
+        "Home": home_tID,
+        "Away": away_tID,
+    }
+
+    # check if home and away tIDs occur in event data
+    if team1 != home_tID and team2 != home_tID:
+        raise AttributeError(
+            f"Neither tID of teams in the event data ({team1} and {team2}) "
+            f"matches the tID of the home team from the "
+            f"teamsheet_home ({home_tID})!"
+        )
+    if team1 != away_tID and team2 != away_tID:
+        raise AttributeError(
+            f"Neither tID of teams in the event data ({team1} and {team2}) "
+            f"matches the tID of the away team from the "
+            f"teamsheet_away ({away_tID})!"
+        )
+
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=team_dfs[segment][links_team_to_role[team]],
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
+
+    # pack objects
+    data_objects = (events_objects, teamsheets, pitch)
 
     return data_objects
 
@@ -539,18 +624,27 @@ def read_event_data_xml(
 def read_position_data_xml(
     filepath_positions: Union[str, Path],
     filepath_mat_info: Union[str, Path],
-    links_jID_to_xID: Dict[str, Dict[int, int]] = None,
-    links_pID_to_jID: Dict[str, Dict[int, int]] = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
+) -> Tuple[
+    Dict[str, Dict[str, XY]],
+    Dict[str, Code],
+    Dict[str, Code],
+    Dict[str, Teamsheet],
+    Pitch,
+]:
     """Parse DFL files and extract position data, possession and ballstatus codes as
-    well as pitch information.
+    well as pitch information and teamsheets.
 
-    The official tracking system of the DFL (German Football League) delivers two
-    separate XML files, one containing the actual data as well as a metadata file
-    containing information about pitch size and start- and endframes of match periods.
-    Since no information about framerate is delivered, it is estimated from time
-    difference between individual frames. This function provides a high-level access to
-    DFL data by parsing "the full match" given both files.
+    The structure of the official tracking system of the DFL (German Football League)
+    contains two separate xml files, one containing the actual data as well as a
+    metadata file containing information about teams, pitch size, and start- and
+    endframes of match periods. However, since no information about framerate is
+    contained in the metadata, the framerate is estimated from the time difference
+    between individual frames. This function provides high-level access to DFL data by
+    parsing "the full match" and returning XY- and Code-objects parsed from the position
+    data xml-file as well as Pitch- and Teamsheet-objects parsed from the metadata
+    xml-file.
 
     Parameters
     ----------
@@ -558,35 +652,73 @@ def read_position_data_xml(
         Full path to XML File where the Position data in DFL format is saved.
     filepath_mat_info: str or pathlib.Path
         Full path to XML File where the Match Information data in DFL format is saved.
-    links_jID_to_xID: Dict, optional
-        A link dictionary of the form `links[team][jID] = xID`. Player's are identified
-        in the XML files via jID, and this dictionary is used to map them to a specific
-        xID in the respective XY objects. Should be supplied if that order matters. If
-        one of links or id_to_jrsy is given as None (default), they are automatically
-        extracted from the Match Information XML file.
-    links_pID_to_jID: Dict, optional
-        A link dictionary of the form `links[team][pID] = jID` where pID is the PersonId
-        specified in the DFL Match Information file.
+    teamsheet_home: Teamsheet, optional
+        Teamsheet-object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID` and  `links[team][pID] = jID`. The links are used to
+        map players to a specific xID in the respective XY objects. Should be supplied
+        for custom ordering. If given as None (default), teamsheet is extracted from the
+        Match Information XML file and its xIDs are assigned in order of appearance.
+    teamsheet_away: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the Match Information XML file. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]
-        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Code], \
+     Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        possession_objects, ballstatus_objects, teamsheets, pitch).
 
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'firstHalf': {'Home': XY, 'Away': XY}, 'secondHalf': {'Home': XY, 'Away':
+        XY}}``.
+
+        ``possession_objects`` is a dictionary containing ``Code`` objects with
+        possession information (home or away) for each segment of the form
+        ``possession_objects[segment] = Code``.
+
+        ``ballstatus_objects`` is a dictionary containing ``Code`` objects with
+        ballstatus information (dead or alive) for each segment of the form
+        ``ballstatus_objects[segment] = Code``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
     """
     # read metadata
     pitch = read_pitch_from_mat_info_xml(filepath_mat_info)
 
-    # create or check links
-    if links_jID_to_xID is None or links_pID_to_jID is None:
-        links_jID_to_xID, links_pID_to_jID = create_links_from_mat_info(
-            filepath_mat_info
-        )
+    # create or check teamsheet objects
+    if teamsheet_home is None and teamsheet_away is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
+        teamsheets = read_teamsheets_from_mat_info_xml(filepath_mat_info)
+        teamsheet_away = teamsheets["Away"]
     else:
         pass
         # potential check
+
+    # create links
+    if "xID" not in teamsheet_home.teamsheet.columns:
+        teamsheet_home.add_xIDs()
+    if "xID" not in teamsheet_away.teamsheet.columns:
+        teamsheet_away.add_xIDs()
+    links_jID_to_xID = {
+        "Home": teamsheet_home.get_links("jID", "xID"),
+        "Away": teamsheet_away.get_links("jID", "xID"),
+    }
+    links_pID_to_jID = {
+        "Home": teamsheet_home.get_links("pID", "jID"),
+        "Away": teamsheet_away.get_links("pID", "jID"),
+    }
 
     # create periods
     periods, framerate_est = _create_periods_from_dat(filepath_positions)
@@ -676,51 +808,40 @@ def read_position_data_xml(
 
         frame_set.clear()
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"]["firstHalf"], framerate=framerate_est)
-    home_ht2 = XY(xy=xydata["Home"]["secondHalf"], framerate=framerate_est)
-    away_ht1 = XY(xy=xydata["Away"]["firstHalf"], framerate=framerate_est)
-    away_ht2 = XY(xy=xydata["Away"]["secondHalf"], framerate=framerate_est)
-    ball_ht1 = XY(xy=xydata["Ball"]["firstHalf"], framerate=framerate_est)
-    ball_ht2 = XY(xy=xydata["Ball"]["secondHalf"], framerate=framerate_est)
+    # create objects
+    xy_objects = {}
+    possession_objects = {}
+    ballstatus_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        possession_objects[segment] = Code(
+            code=np.array(codes["possession"][segment]),
+            name="possession",
+            definitions={1: "Home", 2: "Away"},
+            framerate=framerate_est,
+        )
+        ballstatus_objects[segment] = Code(
+            code=np.array(codes["ballstatus"][segment]),
+            name="ballstatus",
+            definitions={0: "Dead", 1: "Alive"},
+            framerate=framerate_est,
+        )
+        for team in ["Home", "Away", "Ball"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment],
+                framerate=framerate_est,
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    # create Code objects
-    possession_ht1 = Code(
-        code=np.array(codes["possession"]["firstHalf"]),
-        name="possession",
-        definitions={1: "Home", 2: "Away"},
-        framerate=framerate_est,
-    )
-    possession_ht2 = Code(
-        code=np.array(codes["possession"]["secondHalf"]),
-        name="possession",
-        definitions={1: "Home", 2: "Away"},
-        framerate=framerate_est,
-    )
-    ballstatus_ht1 = Code(
-        code=np.array(codes["ballstatus"]["firstHalf"]),
-        name="ballstatus",
-        definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate_est,
-    )
-    ballstatus_ht2 = Code(
-        code=np.array(codes["ballstatus"]["secondHalf"]),
-        name="ballstatus",
-        definitions={0: "Dead", 1: "Alive"},
-        framerate=framerate_est,
-    )
-
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
+        xy_objects,
+        possession_objects,
+        ballstatus_objects,
+        teamsheets,
         pitch,
     )
 

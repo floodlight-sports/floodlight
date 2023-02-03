@@ -1,22 +1,28 @@
+import json
 from pathlib import Path
 from typing import Dict, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from lxml import etree
 
 from floodlight.core.code import Code
 from floodlight.core.pitch import Pitch
 from floodlight.core.xy import XY
+from floodlight.core.teamsheet import Teamsheet
+from floodlight.io.utils import get_and_convert
 
 
-def _read_metadata(filepath_metadata: Union[str, Path]) -> Tuple[Dict, Dict, Pitch]:
-    """Reads TRACAB's metadata file and extracts information about match metainfo,
-    periods and the pitch.
+def _read_metadata_from_xml(
+    filepath_metadata: Union[str, Path]
+) -> Tuple[Dict, Dict, Pitch]:
+    """Reads TRACAB's metadata file (xml format) and extracts match meta information
+    such as framerate, periods and pitch.
 
     Parameters
     ----------
     filepath_metadata: str or pathlib.Path
-        Full path to metadata.xml file.
+        Full path to _metadata.xml file.
 
     Returns
     -------
@@ -57,6 +63,67 @@ def _read_metadata(filepath_metadata: Union[str, Path]) -> Tuple[Dict, Dict, Pit
         "tracab",
         length=float(metadata["length"]),
         width=float(metadata["width"]),
+        sport="football",
+    )
+
+    return metadata, periods, pitch
+
+
+def _read_metadata_from_json(
+    filepath_metadata: Union[str, Path]
+) -> Tuple[Dict, Dict, Pitch]:
+    """Reads TRACAB's metadata file (json format) and extracts match meta information
+    such as framerate, periods and pitch.
+
+    Parameters
+    ----------
+    filepath_metadata: str or pathlib.Path
+        Full path to _metadata.json file.
+
+    Returns
+    -------
+    metadata: Dict
+        Dictionary with metainformation such as framerate.
+    periods: Dict
+        Dictionary with start and endframes:
+        `periods[segment] = (startframe, endframe)`.
+    pitch: Pitch
+        Pitch object with actual pitch length and width.
+    """
+    # load file
+    with open(filepath_metadata, "r", encoding="utf8") as f:
+        metafile = json.load(f)
+
+    # bin
+    metadata = {}
+    periods = {}
+
+    # get framerate
+    metadata["framerate"] = get_and_convert(metafile, "FrameRate", int)
+
+    # get length and with and convert from cm to m
+    length = get_and_convert(metafile, "PitchLongSide", float)
+    width = get_and_convert(metafile, "PitchShortSide", float)
+    metadata["length"] = length / 100 if length else None
+    metadata["width"] = width / 100 if width else None
+
+    # get period start and end frames
+    for i in range(1, 6):
+        phase = f"Phase{i}"
+        ht = f"HT{i}"
+        phase_start = get_and_convert(metafile, phase + "StartFrame", int)
+        phase_end = get_and_convert(metafile, phase + "EndFrame", int)
+        if phase_start is None or phase_end is None:
+            continue
+        if phase_start == 0 or phase_end == 0:
+            continue
+        periods[ht] = (phase_start, phase_end)
+
+    # create pitch
+    pitch = Pitch.from_template(
+        "tracab",
+        length=metadata["length"],
+        width=metadata["width"],
         sport="football",
     )
 
@@ -187,9 +254,9 @@ def _read_dat_jersey_numbers(filepath_dat: Union[str, Path]):
     return home_jIDs, away_jIDs
 
 
-def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int, int]]:
-    """Parses the entire TRACAB .dat file for unique jIDs (jerseynumbers) and creates a
-    dictionary linking jIDs to xIDs in ascending order.
+def read_teamsheets_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Teamsheet]:
+    """Parses the entire TRACAB .dat file for unique jIDs (jerseynumbers) and creates
+    respective teamsheets for the home and the away team.
 
     Parameters
     ----------
@@ -198,32 +265,88 @@ def create_links_from_dat(filepath_dat: Union[str, Path]) -> Dict[str, Dict[int,
 
     Returns
     -------
-    links: Dict[str, Dict[int, int]]
-        Link-dictionary of the form `links[team][jID] = xID`.
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
     """
+    # bin
+    teamsheets = {}
+
+    # get jerseynumbers (jIDs)
     homejrsy, awayjrsy = _read_dat_jersey_numbers(filepath_dat)
 
-    homejrsy = list(homejrsy)
-    awayjrsy = list(awayjrsy)
+    # loop through teams
+    for team, jIDs in zip(("Home", "Away"), (homejrsy, awayjrsy)):
+        jIDs = list(jIDs)
+        jIDs.sort()
+        player = [f"Player {i+1}" for i in range(len(jIDs))]
+        teamsheet = pd.DataFrame(
+            data={
+                "player": player,
+                "jID": jIDs,
+            }
+        )
+        teamsheet = Teamsheet(teamsheet)
+        teamsheets[team] = teamsheet
 
-    homejrsy.sort()
-    awayjrsy.sort()
-
-    links = {
-        "Home": {jID: xID for xID, jID in enumerate(homejrsy)},
-        "Away": {jID: xID for xID, jID in enumerate(awayjrsy)},
-    }
-
-    return links
+    return teamsheets
 
 
-def read_tracab_files(
+def read_teamsheets_from_meta_json(
+    filepath_metadata: Union[str, Path]
+) -> Dict[str, Teamsheet]:
+    """Reads TRACAB's metadata file (json format) and creates respective teamsheets for
+    the home and the away team.
+
+    Parameters
+    ----------
+    filepath_metadata: str or pathlib.Path
+        Full path to _metadata.json file.
+
+    Returns
+    -------
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
+    """
+    # load file
+    with open(filepath_metadata, "r", encoding="utf8") as f:
+        metafile = json.load(f)
+
+    # param
+    teams = ["Home", "Away"]
+
+    # bin
+    teamsheets = {team: {var: [] for var in ["player", "pID", "jID"]} for team in teams}
+
+    # loop through teams
+    for team in teams:
+        team_name = team + "Team"
+        for player in metafile[team_name]["Players"]:
+            first_name = get_and_convert(player, "FirstName", str, "")
+            last_name = get_and_convert(player, "LastName", str, "")
+            full_name = first_name + " " + last_name
+            teamsheets[team]["player"].append(full_name)
+            teamsheets[team]["pID"].append(get_and_convert(player, "PlayerID", int))
+            teamsheets[team]["jID"].append(get_and_convert(player, "JerseyNo", int))
+
+        teamsheets[team] = Teamsheet(pd.DataFrame(teamsheets[team]))
+
+    return teamsheets
+
+
+def read_position_data_dat(
     filepath_dat: Union[str, Path],
     filepath_metadata: Union[str, Path],
-    links: Dict[str, Dict[int, int]] = None,
-) -> Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]:
-    """Parse TRACAB files and extract position data, possession and ballstatus codes as
-    well as pitch information.
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
+) -> Tuple[
+    Dict[str, Dict[str, XY]],
+    Dict[str, Code],
+    Dict[str, Code],
+    Dict[str, Teamsheet],
+    Pitch,
+]:
+    """Parse TRACAB .dat-files (ASCII) and metadata (xml or json) and extract position
+    data, possession and ballstatus codes, teamsheets as well as pitch information.
 
     ChyronHego's TRACAB system delivers two separate files, a .dat file containing the
     actual data as well as a metadata.xml containing information about pitch size,
@@ -236,34 +359,102 @@ def read_tracab_files(
         Full path to dat-file.
     filepath_metadata: str or pathlib.Path
         Full path to metadata.xml file.
-    links: Dict[str, Dict[int, int]], optional
-        A link dictionary of the form `links[team][jID] = xID`. Player's are identified
-        in TRACAB files via jID, and this dictionary is used to map them to a specific
-        xID in the respective XY objects. Should be supplied if that order matters. If
-        None is given (default), the links are automatically extracted from the .dat
-        file at the cost of a second pass through the entire file.
+    teamsheet_home: Teamsheet, optional
+        Teamsheet object for the home team used to create link dictionaries of the form
+        `links[team][jID] = xID`. The links are used to map players to a specific xID
+        in the respective XY objects. Should be supplied for custom ordering. If given
+        as None (default), teamsheet is extracted from the .dat or .json file (see
+        Notes) and xIDs are assigned to the player's jersey numbers ascendingly (dat
+        case) or in order of appearance (json case).
+    teamsheet_away: Teamsheet, optional
+        Teamsheet object for the away team. If given as None (default), teamsheet is
+        extracted from the .dat or -json file. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[XY, XY, XY, XY, XY, XY, Code, Code, Code, Code, Pitch]
-        XY-, Code-, and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, ball_ht1, ball_ht2,
-        possession_ht1, possession_ht2, ballstatus_ht1, ballstatus_ht2, pitch)
+    data_objects: Tuple[Dict[str, Dict[str, XY]], Dict[str, Code], Dict[str, Code], \
+     Dict[str, Teamsheet], Pitch]
+        Tuple of (nested) floodlight core objects with shape (xy_objects,
+        possession_objects, ballstatus_objects, teamsheets, pitch).
+
+        ``xy_objects`` is a nested dictionary containing ``XY`` objects for each team
+        and segment of the form ``xy_objects[segment][team] = XY``. For a typical
+        league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': XY, 'Away': XY}, 'HT2': {'Home': XY, 'Away': XY}}``.
+
+        ``possession_objects`` is a dictionary containing ``Code`` objects with
+        possession information (home or away) for each segment of the form
+        ``possession_objects[segment] = Code``.
+
+        ``ballstatus_objects`` is a dictionary containing ``Code`` objects with
+        ballstatus information (dead or alive) for each segment of the form
+        ``ballstatus_objects[segment] = Code``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
+
+    Notes
+    -----
+    Tracab provides metadata in two file types: xml and json. The json metadata files
+    typically include player information whereas the xml files do not. The dat file
+    storing tracking data (e.g. from an ASCII stream) contain only player jersey
+    numbers, but no additional player information.
+
+    This function will check whether the provided ``filepath_metadata`` points to a xml
+    or json file. If it's a json, teamsheets are generated from this source. If it's a
+    xml, teamsheets are generated from the dat file and players are named 'Player i'
+    with i starting at 1. To identify players in this case, use the jersey numbers or
+    provide custom teamsheets generated by a different parser if additional data is
+    available.
     """
-    # read metadata
-    metadata, periods, pitch = _read_metadata(filepath_metadata)
+    # check file type of metadata
+    file_extension = filepath_metadata.split(".")[-1].upper()
+
+    # read metadata and determine logic used for teamsheet parsing
+    if file_extension == "XML":
+        metadata, periods, pitch = _read_metadata_from_xml(filepath_metadata)
+        teamsheet_parse_func = read_teamsheets_from_dat
+        teamsheet_parse_file = filepath_dat
+    elif file_extension == "JSON":
+        metadata, periods, pitch = _read_metadata_from_json(filepath_metadata)
+        teamsheet_parse_func = read_teamsheets_from_meta_json
+        teamsheet_parse_file = filepath_metadata
+    else:
+        raise ValueError(
+            f"Expected metadata file type to be from [XML, JSON], got {file_extension}."
+        )
     segments = list(periods.keys())
 
-    # create or check links
-    if links is None:
-        links = create_links_from_dat(filepath_dat)
+    # create or check teamsheet objects with select teamsheet parsing functions & file
+    if teamsheet_home is None and teamsheet_away is None:
+        teamsheets = teamsheet_parse_func(teamsheet_parse_file)
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
+        teamsheets = teamsheet_parse_func(teamsheet_parse_file)
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
+        teamsheets = teamsheet_parse_func(teamsheet_parse_file)
+        teamsheet_away = teamsheets["Away"]
     else:
         pass
-        # potential check vs jerseys in dat file
+        # potential check
+
+    # create links
+    if "xID" not in teamsheet_home.teamsheet.columns:
+        teamsheet_home.add_xIDs()
+    if "xID" not in teamsheet_away.teamsheet.columns:
+        teamsheet_away.add_xIDs()
+    links_jID_to_xID = {
+        "Home": teamsheet_home.get_links("jID", "xID"),
+        "Away": teamsheet_away.get_links("jID", "xID"),
+    }
 
     # infer data array shapes
-    number_of_home_players = max(links["Home"].values()) + 1
-    number_of_away_players = max(links["Away"].values()) + 1
+    number_of_home_players = max(links_jID_to_xID["Home"].values()) + 1
+    number_of_away_players = max(links_jID_to_xID["Away"].values()) + 1
     number_of_frames = {}
     for segment in segments:
         start = periods[segment][0]
@@ -315,8 +506,8 @@ def read_tracab_files(
             for team in ["Home", "Away"]:
                 for jID in positions[team].keys():
                     # map jersey number to array index and infer respective columns
-                    x_col = (links[team][jID]) * 2
-                    y_col = (links[team][jID]) * 2 + 1
+                    x_col = (links_jID_to_xID[team][jID]) * 2
+                    y_col = (links_jID_to_xID[team][jID]) * 2 + 1
                     xydata[team][segment][frame_rel, x_col] = positions[team][jID][0]
                     xydata[team][segment][frame_rel, y_col] = positions[team][jID][1]
 
@@ -327,51 +518,39 @@ def read_tracab_files(
             codes["possession"][segment].append(ball.get("possession", np.nan))
             codes["ballstatus"][segment].append(ball.get("ballstatus", np.nan))
 
-    # create XY objects
-    home_ht1 = XY(xy=xydata["Home"]["HT1"], framerate=metadata["framerate"])
-    home_ht2 = XY(xy=xydata["Home"]["HT2"], framerate=metadata["framerate"])
-    away_ht1 = XY(xy=xydata["Away"]["HT1"], framerate=metadata["framerate"])
-    away_ht2 = XY(xy=xydata["Away"]["HT2"], framerate=metadata["framerate"])
-    ball_ht1 = XY(xy=xydata["Ball"]["HT1"], framerate=metadata["framerate"])
-    ball_ht2 = XY(xy=xydata["Ball"]["HT2"], framerate=metadata["framerate"])
+    # create objects
+    xy_objects = {}
+    possession_objects = {}
+    ballstatus_objects = {}
+    for segment in segments:
+        xy_objects[segment] = {}
+        possession_objects[segment] = Code(
+            code=np.array(codes["possession"][segment]),
+            name="possession",
+            definitions={"H": "Home", "A": "Away"},
+            framerate=metadata["framerate"],
+        )
+        ballstatus_objects[segment] = Code(
+            code=np.array(codes["ballstatus"][segment]),
+            name="ballstatus",
+            definitions={"D": "Dead", "A": "Alive"},
+            framerate=metadata["framerate"],
+        )
+        for team in ["Home", "Away", "Ball"]:
+            xy_objects[segment][team] = XY(
+                xy=xydata[team][segment], framerate=metadata["framerate"]
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    # create Code objects
-    possession_ht1 = Code(
-        code=np.array(codes["possession"]["HT1"]),
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-        framerate=metadata["framerate"],
-    )
-    possession_ht2 = Code(
-        code=np.array(codes["possession"]["HT2"]),
-        name="possession",
-        definitions={"H": "Home", "A": "Away"},
-        framerate=metadata["framerate"],
-    )
-    ballstatus_ht1 = Code(
-        code=np.array(codes["ballstatus"]["HT1"]),
-        name="ballstatus",
-        definitions={"D": "Dead", "A": "Alive"},
-        framerate=metadata["framerate"],
-    )
-    ballstatus_ht2 = Code(
-        code=np.array(codes["ballstatus"]["HT2"]),
-        name="ballstatus",
-        definitions={"D": "Dead", "A": "Alive"},
-        framerate=metadata["framerate"],
-    )
-
+    # pack objects
     data_objects = (
-        home_ht1,
-        home_ht2,
-        away_ht1,
-        away_ht2,
-        ball_ht1,
-        ball_ht2,
-        possession_ht1,
-        possession_ht2,
-        ballstatus_ht1,
-        ballstatus_ht2,
+        xy_objects,
+        possession_objects,
+        ballstatus_objects,
+        teamsheets,
         pitch,
     )
 

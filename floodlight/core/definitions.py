@@ -19,6 +19,14 @@ essential_events_columns = {
     }
 }
 
+essential_teamsheet_columns = {
+    "player": {
+        "definition": "Name of a player. May be abbreviated or contain aliases.",
+        "dtypes": [str],
+        "value_range": None,
+    }
+}
+
 
 protected_columns = {
     "pID": {
@@ -33,11 +41,11 @@ protected_columns = {
     },
     "xID": {
         "definition": "Index ID - a players index in the list of all players of a team"
-                      "for a given match (starts counting at 1). This is primarily used"
-                      " for locating players data in XY objects, but can also be "
-                      "helpful iterating or displaying all players of a team",
+                      "for a given match. This is primarily used for locating players "
+                      "data in XY objects, but can also be helpful iterating or "
+                      "displaying all players of a team",
         "dtypes": [int],
-        "value_range": [1, np.inf]
+        "value_range": [0, np.inf]
     },
     "tID": {
         "definition": "Team ID - unique number or string for team identification ",
@@ -67,12 +75,12 @@ protected_columns = {
         "value_range": None
     },
     "minute": {
-        "definition": "Minute of the segment the event took place",
+        "definition": "Minute of the segment when an event took place",
         "dtypes": [int],
         "value_range": [0, np.inf]
     },
     "second": {
-        "definition": "Second of the minute of the segment the event took place",
+        "definition": "Second of the minute of the segment when an event took place",
         "dtypes": [int],
         "value_range": [0, np.inf]
     },
@@ -83,27 +91,33 @@ protected_columns = {
         "value_range": [0, 1],
     },
     "at_x": {
-        "definition": "The x position (longitudinal) where the event took place or "
+        "definition": "The x position (longitudinal) where an event took place or "
                       "originated from",
         "dtypes": [float],
         "value_range": None
     },
     "at_y": {
-        "definition": "The y position (lateral) where the event took place or "
+        "definition": "The y position (lateral) where an event took place or "
                       "originated from",
         "dtypes": [float],
         "value_range": None
     },
     "to_x": {
-        "definition": "The x position (longitudinal) where the event ended",
+        "definition": "The x position (longitudinal) where an event ended",
         "dtypes": [float],
         "value_range": None
     },
     "to_y": {
-        "definition": "The y position (lateral) where the event ended",
+        "definition": "The y position (lateral) where an event ended",
         "dtypes": [float],
         "value_range": None
     },
+    "started": {
+        "definition": "Boolean indicating whether a player started the observation as"
+                      "an active player.",
+        "dtypes": [bool],
+        "value_range": None
+    }
 }
 
 # fmt:on

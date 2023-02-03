@@ -13,6 +13,7 @@ Collection of file parsing functionalities for different data providers as well 
    kinexon
    opta
    secondspectrum
+   sportradar
    statsbomb
    statsperform
    tracab
@@ -35,10 +36,10 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   read_event_data_xml
    read_position_data_xml
+   read_event_data_xml
    read_pitch_from_mat_info_xml
-   create_links_from_mat_info
+   read_teamsheets_from_mat_info_xml
 
 .. rubric:: Kinexon
 
@@ -46,9 +47,9 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   read_kinexon_file
-   get_meta_data
+   read_position_data_csv
    create_links_from_meta_data
+   get_meta_data
    get_column_names_from_csv
 
 .. rubric:: Opta
@@ -57,7 +58,7 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   read_f24
+   read_event_data_xml
    get_opta_feedtype
 
 .. rubric:: Second Spectrum
@@ -66,8 +67,17 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   read_secspec_files
-   create_links_from_metajson
+   read_position_data_jsonl
+   read_event_data_jsonl
+   read_teamsheets_from_meta_json
+
+.. rubric:: Sportradar
+
+.. currentmodule:: floodlight.io.sportradar
+.. autosummary::
+   :nosignatures:
+
+   read_event_data_json
 
 .. rubric:: StatsBomb
 
@@ -75,7 +85,8 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   read_open_statsbomb_event_data_json
+   read_open_event_data_json
+   read_teamsheets_from_open_event_data_json
 
 .. rubric:: StatsPerform
 
@@ -83,14 +94,15 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
+   read_position_data_txt
+   read_open_position_data_csv
+   read_position_data_from_url
    read_event_data_xml
-   read_tracking_data_txt
-   read_event_data_from_url
-   read_tracking_data_from_url
    read_open_event_data_csv
-   read_open_tracking_data_csv
-   create_links_from_statsperform_tracking_data_txt
-   create_links_from_open_tracking_data_csv
+   read_event_data_from_url
+   read_teamsheets_from_position_data_txt
+   read_teamsheets_from_event_data_xml
+   read_teamsheets_from_open_data_csv
 
 .. rubric:: Tracab (ChyronHego)
 
@@ -98,4 +110,6 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   read_tracab_files
+   read_position_data_dat
+   read_teamsheets_from_dat
+   read_teamsheets_from_meta_json

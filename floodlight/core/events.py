@@ -15,12 +15,11 @@ from floodlight.core.code import Code
 class Events:
     """Event data fragment. Core class of floodlight.
 
-    Event data is stored in `pandas` ``DataFrame``, where each row stores one event
-    with its different properties organized in columns. You may put whatever
-    information you like in these columns. Yet, the columns `"eID"` and `"gameclock"`
-    are mandatory to identify and time-locate events. Some special column names are
-    reserved for properties that follow conventions. These may be necessary and their
-    existence is checked for running particular analyses.
+    Event data is stored in a `pandas` ``DataFrame``, where each row stores one
+    event with its different properties organized in columns. Columns may contain
+    any relevant information. An `"eID"` (event ID) and `"gameclock"` column is
+    required for instantiation, to identify and time-locate events. Some particular
+    column names are protected (see Notes).
 
     Parameters
     ----------
@@ -47,6 +46,19 @@ class Events:
         List of missing protected columns.
     protected_invalid: list
         List of protected columns that violate the definitions.
+
+    Notes
+    -----
+    Event data, particularly information available for each event, may vary across
+    data providers. To accommodate all data flavours, any column name or data type is
+    permissible. However, two `essential` column are required (`"eID"` and
+    `"gameclock`). Other column names are `protected`. Using these names assumes that
+    data stored in these columns follows conventions in terms of data types and value
+    ranges. These are required for methods working with protected columns to assure
+    correct calculations. Definitions for `essential` and `protected` columns can be
+    found in
+    :ref:`floodlight.core.definitions <definitions target>`.
+
     """
 
     events: pd.DataFrame
@@ -66,10 +78,9 @@ class Events:
         if incorrect_columns:
             for col in incorrect_columns:
                 warnings.warn(
-                    f"Floodlight Events column {col} does not match the defined value"
-                    f"range (from floodlight.core.definitions). You can pursue at this "
-                    f"point, however, be aware that this may lead to unexpected "
-                    f"behavior in the future."
+                    f"The '{col}' column does not match the defined value range (from "
+                    f"floodlight.core.definitions). This may lead to unexpected "
+                    f"behavior of methods using this column."
                 )
 
     def __str__(self):
@@ -145,12 +156,13 @@ class Events:
 
     def column_values_in_range(self, col: str, definitions: Dict[str, Dict]) -> bool:
         """Check if values for a single column of the inner event DataFrame are in
-        correct range using using the specifications from floodlight.core.definitions.
+        correct range using the specifications from
+        :ref:`floodlight.core.definitions <definitions target>`.
 
         Parameters
         ----------
         col: str
-            Column name of the inner event DataFrame to be checked
+            Column name of the inner events DataFrame to be checked
         definitions: Dict
             Dictionary (from floodlight.core.definitions) containing specifications for
             the columns to be checked.
@@ -493,19 +505,19 @@ class Events:
                 f"Expected fade to be a positive integer or None, got {fade} instead."
             )
 
-        sorted_events = self.events.sort_values("frameclock")
-        start = int(np.round(np.nanmin(sorted_events["frameclock"].values)))
-        end = int(np.round(np.nanmax(sorted_events["frameclock"].values))) + 1
+        tmp_events = self.events.sort_values("frameclock")
+        start = int(np.round(np.nanmin(tmp_events["frameclock"].values)))
+        end = int(np.round(np.nanmax(tmp_events["frameclock"].values))) + 1
 
         code = np.full((end - start,), np.nan, dtype=object)
-        for _, event in sorted_events.iterrows():
-            if pd.isna(event["frameclock"]):
+        for i in tmp_events.index:
+            if pd.isna(tmp_events.at[i, "frameclock"]):
                 continue
-            frame = int(np.round(event["frameclock"]))
+            frame = int(np.round(tmp_events.at[i, "frameclock"]))
             if fade is None:
-                code[frame - start :] = event["eID"]
+                code[frame - start :] = tmp_events.at[i, "eID"]
             else:
-                code[frame - start : frame - start + fade + 1] = event["eID"]
+                code[frame - start : frame - start + fade + 1] = tmp_events.at[i, "eID"]
 
         event_stream = Code(
             code=code,

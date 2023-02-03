@@ -156,7 +156,7 @@ def test_calc_metabolic_power(
     # Assert
     assert np.array_equal(
         np.round(metabolic_power, 3),
-        np.array(((0.101, 0.045), (0.251, 2.427), (2.602, 0.347))),
+        np.array(((2.020, 0.896), (5.011, 48.540), (52.038, 6.931))),
     )
 
 
@@ -173,7 +173,7 @@ def test_metabolic_power(example_pitch_dfl, example_xy_object_kinetics) -> None:
     # Assert
     assert np.array_equal(
         np.round(metabolic_power, 3),
-        np.array(((0.459, 0.223), (0.465, 0.249), (0.472, 0.278))),
+        np.array(((9.177, 4.452), (9.306, 4.988), (9.439, 5.570))),
     )
 
 
@@ -209,7 +209,7 @@ def test_equivalent_distance(example_pitch_dfl, example_xy_object_kinetics) -> N
     # Assert
     assert np.array_equal(
         np.round(equivalent_distance, 3),
-        np.array(((0.127, 0.062), (0.129, 0.069), (0.131, 0.077))),
+        np.array(((2.549, 1.237), (2.585, 1.386), (2.622, 1.547))),
     )
 
 

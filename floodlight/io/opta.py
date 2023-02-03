@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 import pytz
 import iso8601
@@ -45,9 +45,9 @@ def get_opta_feedtype(filepath: Union[str, Path]) -> Union[str, None]:
     return feedtype
 
 
-def read_f24(
+def read_event_data_xml(
     filepath: Union[str, Path]
-) -> Tuple[Events, Events, Events, Events, Pitch]:
+) -> Tuple[Dict[str, Dict[str, Events]], Pitch]:
     """Parse Opta's f24 feed (containing match events) and extract event data and pitch
     information.
 
@@ -62,9 +62,17 @@ def read_f24(
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events, Pitch]
-        Events- and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Pitch]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        pitch).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``pitch`` is a ``Pitch`` object corresponding to the data.
 
     Notes
     -----
@@ -196,25 +204,18 @@ def read_f24(
             qual_dict[qual_id] = qual_value
         event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-    # assembly
-    home_ht1 = Events(
-        events=pd.DataFrame(data=event_lists["Home"]["HT1"]),
-        direction=directions["Home"]["HT1"],
-    )
-    home_ht2 = Events(
-        events=pd.DataFrame(data=event_lists["Home"]["HT2"]),
-        direction=directions["Home"]["HT2"],
-    )
-    away_ht1 = Events(
-        events=pd.DataFrame(data=event_lists["Away"]["HT1"]),
-        direction=directions["Away"]["HT1"],
-    )
-    away_ht2 = Events(
-        events=pd.DataFrame(data=event_lists["Away"]["HT2"]),
-        direction=directions["Away"]["HT2"],
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=pd.DataFrame(data=event_lists[team][segment]),
+                direction=directions[team][segment],
+            )
     pitch = Pitch.from_template("opta", sport="football")
 
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2, pitch)
+    # pack objects
+    data_objects = (events_objects, pitch)
 
     return data_objects

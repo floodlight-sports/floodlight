@@ -15,19 +15,21 @@
 [contrib-url]: https://github.com/floodlight-sports/floodlight/blob/main/CONTRIBUTING.md
 [arxiv-image]: https://img.shields.io/badge/arXiv-2206.02562-b31b1b.svg
 [arxiv-url]: https://arxiv.org/abs/2206.02562
+[joss-image]: https://joss.theoj.org/papers/10.21105/joss.04588/status.svg
+[joss-url]: https://doi.org/10.21105/joss.04588
 [codecov-image]: https://codecov.io/gh/floodlight-sports/floodlight/branch/develop/graph/badge.svg?token=RLY582UBC6
 [codecov-url]: https://codecov.io/gh/floodlight-sports/floodlight
 
 
 # floodlight
+
 [![Latest Version][version-image]][version-url]
 [![Python Version][python-image]][python-url]
 [![Documentation Status][docs-image]][docs-url]
 [![Build Status][build-image]][build-url]
 [![Linting Status][lint-image]][lint-url]
 [![Codecov][codecov-image]][codecov-url]
-[![Code style: black][black-image]][black-url]
-[![arXiv][arxiv-image]][arxiv-url]
+[![DOI][joss-image]][joss-url]
 
 ## A high-level, data-driven sports analytics framework
 
@@ -88,28 +90,30 @@ To find out more, see the full set of features below or get started quickly with
 
 ### Features
 
-This project is still under development, and we hope to expand the set
-of features in the future. At this point, we provide core data structures,
-parsing functionality for major data providers, access to public data sets, data
-filtering, basic plotting routines and computational models.
+We provide core data structures for team sports data, parsing functionality for major
+data providers, access points to public data sets, data filtering, plotting routines and
+many computational models from the literature. The feature set is constantly expanding,
+and if you want to add more just open an issue!
 
 #### Data-level Objects
 
 - Tracking data
 - Event data
 - Pitch information
+- Teamsheets with player information (*new*)
 - Codes such as ball possession information
 - Properties such as distances or advanced computations
 
 #### Parser
 
-- ChyronHego (Tracking data, Codes)
-- DFL (Tracking data, Event data, Codes)
-- Kinexon (Tracking data)
-- Opta (Event data - F24 feeds)
-- Second Spectrum (Tracking data)
-- StatsPerform (Tracking data, Event data - also directly from URLs)
-- StatsBomb (Event data)
+- **Tracab/ChyronHego**: Tracking data, Teamsheets, Codes
+- **DFL/STS**: Tracking data, Event data, Teamsheets, Codes
+- **Kinexon**: Tracking data
+- **Opta**: Event data (F24 feeds)
+- **Second Spectrum**: Tracking data, Event data (*new*)
+- **Sportradar**: Event data (*new*)
+- **StatsPerform**: Tracking data, Event data (with URL access)
+- **StatsBomb**: Event data
 
 #### Datasets
 
@@ -120,15 +124,16 @@ filtering, basic plotting routines and computational models.
 
 - Spatial transformations for all data structures
 - Lowpass-filter tracking data
-- Slicing and selection methods
-- Plot pitches and tracking data
+- Slicing, selection and sequencing methods
+- Plot pitches, player positions and model overlays
 
 #### Models and Metrics
 
-- Centroids
-- Distances, Velocities, Accelerations
-- Metabolic Power and Equivalent Distances
 - Approximate Entropy
+- Centroids
+- Distances, Velocities & Accelerations
+- Metabolic Power & Equivalent Distances
+- Voronoi Space Control (*new*)
 
 ### Installation
 
@@ -148,6 +153,8 @@ You can find all documentation [here][docs-url].
 ### Contributing
 
 [![Contributions][contrib-image]][contrib-url]
+[![Code style: black][black-image]][black-url]
+
 
 Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
 know to get started. We also provide an extended, beginner-friendly guide on how to
@@ -157,17 +164,21 @@ start contributing in our documentation.
 
 ### Citing
 
-If you've used *floodlight* in your scientific work, please cite the [corresponding paper][arxiv-url].
+If you've used *floodlight* in your scientific work, please cite the [corresponding paper][joss-url].
 
 ```
-@misc{Raabe2022floodlight,
-  doi = {10.48550/ARXIV.2206.02562},
-  url = {https://arxiv.org/abs/2206.02562},
-  author = {Raabe, Dominik and Biermann, Henrik and Bassek, Manuel and Wohlan, Martin and Komitova, Rumena and Rein,
-           Robert and Groot, Tobias Kuppens and Memmert, Daniel},
-  title = {floodlight -- A high-level, data-driven sports analytics framework},
-  publisher = {arXiv},
-  year = {2022},
+@article{Raabe2022,
+    doi = {10.21105/joss.04588},
+    url = {https://doi.org/10.21105/joss.04588},
+    year = {2022},
+    publisher = {The Open Journal},
+    volume = {7},
+    number = {76},
+    pages = {4588},
+    author = {Dominik Raabe and Henrik Biermann and Manuel Bassek and Martin Wohlan and Rumena Komitova
+              and Robert Rein and Tobias Kuppens Groot and Daniel Memmert},
+    title = {floodlight - A high-level, data-driven sports analytics framework},
+    journal = {Journal of Open Source Software}
 }
 ```
 

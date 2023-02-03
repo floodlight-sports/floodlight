@@ -1,26 +1,149 @@
 import warnings
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 
 import os
 import json
 import pandas as pd
 
 from floodlight.core.events import Events
+from floodlight.core.teamsheet import Teamsheet
 
 
-def read_open_statsbomb_event_data_json(
+def read_teamsheets_from_open_event_data_json(
+    filepath_events: Union[str, Path],
+    filepath_match: Union[str, Path],
+) -> Dict[str, Teamsheet]:
+    """Reads open events and match files and returns Teamsheet objects for the home
+    and the away team.
+
+    Parameters
+    ----------
+    filepath_events: str or pathlib.Path
+        Full path to json file where the Event data is saved.
+    filepath_match: str or pathlib.Path
+        Full path to json file where information about all matches of a season are
+        stored.
+
+    Returns
+    -------
+    teamsheets: Dict[str, Teamsheet]
+        Dictionary with teamsheets for the home team and the away team.
+    """
+    # load json file into memory
+    with open(str(filepath_match), "r", encoding="utf8") as f:
+        matchinfo_list = json.load(f)
+    with open(str(filepath_events), "r", encoding="utf8") as f:
+        file_event_list = json.load(f)
+
+    # retrieve match info from file
+    mID = int(str(filepath_events).split(os.path.sep)[-1][:-5])  # from filepath
+    matchinfo = None
+    for info in matchinfo_list:
+        if info["match_id"] == mID:
+            matchinfo = info
+            break
+
+    # raise error if match is not contained in matchinfo
+    if matchinfo is None:
+        raise KeyError(
+            f"The match with mID {mID} was not found in the specified "
+            f"File of match information ({filepath_match})."
+        )
+
+    # initialize teamsheets
+    teamsheets = {
+        "Home": pd.DataFrame(
+            columns=["player", "position", "team_name", "jID", "pID", "tID"]
+        ),
+        "Away": pd.DataFrame(
+            columns=["player", "position", "team_name", "jID", "pID", "tID"]
+        ),
+    }
+
+    # find team data in match info
+    tIDs = {
+        "Home": matchinfo["home_team"]["home_team_id"],
+        "Away": matchinfo["away_team"]["away_team_id"],
+    }
+    team_names = {
+        "Home": matchinfo["home_team"]["home_team_name"],
+        "Away": matchinfo["away_team"]["away_team_name"],
+    }
+
+    # parse starting eleven
+    for event in file_event_list:
+        if event["type"]["name"] != "Starting XI":
+            continue
+
+        # find team
+        if event["team"]["id"] == tIDs["Home"]:
+            team = "Home"
+        elif event["team"]["id"] == tIDs["Away"]:
+            team = "Away"
+        else:
+            team = None
+
+        # find list of players
+        players = event["tactics"]["lineup"]
+
+        # add player data to teamsheets
+        teamsheets[team]["player"] = [player["player"]["name"] for player in players]
+        teamsheets[team]["pID"] = [player["player"]["id"] for player in players]
+        teamsheets[team]["jID"] = [player["jersey_number"] for player in players]
+        teamsheets[team]["position"] = [
+            player["position"]["name"] for player in players
+        ]
+        teamsheets[team]["tID"] = tIDs[team]
+        teamsheets[team]["team_name"] = team_names[team]
+
+    # parse players coming in from substitutions
+    for event in file_event_list:
+        if event["type"]["name"] != "Substitution":
+            continue
+
+        # find team
+        if event["team"]["id"] == tIDs["Home"]:
+            team = "Home"
+        elif event["team"]["id"] == tIDs["Away"]:
+            team = "Away"
+        else:
+            team = None
+
+        # append player data to teamsheet
+        player_data = pd.DataFrame(
+            {
+                "player": [event["substitution"]["replacement"]["name"]],
+                "pID": [event["substitution"]["replacement"]["id"]],
+                "jID": [pd.NA],  # unfortunately not included in substitution event
+                "position": [event["position"]["name"]],
+                "tID": [tIDs[team]],
+                "team_name": [team_names[team]],
+            }
+        )
+        teamsheets[team] = pd.concat((teamsheets[team], player_data), ignore_index=True)
+
+    # create teamsheet objects
+    for team in team_names.keys():
+        teamsheets[team] = Teamsheet(teamsheets[team])
+
+    return teamsheets
+
+
+def read_open_event_data_json(
     filepath_events: Union[str, Path],
     filepath_match: Union[str, Path],
     filepath_threesixty: Union[str, Path] = None,
-) -> Tuple[Events, Events, Events, Events]:
+    teamsheet_home: Teamsheet = None,
+    teamsheet_away: Teamsheet = None,
+) -> Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]:
     """Parses files for a single match from the StatsBomb open dataset and extracts the
-    event data.
+    event data and teamsheets.
 
-    This function provides a high-level access to an events json file from the openly
-    published StatsBomb open data and returns Event objects for both teams for the first
-    two periods. A StatsBomb360 json file can be passed to the function to include
-    `StatsBomb360 data <https://statsbomb.com/articles/soccer/
+    This function provides high-level access to an events json file from the openly
+    published StatsBomb open data and returns Event- and Teamsheet-objects for both
+    teams for the full match. A StatsBomb360 json file can be passed to the function to
+    include `StatsBomb360 data <https://statsbomb.com/articles/soccer/
     statsbomb-360-freeze-frame-viewer-a-new-release-in-statsbomb-iq/>`_ to the
     ``qualifier`` column. Requires the parsed files from the dataset to maintain their
     original names from the `official data repository
@@ -38,12 +161,28 @@ def read_open_statsbomb_event_data_json(
         information about the area of the field where player positions are tracked
         (``visible_area``) and player positions at single events (``freeze frame``) are
         stored as a string in the ``qualifier`` column.
+    teamsheet_home: Teamsheet, optional
+        Teamsheet-object for the home team used to create link dictionaries of the form
+        `links[pID] = team`. If given as None (default), teamsheet is extracted from
+        the events and match json files.
+    teamsheet_away: Teamsheet, optional
+        Teamsheet-object for the away team. If given as None (default), teamsheet is
+        extracted from the events and match json files. See teamsheet_home for details.
 
     Returns
     -------
-    data_objects: Tuple[Events, Events, Events, Events]
-        Events- and Pitch-objects for both teams and both halves. The order is
-        (home_ht1, home_ht2, away_ht1, away_ht2).
+    data_objects: Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet]]
+        Tuple of (nested) floodlight core objects with shape (events_objects,
+        teamsheets).
+
+        ``events_objects`` is a nested dictionary containing ``Events`` objects for
+        each team and segment of the form ``events_objects[segment][team] = Events``.
+        For a typical league match with two halves and teams this dictionary looks like:
+        ``{'HT1': {'Home': Events, 'Away': Events}, 'HT2': {'Home': Events, 'Away':
+        Events}}``.
+
+        ``teamsheets`` is a dictionary containing ``Teamsheet`` objects for each team
+        of the form ``teamsheets[team] = Teamsheet``.
 
     Notes
     -----
@@ -56,35 +195,45 @@ def read_open_statsbomb_event_data_json(
     """
 
     # load json files into memory
-    with open(filepath_match, "r", encoding="utf8") as f:
-        matchinfo_list = json.load(f)
-    with open(filepath_events, "r", encoding="utf8") as f:
+    with open(str(filepath_events), "r", encoding="utf8") as f:
         file_event_list = json.load(f)
     if filepath_threesixty is not None:
-        with open(filepath_threesixty, "r", encoding="utf8") as f:
+        with open(str(filepath_threesixty), "r", encoding="utf8") as f:
             file_threesixty_list = json.load(f)
     else:
         file_threesixty_list = None
 
-    # 1. retrieve match info from file
-    mID = int(filepath_events.split(os.path.sep)[-1][:-5])  # from filepath
-    matchinfo = None
-    for info in matchinfo_list:
-        if info["match_id"] == mID:
-            matchinfo = info
-            break
+    # create or check teamsheet objects
+    if teamsheet_home is None and teamsheet_away is None:
+        teamsheets = read_teamsheets_from_open_event_data_json(
+            filepath_events, filepath_match
+        )
+        teamsheet_home = teamsheets["Home"]
+        teamsheet_away = teamsheets["Away"]
+    elif teamsheet_home is None:
+        teamsheets = read_teamsheets_from_open_event_data_json(
+            filepath_events, filepath_match
+        )
+        teamsheet_home = teamsheets["Home"]
+    elif teamsheet_away is None:
+        teamsheets = read_teamsheets_from_open_event_data_json(
+            filepath_events, filepath_match
+        )
+        teamsheet_away = teamsheets["Away"]
+    else:
+        pass
+        # potential check
 
-    # 2. parse match info
-    teams = ["Home", "Away"]
-    tID_link = {
-        int(matchinfo["home_team"]["home_team_id"]): "Home",
-        int(matchinfo["away_team"]["away_team_id"]): "Away",
+    # create links
+    links_tID_to_team = {
+        teamsheet_home.teamsheet.at[0, "tID"]: "Home",
+        teamsheet_away.teamsheet.at[0, "tID"]: "Away",
     }
     periods = set([event["period"] for event in file_event_list])
     segments = [f"HT{period}" for period in periods]
+    mID = int(filepath_events.split(os.path.sep)[-1][:-5])  # from filepath
 
-    # 3. parse events
-    # bins
+    # initialize event bins
     columns = [
         "eID",
         "gameclock",
@@ -107,15 +256,15 @@ def read_open_statsbomb_event_data_json(
 
     team_event_lists = {
         team: {segment: {col: [] for col in columns} for segment in segments}
-        for team in teams
+        for team in links_tID_to_team.values()
     }
 
-    # loop
+    # parse events loop
     for event in file_event_list:
         # get team and segment information
         period = event["period"]
         segment = "HT" + str(period)
-        team = tID_link[event["possession_team"]["id"]]
+        team = links_tID_to_team[event["possession_team"]["id"]]
 
         # identifier and outcome:
         eID = event["type"]["id"]
@@ -219,20 +368,20 @@ def read_open_statsbomb_event_data_json(
                 )
         team_event_lists[team][segment]["qualifier"].append(str(qual_dict))
 
-    # assembly
-    home_ht1 = Events(
-        events=pd.DataFrame(data=team_event_lists["Home"]["HT1"]),
-    )
-    home_ht2 = Events(
-        events=pd.DataFrame(data=team_event_lists["Home"]["HT2"]),
-    )
-    away_ht1 = Events(
-        events=pd.DataFrame(data=team_event_lists["Away"]["HT1"]),
-    )
-    away_ht2 = Events(
-        events=pd.DataFrame(data=team_event_lists["Away"]["HT2"]),
-    )
+    # create objects
+    events_objects = {}
+    for segment in segments:
+        events_objects[segment] = {}
+        for team in ["Home", "Away"]:
+            events_objects[segment][team] = Events(
+                events=pd.DataFrame(data=team_event_lists[team][segment]),
+            )
+    teamsheets = {
+        "Home": teamsheet_home,
+        "Away": teamsheet_away,
+    }
 
-    data_objects = (home_ht1, home_ht2, away_ht1, away_ht2)
+    # pack objects
+    data_objects = (events_objects, teamsheets)
 
     return data_objects

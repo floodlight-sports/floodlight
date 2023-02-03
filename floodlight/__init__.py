@@ -3,6 +3,7 @@ from .core.events import Events
 from .core.pitch import Pitch
 from .core.xy import XY
 from .core.property import DyadicProperty, PlayerProperty, TeamProperty
+from .core.teamsheet import Teamsheet
 
 __all__ = [
     "__version__",
@@ -13,10 +14,11 @@ __all__ = [
     "Pitch",
     "PlayerProperty",
     "TeamProperty",
+    "Teamsheet",
     "XY",
 ]
 
-__version__ = "0.3.3"
+__version__ = "0.4.0"
 
 __doc__ = """
 A high-level, data-driven sports analytics framework

@@ -71,7 +71,7 @@ def test_essential_missing(
 
 
 @pytest.mark.unit
-@pytest.mark.filterwarnings("ignore: Floodlight Events column")
+@pytest.mark.filterwarnings("ignore: The 'gameclock' column")
 def test_essential_invalid(
     example_events_data_minimal_invalid_essential: pd.DataFrame,
 ) -> None:
@@ -89,14 +89,11 @@ def test_essential_invalid(
 def test_protected_missing(
     example_events_data_minimal: pd.DataFrame,
 ) -> None:
-    # Arrange
     data = Events(example_events_data_minimal)
-
-    # Act
     missing_protected_columns = data.protected_missing
+    total_num_protected = len(protected_columns)
 
-    # Assert
-    assert len(missing_protected_columns) == 15
+    assert len(missing_protected_columns) == total_num_protected
 
 
 @pytest.mark.unit
