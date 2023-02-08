@@ -7,13 +7,15 @@ import numpy as np
 from floodlight.core.xy import XY
 
 
-def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
+def get_column_names_from_csv(filepath_data: Union[str, Path], delimiter = ",") -> List[str]:
     """Reads first line of a Kinexon.csv-file and extracts the column names.
 
     Parameters
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter: str
+        Delimiter specified in Kinexon .csv-file.
 
     Returns
     -------
@@ -22,12 +24,16 @@ def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
     """
 
     with open(str(filepath_data), encoding="utf-8") as f:
-        columns = f.readline().split(",")
+        columns = f.readline().split(delimiter)
+
+    # Delete last entry in list if it is a newline
+    if columns[-1] == "\n":
+        del columns[-1]
 
     return columns
 
 
-def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, int]]:
+def _get_column_links(filepath_data: Union[str, Path], delimiter = ",") -> Union[None, Dict[str, int]]:
     """Creates a dictionary with the relevant recorded columns and their
     corresponding column index in the Kinexon.csv-file.
 
@@ -35,6 +41,8 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter: str
+        Delimiter specified in Kinexon .csv-file.
 
     Returns
     -------
@@ -52,39 +60,57 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
             - y_coord: 'y in m'
     """
 
-    recorded_columns = get_column_names_from_csv(str(filepath_data))
+    recorded_columns = get_column_names_from_csv(str(filepath_data), delimiter)
 
     # relevant columns
     mapping = {
-        "ts in ms": "time",
         "sensor id": "sensor_id",
         "mapped id": "mapped_id",
+        "league id": "league_id", # same as Sportradar ID btw (in German Bundesliga) 
         "full name": "name",
         "number": "number",
         "group id": "group_id",
         "group name": "group_name",
         "x in m": "x_coord",
         "y in m": "y_coord",
+        "z in m": "z_coord"
     }
+    # Okay so this is tricky, so bear with me.
+    # In order to read out the new f'ed up kinexon format, we first need the uniques of the column names in order to match it with our mapping.
+    recorded_columns_uniques = list(dict.fromkeys(recorded_columns)) # https://www.w3schools.com/python/python_howto_remove_duplicates.asp
+    # Now, to iterate over the right amount of columns, we need to determine if there are less columns provided than keys in the mapping.
+    necessary_min_length_steps = min(len(mapping), len(recorded_columns_uniques)-1) # -1 because of the timestamp
+    necessary_columns = [ "x_coord", "y_coord"]
+    # necessary_columns = ["time", "x_coord", "y_coord"]
+    list_column_links = []
+    # Recorded columns now 
+    for i in range(1, len(recorded_columns),necessary_min_length_steps): 
+        column_links = {}
+        recorded_columns_tmp = recorded_columns[i:i+necessary_min_length_steps]
+        # Sanity check. Shouldn't happen but we knever know
+        if recorded_columns_tmp == ['\n'] or recorded_columns_tmp == ['']:
+            continue
 
-    necessary_columns = ["time", "x_coord", "y_coord"]
+        # loop to add the column link list.
+        for key in mapping:
+            # create links
+            if key in recorded_columns_tmp:
+                column_links.update({mapping[key]: recorded_columns_tmp.index(key)})
 
-    column_links = {}
-    # loop
-    for key in mapping:
-        # create links
-        if key in recorded_columns:
-            column_links.update({mapping[key]: recorded_columns.index(key)})
+        # check if necessary columns are available
+        if not all(columns in column_links for columns in necessary_columns):
+            warnings.warn(
+                "Data file lacks critical information! "
+                "No timestamp or coordinates found."
+            )
+            return None
+        
+        # Append to list of column links. As this should be always the same, we can probably make uniques here already.
+        # As long as this is in beta stage, this is a good debugging point for looking into the correct reading of column headers.
+        list_column_links.append(column_links)
 
-    # check if necessary columns are available
-    if not all(columns in column_links for columns in necessary_columns):
-        warnings.warn(
-            "Data file lacks critical information! "
-            "No timestamp or coordinates found."
-        )
-        return None
 
-    return column_links
+    return list_column_links
 
 
 def _get_group_id(
@@ -145,7 +171,7 @@ def _get_group_id(
 
 
 def get_meta_data(
-    filepath_data: Union[str, Path]
+    filepath_data: Union[str, Path], delimiter = ","
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
     length and framerate.
@@ -154,6 +180,8 @@ def get_meta_data(
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter: str
+        Delimiter specified in Kinexon .csv-file.
 
     Returns
     -------
@@ -177,7 +205,15 @@ def get_meta_data(
         Timestamp of the first recorded frame
     """
 
-    column_links = _get_column_links(str(filepath_data))
+    list_column_links = _get_column_links(str(filepath_data), delimiter)
+    
+    # check for correct delimiter
+    if list_column_links  == []:
+        warnings.warn("No column links found! Is the correct delimiter set?")
+
+    column_links = list_column_links[0] # Should all be the same.
+    number_of_unique_column_links = len(column_links)
+
     sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
     column_links_set = set(column_links)
     recorded_sensor_identifier = list(column_links_set & sensor_identifier)
@@ -208,24 +244,40 @@ def get_meta_data(
             if len(line_string) == 0:
                 break
             # split str
-            line = line_string.split(",")
-            # extract frames timestamp
-            t.append(int(line[column_links["time"]]))
-            # extract group_id
-            group_id = _get_group_id(recorded_group_identifier, column_links, line)
-            # create group dict in pID_dict
-            if group_id not in pID_dict:
-                pID_dict.update({group_id: {}})
-            # create links
-            for identifier in sensor_links:
-                # extract identifier
-                if identifier not in pID_dict[group_id]:
-                    pID_dict[group_id].update({identifier: []})
-                # extract ids
-                if line[column_links[identifier]] not in pID_dict[group_id][identifier]:
-                    pID_dict[group_id][identifier].append(
-                        line[column_links[identifier]]
-                    )
+            line = line_string.split(delimiter)
+            # Sanity check
+            if line == ["\n"] or line == ['']:
+                continue
+            # extract frames timestamp and append it
+            t.append(int(line[0]))
+            # Iterate over new, f*-up kinexon line, but in steps that match the number of items (e.g. league id, number, etc.) and the subsequently same amount of columns in the csv.
+            for i in range(1, len(line),number_of_unique_column_links):
+                # Now cut the line, which is a string list, to get a sublist of a single player with the according and correct number of columns.
+                line_tmp = line[i:i+number_of_unique_column_links]
+                # Sanity check, you know the drill.
+                if line_tmp == ["\n"] or line_tmp == [""]:
+                    continue
+                # extract group_id
+                group_id = _get_group_id(recorded_group_identifier, column_links, line_tmp)
+                # That's right: sanity check
+                if  group_id == "":
+                    continue
+                # create group dict in pID_dict
+                if group_id not in pID_dict:
+                    pID_dict.update({group_id: {}})
+                    # Sanity check.
+                    if len(pID_dict) > 3:
+                        warnings.warn("More than 3 entries in the group ID dict. This should not happen.")
+                # create links
+                for identifier in sensor_links:
+                    # extract identifier
+                    if identifier not in pID_dict[group_id]:
+                        pID_dict[group_id].update({identifier: []})
+                    # extract ids
+                    if line_tmp[list_column_links[0][identifier]] not in pID_dict[group_id][identifier]:
+                        pID_dict[group_id][identifier].append(
+                            line_tmp[list_column_links[0][identifier]]
+                        )
 
     # sort dict
     pID_dict = dict(sorted(pID_dict.items()))
@@ -263,7 +315,8 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
     Parameters
     ----------
     pID_dict: Dict[str, Dict[str, List[str]]],
-        Nested dictionary that stores information about the pIDs from every player-
+        Nested dictionary that   File "/home/madams/dev/tmp/bi-vision-floodlight/test_floodlight.py", line 8, in <module>
+stores information about the pIDs from every player-
         identifying column in every group.
         'pID_dict[group][identifying_column] = [pID1, pID2, ..., pIDn]'
         When recording and exporting Kinexon data, the pID can be stored
@@ -317,6 +370,7 @@ def create_links_from_meta_data(
         Link-dictionary of the form ``links[group][identifier-ID] = xID``.
     """
 
+
     if identifier is None:
         # available sensor identifier
         identifier = _get_available_sensor_identifier(pID_dict)
@@ -334,7 +388,7 @@ def create_links_from_meta_data(
     return links
 
 
-def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
+def read_position_data_csv(filepath_data: Union[str, Path], delimiter=",") -> List[XY]:
     """Parses a Kinexon csv file and extracts position data.
 
     Kinexon's local positioning system delivers one .csv file containing the position
@@ -345,6 +399,8 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon .csv-file.
+    delimiter: str
+        Delimiter specified in Kinexon .csv-file.
 
     Returns
     -------
@@ -356,12 +412,14 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
     """
 
     # get metadata
-    pID_dict, number_of_frames, framerate, t_null = get_meta_data(filepath_data)
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(filepath_data, delimiter)
 
     # get links
     links = create_links_from_meta_data(pID_dict)
     # get column-links
-    column_links = _get_column_links(filepath_data)
+    list_column_links = _get_column_links(filepath_data, delimiter)
+    column_links = list_column_links[0] # Should all be the same.
+    number_of_unique_column_links = len(column_links)
     column_links_set = set(column_links)
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(column_links_set & group_identifier_set)
@@ -392,25 +450,39 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
             if len(line_string) == 0:
                 break
             # split str
-            line = line_string.split(",")
-            timestamp = int(line[column_links["time"]])
-            # set group
-            group_id = _get_group_id(recorded_group_identifier, column_links, line)
-            # set column
-            x_col = links[group_id][line[column_links[identifier]]] * 2
-            y_col = x_col + 1
-            # set row
-            row = int((timestamp - t_null) / (1000 / framerate))
-            # set (x, y)-data
-            x_coordinate = line[column_links["x_coord"]]
-            y_coordinate = line[column_links["y_coord"]]
+            line = line_string.split(delimiter)
+            # Extract timestamp at fixed index 0
+            timestamp = int(line[0])
+            # Sanity check
+            if line == ["\n"]:
+                continue
+            # Iterate over new, fucked-up kinexon line.
+            for i in range(1, len(line),number_of_unique_column_links):
+                # get tmp line for single player
+                line_tmp = line[i:i+number_of_unique_column_links]
+                # Sanity check
+                if line_tmp == ["\n"] or line_tmp == [""]:
+                    continue
+                # set group
+                group_id = _get_group_id(recorded_group_identifier, column_links, line_tmp)
+                # Sanity check
+                if group_id == "":
+                    continue
+                # set column
+                x_col = links[group_id][line_tmp[column_links[identifier]]] * 2
+                y_col = x_col + 1
+                # set row
+                row = int((timestamp - t_null) / (1000 / framerate))
+                # set (x, y)-data
+                x_coordinate = line_tmp[column_links["x_coord"]]
+                y_coordinate = line_tmp[column_links["y_coord"]]
 
-            # insert (x, y)-data into column and row of respective array
-            if x_coordinate != "":
-                xydata[group_id][row, x_col] = x_coordinate
+                # insert (x, y)-data into column and row of respective array
+                if x_coordinate != "":
+                    xydata[group_id][row, x_col] = x_coordinate
 
-            if y_coordinate != "":
-                xydata[group_id][row, y_col] = y_coordinate
+                if y_coordinate != "":
+                    xydata[group_id][row, y_col] = y_coordinate
 
     data_objects = []
     for group_id in xydata:
