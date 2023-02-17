@@ -187,7 +187,7 @@ def get_meta_data(
         Timestamp of the first recorded frame
     """
 
-    column_links = _get_column_links(str(filepath_data))
+    column_links = _get_column_links(str(filepath_data), delimiter)
     sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
     column_links_set = set(column_links)
     recorded_sensor_identifier = list(column_links_set & sensor_identifier)
