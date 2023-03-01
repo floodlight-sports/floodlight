@@ -89,6 +89,7 @@ def read_event_data_json(
                 competitor["qualifier"].capitalize(): (
                     competitor["id"],
                     competitor["name"],
+                    competitor['players']
                 )
             }
         )
@@ -216,10 +217,17 @@ def read_event_data_json(
     # flexible parser return for all segments and teams
     data_objects = {
         segment: {
-            team: Events(events=pd.DataFrame(data=team_event_lists[team][segment]))
-            for team in teams
+            team: Events(events=pd.DataFrame(data=team_event_lists[team][segment])) for team in teams
+            
         }
         for segment in segments
     }
+    try:
+        
+        for team in teams:
+               data_objects["players_" + team] = home_away_link[team]
+    except ValueError as e:
+        print(e)        
+    
 
     return data_objects

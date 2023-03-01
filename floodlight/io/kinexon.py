@@ -67,6 +67,7 @@ def _get_column_links(
         "ts in ms": "time",
         "sensor id": "sensor_id",
         "mapped id": "mapped_id",
+        "league id": "league_id",
         "full name": "name",
         "number": "number",
         "group id": "group_id",
@@ -188,7 +189,7 @@ def get_meta_data(
     """
 
     column_links = _get_column_links(str(filepath_data), delimiter)
-    sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
+    sensor_identifier = {"league_id","name", "number", "sensor_id", "mapped_id"}
     column_links_set = set(column_links)
     recorded_sensor_identifier = list(column_links_set & sensor_identifier)
     sensor_links = {
@@ -287,7 +288,7 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
         One sensor identifier that has been recorded.
     """
 
-    player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
+    player_identifiers = ["league_id", "name", "mapped_id", "sensor_id", "number"]
     available_identifier = [
         idt for idt in player_identifiers if idt in list(pID_dict.values())[0]
     ]
