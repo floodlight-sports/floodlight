@@ -1,19 +1,25 @@
 import warnings
 from pathlib import Path
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Optional
+from collections import defaultdict
 
 import numpy as np
+import pandas as pd
 
 from floodlight.core.xy import XY
 
 
-def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
+def get_column_names_from_csv(
+    filepath_data: Union[str, Path], delimiter: Optional[str] = ","
+) -> List[str]:
     """Reads first line of a Kinexon.csv-file and extracts the column names.
 
     Parameters
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter : str, optional
+        Delimiter used in the csv file. Defaults to ",".
 
     Returns
     -------
@@ -22,12 +28,14 @@ def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
     """
 
     with open(str(filepath_data), encoding="utf-8") as f:
-        columns = f.readline().split(",")
+        columns = f.readline().split(delimiter)
 
     return columns
 
 
-def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, int]]:
+def _get_column_links(
+    filepath_data: Union[str, Path], delimiter: Optional[str] = ","
+) -> Union[None, Dict[str, int]]:
     """Creates a dictionary with the relevant recorded columns and their
     corresponding column index in the Kinexon.csv-file.
 
@@ -35,6 +43,8 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter : str, optional
+        Delimiter used in the csv file. Defaults to ",".
 
     Returns
     -------
@@ -52,13 +62,14 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
             - y_coord: 'y in m'
     """
 
-    recorded_columns = get_column_names_from_csv(str(filepath_data))
+    recorded_columns = get_column_names_from_csv(str(filepath_data), delimiter)
 
     # relevant columns
     mapping = {
         "ts in ms": "time",
         "sensor id": "sensor_id",
         "mapped id": "mapped_id",
+        "league id": "league_id",
         "full name": "name",
         "number": "number",
         "group id": "group_id",
@@ -87,19 +98,17 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
     return column_links
 
 
-def _get_group_id(
-    recorded_group_identifier: List[str],
-    column_links: Dict[str, int],
-    single_line: List[str],
-) -> Union[str, None]:
-    """Returns the group_name or group_id if it was recorded or "0" if not.
-    Favors the group_name over the group_id.
+def _get_group_id(df: pd.DataFrame, column_links: Dict[str, int]) -> pd.Series:
+    """
+    Fast calculation of the group identifier based on the 'group_name'
+    and 'group_id' columns.
+
 
     Parameters
     ----------
-    recorded_group_identifier: List[str]
-        List of all recorded group identifiers. Group identifiers are "group_id" or
-        "group_name".
+    df : pd.DataFrame
+        The input DataFrame containing the Kinexon data including 'group_name'
+        and 'group_id' columns.
     column_links: Dict[str, int]
         Dictionary with column index for relevant recorded columns.
         'column_links[column] = index'
@@ -108,52 +117,48 @@ def _get_group_id(
             - time: 'ts in ms'
             - sensor_id: 'sensor id'
             - mapped_id: 'mapped id'
+            - league_id: 'league id'
             - name: 'full name'
             - group_id: 'group id'
             - x_coord: 'x in m'
             - y_coord: 'y in m'
-    single_line: List[str]
-        Single line of a Kinexon.csv-file that has been split at the respective
-        delimiter, eg. ",".
 
     Returns
     -------
-    group_id: str
-        The respective group id in that line or "0" if there is no group id.
+    pd.Series
+        The group identifier series.
+
     """
+    # Fill missing values with '0' to avoid NaNs
+    df["group_name"] = df["group_name"].fillna("0")
+    df["group_id"] = df["group_id"].fillna("0")
 
-    # check for group identifier
-    has_groups = len(recorded_group_identifier) > 0
+    # Create a mask to identify rows where 'group_name' is not '0'
+    mask = df["group_name"] != "0"
 
-    if has_groups:
-        # extract group identifier
-        if "group_name" in recorded_group_identifier:
-            group_identifier = "group_name"
-        elif "group_id" in recorded_group_identifier:
-            group_identifier = "group_id"
-        else:
-            warnings.warn("Data has groups but no group identifier!")
-            return None
+    # Assign values from 'group_name' to 'group_identifier' where mask is True
+    df.loc[mask, "group_identifier"] = df.loc[mask, "group_name"]
 
-        group_id = single_line[column_links[group_identifier]]
+    # Assign values from 'group_id' to 'group_identifier' where mask is False
+    df.loc[~mask, "group_identifier"] = df.loc[~mask, "group_id"]
 
-    # no groups
-    else:
-        group_id = "0"
-
-    return group_id
+    # Return the 'group_identifier' series
+    return df["group_identifier"]
 
 
 def get_meta_data(
-    filepath_data: Union[str, Path]
+    filepath_data: Union[str, Path], delimiter: str = ","
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
-    """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
-    length and framerate.
+    """
+    Reads Kinexon's position data file and extracts meta-data about groups, sensors,
+    length, and framerate using optimized methods for better performance.
 
     Parameters
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter : str, optional
+        Delimiter used in the csv file. Defaults to ",".
 
     Returns
     -------
@@ -176,9 +181,12 @@ def get_meta_data(
     t_null: int
         Timestamp of the first recorded frame
     """
+    # Load data into pandas dataframe
+    df = pd.read_csv(filepath_data, delimiter=delimiter)
 
-    column_links = _get_column_links(str(filepath_data))
-    sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
+    # Create a dictionary linking columns to their index
+    column_links = _get_column_links(str(filepath_data), delimiter)
+    sensor_identifier = {"league_id", "name", "number", "sensor_id", "mapped_id"}
     column_links_set = set(column_links)
     recorded_sensor_identifier = list(column_links_set & sensor_identifier)
     sensor_links = {
@@ -189,67 +197,52 @@ def get_meta_data(
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(column_links_set & group_identifier_set)
 
-    # dict for pIDs
-    pID_dict = {}
-    # list for timestamps
-    t = []
-    # check for group identifier
-    has_groups = len(recorded_group_identifier) > 0
-    if not has_groups:
-        warnings.warn("Since no group exist in data, dummy group '0' is created!")
+    # Assume df_columns are the current column names
+    df_columns = df.columns
 
-    # loop
-    with open(str(filepath_data), "r", encoding="utf-8") as f:
-        # skip the header of the file
-        _ = f.readline()
-        while True:
-            line_string = f.readline()
-            # terminate if at end of file
-            if len(line_string) == 0:
-                break
-            # split str
-            line = line_string.split(",")
-            # extract frames timestamp
-            t.append(int(line[column_links["time"]]))
-            # extract group_id
-            group_id = _get_group_id(recorded_group_identifier, column_links, line)
-            # create group dict in pID_dict
-            if group_id not in pID_dict:
-                pID_dict.update({group_id: {}})
-            # create links
-            for identifier in sensor_links:
-                # extract identifier
-                if identifier not in pID_dict[group_id]:
-                    pID_dict[group_id].update({identifier: []})
-                # extract ids
-                if line[column_links[identifier]] not in pID_dict[group_id][identifier]:
-                    pID_dict[group_id][identifier].append(
-                        line[column_links[identifier]]
-                    )
+    # Create a dictionary with old column names and new names from column_links
+    rename_dict = {df_columns[index]: name for name, index in column_links.items()}
 
-    # sort dict
-    pID_dict = dict(sorted(pID_dict.items()))
+    # Rename columns
+    df.rename(columns=rename_dict, inplace=True)
 
-    # estimate framerate
-    timestamps = list(set(t))
+    # Initialize dictionary for pIDs
+    pID_dict = defaultdict(lambda: defaultdict(set))
+
+    # Determine group id
+    df["group_id"] = _get_group_id(df, recorded_group_identifier)
+
+    # Add sensor identifiers to pID_dict
+    for identifier in sensor_links:
+        grouped = df.groupby("group_id")[identifier].unique()
+        for group_id, pIDs in grouped.items():
+            pID_dict[group_id][identifier] = set(pIDs)
+
+    # Convert pID_dict to a normal dict with lists instead of sets
+    pID_dict = {
+        group: {id: list(pIDs) for id, pIDs in identifiers.items()}
+        for group, identifiers in pID_dict.items()
+    }
+
+    # Get list of unique sorted timestamps
+    timestamps = df["time"].unique()
     timestamps.sort()
-    timestamps = np.array(timestamps)
+
+    # Estimate framerate
     minimum_time_step = np.min(np.diff(timestamps))
-    # timestamps are in milliseconds. Magic number 1000 is needed for conversion to
-    # seconds.
     framerate = 1000 / minimum_time_step
 
-    # non-integer framerate
+    # Warn if framerate is non-integer
     if not framerate.is_integer():
         warnings.warn(
-            f"Non-integer frame rate: Minimum time step of "
-            f"{minimum_time_step} detected. Framerate is round to "
-            f"{int(framerate)}."
+            f"Non-integer frame rate: Minimum time step of"
+            f"{minimum_time_step} detected. Framerate is round to {int(framerate)}."
         )
 
+    # Round framerate to integer
     framerate = int(framerate)
 
-    # 1000 again needed to account for millisecond to second conversion.
+    # Calculate number of frames and timestamp of first recorded frame
     number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / framerate))
     t_null = timestamps[0]
 
@@ -277,7 +270,7 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
         One sensor identifier that has been recorded.
     """
 
-    player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
+    player_identifiers = ["league_id", "name", "mapped_id", "sensor_id", "number"]
     available_identifier = [
         idt for idt in player_identifiers if idt in list(pID_dict.values())[0]
     ]
@@ -334,17 +327,24 @@ def create_links_from_meta_data(
     return links
 
 
-def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
-    """Parses a Kinexon csv file and extracts position data.
-
+def read_position_data_csv(
+    filepath_data: Union[str, Path], delimiter: Optional[str] = ","
+) -> List[XY]:
+    """
+    Parses a Kinexon csv file and extracts position data.
     Kinexon's local positioning system delivers one .csv file containing the position
     data. This function provides a high-level access to Kinexon data by parsing "the
     full file" given the path to the file.
 
+    This function uses pandas for efficient data processing,
+    and minimizes loops where possible.
+
     Parameters
     ----------
     filepath_data: str or pathlib.Path
-        Full path to Kinexon .csv-file.
+        Full path to Kinexon.csv-file.
+    delimiter : str, optional
+        Delimiter used in the csv file. Defaults to ",".
 
     Returns
     -------
@@ -355,65 +355,72 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
         ascending according to their appearance in the data.
     """
 
-    # get metadata
-    pID_dict, number_of_frames, framerate, t_null = get_meta_data(filepath_data)
+    # Load data into pandas dataframe.
+    # # This replaces the initial file read and line-by-line parsing
+    df = pd.read_csv(filepath_data, delimiter=delimiter)
 
-    # get links
+    # Get metadata using the optimized function
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(
+        filepath_data, delimiter
+    )
+
+    # Get links dictionary, used later for mapping sensor id to column index
     links = create_links_from_meta_data(pID_dict)
-    # get column-links
-    column_links = _get_column_links(filepath_data)
+
+    # Get the links for the columns in the file
+    column_links = _get_column_links(str(filepath_data), delimiter)
+
+    # Define possible sensor identifiers and get the ones recorded in the file
     column_links_set = set(column_links)
+
+    # Define possible group identifiers and get the ones recorded in the file
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(column_links_set & group_identifier_set)
 
-    # available sensor identifier
+    # The current column names of the dataframe
+    df_columns = df.columns
+
+    # Create a dictionary with old column names and new names from column_links
+    rename_dict = {df_columns[index]: name for name, index in column_links.items()}
+
+    # Rename columns to match the links
+    df.rename(columns=rename_dict, inplace=True)
+
+    # Get available sensor identifier
     identifier = _get_available_sensor_identifier(pID_dict)
 
-    # create np.array for data
-    number_of_sensors = {}
-    xydata = {}
-    for group in links:
-        number_of_sensors.update({group: len(links[group])})
-        xydata.update(
-            {
-                group: np.full(
-                    [number_of_frames + 1, number_of_sensors[group] * 2], np.nan
-                )
-            }
-        )
+    # Create np.array for data, replacing the initial array creation
+    number_of_sensors = {group: len(links[group]) for group in links}
+    xydata = {
+        group: np.full([number_of_frames + 1, number_of_sensors[group] * 2], np.nan)
+        for group in links
+    }
 
-    # loop
-    with open(str(filepath_data), "r", encoding="utf-8") as f:
-        # skip the header of the file
-        _ = f.readline()
-        while True:
-            line_string = f.readline()
-            # terminate if at end of file
-            if len(line_string) == 0:
-                break
-            # split str
-            line = line_string.split(",")
-            timestamp = int(line[column_links["time"]])
-            # set group
-            group_id = _get_group_id(recorded_group_identifier, column_links, line)
-            # set column
-            x_col = links[group_id][line[column_links[identifier]]] * 2
-            y_col = x_col + 1
-            # set row
-            row = int((timestamp - t_null) / (1000 / framerate))
-            # set (x, y)-data
-            x_coordinate = line[column_links["x_coord"]]
-            y_coordinate = line[column_links["y_coord"]]
+    # Calculate group_id for each row using the optimized function
+    df["group_id"] = _get_group_id(df, recorded_group_identifier)
 
-            # insert (x, y)-data into column and row of respective array
-            if x_coordinate != "":
-                xydata[group_id][row, x_col] = x_coordinate
+    # Flatten the links dictionary to match the sensors with their column indices
+    flat_links = {k: v for d in links.values() for k, v in d.items()}
+    df["x_col"] = df[identifier].map(flat_links) * 2
+    df["y_col"] = df["x_col"] + 1
 
-            if y_coordinate != "":
-                xydata[group_id][row, y_col] = y_coordinate
+    # Calculate row index for each row
+    df["row"] = ((df["time"] - t_null) / (1000 / framerate)).astype(int)
 
-    data_objects = []
-    for group_id in xydata:
-        data_objects.append(XY(xy=xydata[group_id], framerate=framerate))
+    # Insert (x, y)-data into column and row of respective array,
+    # replacing the original for-loop.
+    for group_id, group_data in df.groupby("group_id"):
+        valid_x = group_data["x_coord"].notna()
+        valid_y = group_data["y_coord"].notna()
+
+        xydata[group_id][
+            group_data.loc[valid_x, "row"], group_data.loc[valid_x, "x_col"]
+        ] = group_data.loc[valid_x, "x_coord"]
+        xydata[group_id][
+            group_data.loc[valid_y, "row"], group_data.loc[valid_y, "y_col"]
+        ] = group_data.loc[valid_y, "y_coord"]
+
+    # Convert to XY objects
+    data_objects = [XY(xy=xydata[group_id], framerate=framerate) for group_id in xydata]
 
     return data_objects
