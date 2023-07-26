@@ -7,7 +7,8 @@
 .data/*
 !.data/toy_dataset/
 !.data/toy_dataset/*
-
+!.data/kinexon_dataset/
+!.data/kinexon_dataset/*
 
 ### PyCharm ###
 .idea/
