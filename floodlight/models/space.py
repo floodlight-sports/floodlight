@@ -200,7 +200,11 @@ class DiscreteVoronoiModel(BaseModel):
 
             # calculate pairwise distances and determine closest player
             pairwise_distances = cdist(mesh_points, player_points)
-            closest_player_index = np.nanargmin(pairwise_distances, axis=1)
+            closest_player_index = np.where(
+                np.isnan(pairwise_distances).all(axis=1),
+                np.NaN,
+                np.nanargmin(pairwise_distances, axis=1)
+            )
             self._cell_controls_[t] = closest_player_index.reshape(self._meshx_.shape)
 
     def fit(self, xy1: XY, xy2: XY):
