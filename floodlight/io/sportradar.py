@@ -126,6 +126,7 @@ def read_event_data_json(
         "shot_type",
         "outcome",
         "players",
+        "method",
     ]
 
     segments = [f"HT{period[0]}" for period in periods]
@@ -189,6 +190,9 @@ def read_event_data_json(
         zone = get_and_convert(event, "zone", str)
         shot_type = get_and_convert(event, "shot_type", str)
         players = get_and_convert(event, "players", list)
+        method_type = get_and_convert(event, "method", str)
+
+
 
         # add event to team event list
         for team in competitor:
@@ -212,6 +216,7 @@ def read_event_data_json(
             team_event_lists[team][segment]["shot_type"].append(shot_type)
             team_event_lists[team][segment]["outcome"].append(outcome)
             team_event_lists[team][segment]["players"].append(players)
+            team_event_lists[team][segment]["method"].append(method_type)
 
     # flexible parser return for all segments and teams
     data_objects = {

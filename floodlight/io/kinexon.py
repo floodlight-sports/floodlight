@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from floodlight.core.xy import XY
+from floodlight.core.xyz import XYZ
 
 
 def get_column_names_from_csv(
@@ -60,6 +61,7 @@ def _get_column_links(
             - group_id: 'group id'
             - x_coord: 'x in m'
             - y_coord: 'y in m'
+            - z_coord: 'z in m'
     """
 
     recorded_columns = get_column_names_from_csv(str(filepath_data), delimiter)
@@ -76,6 +78,7 @@ def _get_column_links(
         "group name": "group_name",
         "x in m": "x_coord",
         "y in m": "y_coord",
+        "z in m": "z_coord",
     }
 
     necessary_columns = ["time", "x_coord", "y_coord"]
@@ -122,6 +125,7 @@ def _get_group_id(df: pd.DataFrame, column_links: Dict[str, int]) -> pd.Series:
             - group_id: 'group id'
             - x_coord: 'x in m'
             - y_coord: 'y in m'
+            - z_coord: 'z in m'
 
     Returns
     -------
@@ -329,7 +333,7 @@ def create_links_from_meta_data(
 
 def read_position_data_csv(
     filepath_data: Union[str, Path], delimiter: Optional[str] = ","
-) -> List[XY]:
+) -> List[XYZ]:
     """
     Parses a Kinexon csv file and extracts position data.
     Kinexon's local positioning system delivers one .csv file containing the position
@@ -348,8 +352,8 @@ def read_position_data_csv(
 
     Returns
     -------
-    positions: List[XY]
-        List of XY-objects for the whole game, one per group. The order of groups is
+    positions: List[XYZ]
+        List of XYZ-objects for the whole game, one per group. The order of groups is
         ascending according to their group_id. If no groups are specified in the file,
         all data gets assigned to a dummy group "0". The order inside the groups is
         ascending according to their appearance in the data.
@@ -392,7 +396,7 @@ def read_position_data_csv(
     # Create np.array for data, replacing the initial array creation
     number_of_sensors = {group: len(links[group]) for group in links}
     xydata = {
-        group: np.full([number_of_frames + 1, number_of_sensors[group] * 2], np.nan)
+        group: np.full([number_of_frames + 1, number_of_sensors[group] * 3], np.nan)
         for group in links
     }
 
@@ -401,8 +405,9 @@ def read_position_data_csv(
 
     # Flatten the links dictionary to match the sensors with their column indices
     flat_links = {k: v for d in links.values() for k, v in d.items()}
-    df["x_col"] = df[identifier].map(flat_links) * 2
+    df["x_col"] = df[identifier].map(flat_links) * 3
     df["y_col"] = df["x_col"] + 1
+    df["z_col"] = df["x_col"] + 2  # Add z_col calculation
 
     # Calculate row index for each row
     df["row"] = ((df["time"] - t_null) / (1000 / framerate)).astype(int)
@@ -412,6 +417,8 @@ def read_position_data_csv(
     for group_id, group_data in df.groupby("group_id"):
         valid_x = group_data["x_coord"].notna()
         valid_y = group_data["y_coord"].notna()
+        valid_z = group_data["z_coord"].notna()
+
 
         xydata[group_id][
             group_data.loc[valid_x, "row"], group_data.loc[valid_x, "x_col"]
@@ -419,8 +426,11 @@ def read_position_data_csv(
         xydata[group_id][
             group_data.loc[valid_y, "row"], group_data.loc[valid_y, "y_col"]
         ] = group_data.loc[valid_y, "y_coord"]
+        xydata[group_id][
+            group_data.loc[valid_z, "row"], group_data.loc[valid_z, "z_col"]
+        ] = group_data.loc[valid_z, "z_coord"]  # Insert Z-coordinate data
 
     # Convert to XY objects
-    data_objects = [XY(xy=xydata[group_id], framerate=framerate) for group_id in xydata]
+    data_objects = [XYZ(xyz=xydata[group_id], framerate=framerate) for group_id in xydata]
 
     return data_objects
