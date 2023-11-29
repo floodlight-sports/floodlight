@@ -187,6 +187,23 @@ def get_meta_data(
     """
     # Load data into pandas dataframe
     df = pd.read_csv(filepath_data, delimiter=delimiter)
+    # print(df.info())
+        # Create a mask for values containing 'ball'
+    mask = df['league id'].str.contains('Ball', na=False)
+    # Convert all values that don't contain 'ball' to integers
+    df.loc[~mask, 'league id'] = pd.to_numeric(df.loc[~mask, 'league id'], errors='coerce', downcast='integer')
+
+    # try to convert values in column 'league_id' to int64
+    # df["league id"] = pd.to_numeric(df["league id"], errors="coerce")
+
+
+    # # Find values in column 'league_id' that are not integers
+    # non_int_league_id = df["league id"].loc[~df["league id"].astype(str).str.isdigit()]
+    # # The last char of the value is a number and can be used as an identifier
+    # df["league id"].loc[~df["league id"].astype(str).str.isdigit()] = non_int_league_id.str[-1]
+    # # set column of league_id to int64
+    # df["league id"] = df["league id"].astype("int64")
+    # print(df.info())
 
     # Create a dictionary linking columns to their index
     column_links = _get_column_links(str(filepath_data), delimiter)
@@ -220,6 +237,11 @@ def get_meta_data(
     for identifier in sensor_links:
         grouped = df.groupby("group_id")[identifier].unique()
         for group_id, pIDs in grouped.items():
+            # if identifier == "league_id" and not 'Ball' in group_id:
+            #     pIDs = [int(pID) for pID in pIDs]
+            #     # remove duplicates
+            #     pIDs = list(set(pIDs))
+
             pID_dict[group_id][identifier] = set(pIDs)
 
     # Convert pID_dict to a normal dict with lists instead of sets
@@ -363,6 +385,18 @@ def read_position_data_csv(
     # # This replaces the initial file read and line-by-line parsing
     df = pd.read_csv(filepath_data, delimiter=delimiter)
 
+    print(df["league id"].unique())
+    print("\n\n\n")
+
+    # Create a mask for values containing 'ball'
+    mask = df['league id'].str.contains('Ball', na=False)
+    # Convert all values that don't contain 'ball' to integers
+    df.loc[~mask, 'league id'] = pd.to_numeric(df.loc[~mask, 'league id'], errors='coerce', downcast='integer')
+
+    # Check the unique values after conversion
+    print(df["league id"].unique())
+
+
     # Get metadata using the optimized function
     pID_dict, number_of_frames, framerate, t_null = get_meta_data(
         filepath_data, delimiter
@@ -420,15 +454,16 @@ def read_position_data_csv(
         valid_z = group_data["z_coord"].notna()
 
 
-        xydata[group_id][
-            group_data.loc[valid_x, "row"], group_data.loc[valid_x, "x_col"]
-        ] = group_data.loc[valid_x, "x_coord"]
-        xydata[group_id][
-            group_data.loc[valid_y, "row"], group_data.loc[valid_y, "y_col"]
-        ] = group_data.loc[valid_y, "y_coord"]
-        xydata[group_id][
-            group_data.loc[valid_z, "row"], group_data.loc[valid_z, "z_col"]
-        ] = group_data.loc[valid_z, "z_coord"]  # Insert Z-coordinate data
+        # valid_x = group_data["x_coord"].notna()
+        # x_col = group_data.loc[valid_x, "x_col"]
+        # # xcol to int
+        # x_col = x_col.astype(int)
+        # x_coord = group_data.loc[valid_x, "x_coord"]
+        # idx = group_data.loc[valid_x, "row"]
+        # xydata[group_id][idx , x_col] = x_coord
+        xydata[group_id][group_data.loc[valid_x, "row"], group_data.loc[valid_x, "x_col"].astype(int)] = group_data.loc[valid_x, "x_coord"]
+        xydata[group_id][group_data.loc[valid_y, "row"], group_data.loc[valid_y, "y_col"].astype(int)] = group_data.loc[valid_y, "y_coord"]
+        xydata[group_id][group_data.loc[valid_z, "row"], group_data.loc[valid_z, "z_col"].astype(int)] = group_data.loc[valid_z, "z_coord"]  # Insert Z-coordinate data
 
     # Convert to XY objects
     data_objects = [XYZ(xyz=xydata[group_id], framerate=framerate) for group_id in xydata]
