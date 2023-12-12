@@ -187,12 +187,15 @@ def get_meta_data(
     """
     # Load data into pandas dataframe
     df = pd.read_csv(filepath_data, delimiter=delimiter)
-    # print(df.info())
-        # Create a mask for values containing 'ball'
-    mask = df['league id'].str.contains('Ball', na=False)
-    # Convert all values that don't contain 'ball' to integers
-    df.loc[~mask, 'league id'] = pd.to_numeric(df.loc[~mask, 'league id'], errors='coerce', downcast='integer')
 
+    # Convert values in column 'league_id' to int64 if there are strings in it (thus try/except)
+    try:
+        # Create a mask for values containing 'ball'
+        mask = df['league id'].str.contains('Ball', na=False)
+    # Convert all values that don't contain 'ball' to integers
+        df.loc[~mask, 'league id'] = pd.to_numeric(df.loc[~mask, 'league id'], errors='coerce', downcast='integer')
+    except AttributeError:
+        pass
     # try to convert values in column 'league_id' to int64
     # df["league id"] = pd.to_numeric(df["league id"], errors="coerce")
 
@@ -385,16 +388,17 @@ def read_position_data_csv(
     # # This replaces the initial file read and line-by-line parsing
     df = pd.read_csv(filepath_data, delimiter=delimiter)
 
-    print(df["league id"].unique())
-    print("\n\n\n")
-
-    # Create a mask for values containing 'ball'
-    mask = df['league id'].str.contains('Ball', na=False)
-    # Convert all values that don't contain 'ball' to integers
-    df.loc[~mask, 'league id'] = pd.to_numeric(df.loc[~mask, 'league id'], errors='coerce', downcast='integer')
-
+    # print(df["league id"].unique())
+    # print("\n\n\n")
+    try:
+        # Create a mask for values containing 'ball'
+        mask = df['league id'].str.contains('Ball', na=False)
+        # Convert all values that don't contain 'ball' to integers
+        df.loc[~mask, 'league id'] = pd.to_numeric(df.loc[~mask, 'league id'], errors='coerce', downcast='integer')
+    except AttributeError:
+        pass
     # Check the unique values after conversion
-    print(df["league id"].unique())
+    # print(df["league id"].unique())
 
 
     # Get metadata using the optimized function
