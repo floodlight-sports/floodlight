@@ -205,7 +205,10 @@ structures we're dealing with at that time.
 
 This project has been kindly supported by the [Institute of Exercise Training and Sport
 Informatics](https://www.dshs-koeln.de/en/institut-fuer-trainingswissenschaft-und-sportinformatik/) at the German Sport
-University Cologne under supervision of Prof. Daniel Memmert.
+University Cologne under supervision of Prof. Daniel Memmert. Funding was provided by the [Federal Ministry of Education
+and Research](https://www.bmbf.de/bmbf/de/home/home_node.html) ([MM4SPA](https://mm4spa.github.io/project/)) and the 
+[German Research Foundation](https://www.dfg.de/en) 
+([floodlight](https://gepris.dfg.de/gepris/projekt/522904388?context=projekt&task=showDetail&id=522904388&)).
 
 
 
