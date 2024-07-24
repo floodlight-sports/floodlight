@@ -12,6 +12,7 @@ from floodlight.io.statsbomb import (
     read_open_event_data_json,
     read_teamsheets_from_open_event_data_json,
 )
+from floodlight.io.dfl import read_event_data_xml, read_position_data_xml
 from floodlight import XY, Pitch, Events, Code
 from floodlight.core.teamsheet import Teamsheet
 from floodlight.settings import DATA_DIR
@@ -799,3 +800,146 @@ class StatsBombOpenDataset:
                 )
                 with open(season_file, "wb") as binary_file:
                     binary_file.write(download_from_url(season_host_url))
+
+class DFLDataset:
+    """This dataset loads the DFL-Benchmark data set from the *An integrated dataset of
+     synchronized spatiotemporal and event data in elite soccer* paper. [1]_
+
+    Upon instantiation, the class checks if the data already exists in the repository's
+    root ``.data``-folder, and will download the files (~2.44 GB) to this folder if not.
+
+    Parameters
+    ----------
+    dataset_dir_name: str, optional
+        Name of subdirectory where the dataset is stored within the root .data
+        directory. Defaults to 'dfl_dataset'.
+
+    Notes
+    -----
+    The dataset contains seven full matches of event and position data for both
+    teams and the ball from the German Men's Handball Bundesliga (HBL). For a
+    detailed description of the dataset read the accompanying paper.
+    Data for one match can be queried calling the :func:`~DFLDataset.get`-method
+    specifying the match and segment. The following matches and segments are
+    available::
+
+        matches = ['J03WMX', 'J03WN1', 'J03WPY', 'J03WOH', 'J03WQQ', 'J03WOY', 'J03WR9']
+
+    Examples
+    --------
+    >>> from floodlight.io.datasets import DFLDataset
+
+    >>> dataset = DFLDataset()
+    # get one sample
+    >>> events_data_objects, position_data_objects = dataset.get(match_name="J03WMX")
+    # get the corresponding pitch
+    >>> pitch = dataset.get_pitch()
+
+
+    References
+    ----------
+        .. [1] `Bassek, M., Müller-Budack, E., Ewerth, R., Weber, H., Rein, R., & Memmert,
+            D. (2024). An integrated dataset of synchronized spatiotemporal and event data
+            in elite soccer. In Submission.
+    """
+
+    def __init__(self, dataset_dir_name="dfl_dataset"):
+        self._EIGD_SCHEMA = "https"
+        self._EIGD_BASE_URL = (
+            "XXX"
+        )
+        self._EIGD_FILENAME = "dfl_pos.zip"
+        self._EIGD_HOST_URL = (
+            f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
+        )
+        self._EIGD_FILE_EXT = "xml"
+        self._EIGD_FRAMERATE = 25
+
+        self._data_dir = os.path.join(DATA_DIR, dataset_dir_name)
+
+        if not os.path.isdir(self._data_dir):
+            os.makedirs(self._data_dir, exist_ok=True)
+        if not bool(os.listdir(self._data_dir)):
+            self._download_and_extract()
+
+    def get(
+        self, match_name: str = "J03WMX", teamsheet_home: Teamsheet = None, teamsheet_away: Teamsheet=None, events=True, positions=True
+    ) -> Tuple[tuple[dict[str, dict[str, Events]], dict[str, Teamsheet], Pitch], tuple[dict[str, dict[str, XY]], dict[str, Code], dict[str, Code], dict[str, Teamsheet], Pitch]]:
+
+        """Get event and position data from the DFL dataset.
+
+        Parameters
+        ----------
+        match_name : str, optional
+            Match name, check Notes section for valid arguments.
+            Defaults to the first match ("J03WMX").
+
+        Returns
+        -------
+        match_data: Tuple[Tuple[Events, Teamsheets, Pitch], Tuple[dict[XY], dict[Code], dict[Code], dict[teamsheets], Pitch]
+            Returns a tuple of shape (event_data, position_data) as returned by the ``floodlight.io.dfl.read_event_data_xml()``
+            and ``floodlight.io.dfl.read_position_data_xml()`` functions for the requested match.
+        """
+
+        if match_name in ["J03WMX", "J03WN1"]:
+            competition = "DFL-COM-000001"
+        else:
+            competition = "DFL-COM-000002"
+
+        file_name_infos = os.path.join(
+            self._data_dir,
+            f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_name}.{self._EIGD_FILE_EXT}"
+        )
+
+        file_name_events = os.path.join(
+            self._data_dir,
+            f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_name}.{self._EIGD_FILE_EXT}"
+        )
+
+        file_name_positions = os.path.join(
+            self._data_dir,
+            f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_name}.{self._EIGD_FILE_EXT}"
+        )
+
+        if not os.path.isfile(file_name_infos):
+            raise FileNotFoundError(
+                f"Could not load file, check class description for valid match "
+                f"and segment values ({file_name_infos})."
+            )
+
+        # parse event data
+
+        if events is True:
+            data_objects_events = read_event_data_xml(
+                file_name_events, file_name_infos, teamsheet_home, teamsheet_away
+            )
+        else:
+            events = None
+
+        if positions is True:
+            data_objects_positions = read_position_data_xml(
+                file_name_positions, file_name_infos, teamsheet_home, teamsheet_away
+            )
+        else:
+            positions = None
+
+        # assemble
+        match_data = (data_objects_events, data_objects_positions)
+
+        return match_data
+
+    @staticmethod
+    def get_pitch() -> Pitch:
+        """Returns a Pitch object corresponding to the DFL-data."""
+        return Pitch.from_template("dfl", length=105, width=68)
+
+
+    def _download_and_extract(self) -> None:
+        """Downloads an archive file into temporary storage and
+        extracts the content to the file system.
+        """
+        file = f"{DATA_DIR}/dfl.zip"
+        with open(file, "wb") as binary_file:
+            binary_file.write(download_from_url(self._EIGD_HOST_URL))
+        extract_zip(file, self._data_dir)
+        os.remove(file)
