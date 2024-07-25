@@ -12,7 +12,6 @@ from floodlight.io.statsbomb import (
     read_open_event_data_json,
     read_teamsheets_from_open_event_data_json,
 )
-from floodlight.io.dfl import read_event_data_xml, read_position_data_xml
 from floodlight import XY, Pitch, Events, Code
 from floodlight.core.teamsheet import Teamsheet
 from floodlight.settings import DATA_DIR
