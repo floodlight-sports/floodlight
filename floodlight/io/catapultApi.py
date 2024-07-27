@@ -137,11 +137,31 @@ def json_data_to_csv(json_data_lists: List[Dict]) -> str:
 
 
 def get_column_names_from_csv(csv_content: str) -> List[str]:
+    """
+    Extracts column names from a CSV content string.
+
+    Args:
+        csv_content (str): A string containing CSV-formatted data.
+
+    Returns:
+        List[str]: A list of column names extracted from the CSV data.
+    """
     csv_file = io.StringIO(csv_content)
     columns = csv_file.readline().strip().split(",")
     return columns
 
+
 def _get_column_links(csv_content: str) -> Union[None, Dict[str, int]]:
+    """
+    Maps column names from the CSV content to internal names and indexes.
+
+    Args:
+        csv_content (str): A string containing CSV-formatted data.
+
+    Returns:
+        Union[None, Dict[str, int]]: A dictionary mapping internal names to column indexes, 
+                                     or None if critical columns are missing.
+    """
     recorded_columns = get_column_names_from_csv(csv_content)
     mapping = {
         "ts": "time",
@@ -164,12 +184,24 @@ def _get_column_links(csv_content: str) -> Union[None, Dict[str, int]]:
 
     return column_links
 
+
 def _get_group_id(
     recorded_group_identifier: List[str],
     column_links: Dict[str, int],
     single_line: List[str],
 ) -> Union[str, None]:
-    if len(recorded_group_identifier) > 0:
+    """
+    Extracts the group ID from a single line of CSV data.
+
+    Args:
+        recorded_group_identifier (List[str]): List of group identifiers available in the data.
+        column_links (Dict[str, int]): A dictionary mapping internal column names to CSV column indexes.
+        single_line (List[str]): A list of values representing a single line of CSV data.
+
+    Returns:
+        Union[str, None]: The group ID, or '0' if no group identifier is recorded.
+    """
+    if recorded_group_identifier:
         group_identifier = recorded_group_identifier[0]
         group_id = single_line[column_links[group_identifier]]
     else:
@@ -177,7 +209,21 @@ def _get_group_id(
 
     return group_id
 
+
 def get_meta_data(csv_content: str) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
+    """
+    Extracts metadata from the CSV content, including player IDs, frame rate, and number of frames.
+
+    Args:
+        csv_content (str): A string containing CSV-formatted data.
+
+    Returns:
+        Tuple[Dict[str, Dict[str, List[str]]], int, int, int]: A tuple containing:
+            - A dictionary of player IDs by group.
+            - The number of frames.
+            - The frame rate.
+            - The initial timestamp (t_null).
+    """
     column_links = _get_column_links(csv_content)
     if not column_links:
         return {}, 0, 0, 0
@@ -227,12 +273,33 @@ def get_meta_data(csv_content: str) -> Tuple[Dict[str, Dict[str, List[str]]], in
 
     return pID_dict, number_of_frames, framerate, t_null
 
+
 def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) -> str:
+    """
+    Determines an available sensor identifier from the metadata.
+
+    Args:
+        pID_dict (Dict[str, Dict[str, List[str]]]): Metadata dictionary containing player IDs by group.
+
+    Returns:
+        str: The available sensor identifier.
+    """
     player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
     available_identifier = [idt for idt in player_identifiers if idt in list(pID_dict.values())[0]]
     return available_identifier[0]
 
+
 def create_links_from_meta_data(pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None) -> Dict[str, Dict[str, int]]:
+    """
+    Creates a mapping of player IDs to numerical indices based on the metadata.
+
+    Args:
+        pID_dict (Dict[str, Dict[str, List[str]]]): Metadata dictionary containing player IDs by group.
+        identifier (str, optional): The sensor identifier to use for mapping. Defaults to the available identifier.
+
+    Returns:
+        Dict[str, Dict[str, int]]: A dictionary mapping group IDs to player ID indices.
+    """
     if identifier is None:
         identifier = _get_available_sensor_identifier(pID_dict)
 
@@ -242,7 +309,17 @@ def create_links_from_meta_data(pID_dict: Dict[str, Dict[str, List[str]]], ident
 
     return links
 
+
 def read_position_data_csv(csv_content: str) -> List[XY]:
+    """
+    Reads position data from CSV content and converts it to a list of XY objects.
+
+    Args:
+        csv_content (str): A string containing CSV-formatted position data.
+
+    Returns:
+        List[XY]: A list of XY objects representing the position data for each group.
+    """
     pID_dict, number_of_frames, framerate, t_null = get_meta_data(csv_content)
     if not pID_dict:
         return []
@@ -291,5 +368,3 @@ def read_position_data_csv(csv_content: str) -> List[XY]:
             xydata[group_id][frame_idx, sensor_idx * 2 + 1] = y
 
     return [XY(xydata[group], framerate=framerate) for group in xydata]
-
-
