@@ -1,27 +1,87 @@
 import requests
 import numpy as np
 from floodlight.core.xy import XY
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Any
 from pathlib import Path
 import warnings
 import csv
 import io
+import json
+import os
 
-## Custom Errors
+# for testing: so that data has not to be downloaded every run
+
+def saveResponse(response: requests.Response, endpoint: str) -> None:
+    """
+    Saves the response from an API request to a JSON file.
+
+    Args:
+        response (requests.Response): The response object from the API request.
+        endpoint (str): The endpoint to determine the directory for saving the file.
+
+    Returns:
+        None
+    """
+    if response.status_code == 200:
+        response_data = response.json()[0]
+        os.makedirs(endpoint, exist_ok=True)
+        with open(os.path.join(endpoint, "response.json"), "w") as json_file:
+            json.dump(response_data, json_file, indent=4)
+            print(f"API response successfully saved in '{os.path.join(endpoint, 'response.json')}'")
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+
+
+def load_responses(endpoint: str) -> List[Dict]:
+    """
+    Loads and returns a list of JSON data responses from the specified directory.
+
+    Args:
+        endpoint (str): The directory containing the JSON files.
+
+    Returns:
+        List[Dict]: A list of JSON data responses.
+
+    Raises:
+        FileNotFoundError: If the specified directory does not exist.
+    """
+    response_data_json_list = []
+    
+    # Check if the endpoint directory exists
+    if os.path.exists(endpoint):
+        # Walk through all directories and files in the given directory
+        for root, dirs, files in os.walk(endpoint):
+            for filename in files:
+                if filename.endswith(".json"):
+                    file_path = os.path.join(root, filename)
+                    
+                    # Load the JSON file and append the data to the list
+                    with open(file_path, "r") as json_file:
+                        data = json.load(json_file)
+                        response_data_json_list.append(data)
+    else:
+        raise FileNotFoundError(f"Directory {endpoint} does not exist.")
+    
+    return response_data_json_list
+
+## for testing end 
+
+# Custom Errors
 class APIRequestError(Exception):
-    """Custom error class for API request failures."""
-    def __init__(self, message):
+    """
+    Custom error class for API request failures.
+    """
+    def __init__(self, message: str):
         super().__init__(message)
 
-## Utils
-def _getAllplayerFormActivity_response(baseUrl: str, api_token: str, activity_id: Union[str, int]) -> requests.Response:
+def _getAllplayerFormActivity_response(baseUrl: str, api_token: str, activity_id: str) -> requests.Response:
     """
     Fetches data for all players involved in a specific activity.
 
     Args:
         baseUrl (str): The base URL for the API requests.
         api_token (str): The API token for authentication.
-        activity_id (str or int): The unique identifier for the activity to fetch players from.
+        activity_id (str): The unique identifier for the activity to fetch players from.
 
     Returns:
         requests.Response: The response object containing player data.
@@ -41,14 +101,14 @@ def _getAllplayerFormActivity_response(baseUrl: str, api_token: str, activity_id
     else:
         raise APIRequestError(f"API request failed with status code {response.status_code}")
 
-def getResponse_data_json_list(baseUrl: str, api_token: str, activity_id: Union[str, int]) -> List[Dict]:
+def getResponse_data_json_list(baseUrl: str, api_token: str, activity_id: str) -> List[Dict]:
     """
     Retrieves sensor data for each player involved in a specific activity.
 
     Args:
         baseUrl (str): The base URL for the API requests.
         api_token (str): The API token for authentication.
-        activity_id (str or int): The unique identifier for the activity.
+        activity_id (str): The unique identifier for the activity.
 
     Returns:
         List[Dict]: A list of JSON data responses for each player, containing sensor data.
@@ -70,209 +130,157 @@ def getResponse_data_json_list(baseUrl: str, api_token: str, activity_id: Union[
         url = f'activities/{activity_id}/athletes/{i}/sensor'
         response_data_json_i = requests.get(baseUrl + url, headers=headers)
         if response_data_json_i.status_code == 200:
-            response_data_json_list.append(response_data_json_i.json())
+            response_data_json_list.append(response_data_json_i.json()[0])
+            saveResponse(response_data_json_i, url)
         else:
             raise APIRequestError(f"API request failed with status code {response_data_json_i.status_code}")
 
     return response_data_json_list
 
-def json_data_to_csv(json_data_lists: List[Dict]) -> str:
+def get_key_names_from_json(response_data_json_list: List[Dict]) -> set:
     """
-    Converts a list of JSON data into a CSV formatted string.
+    Extracts unique column names from a list of JSON data responses.
 
     Args:
-        json_data_lists (List[Dict]): A list of JSON data lists, each containing sensor data for an athlete.
+        response_data_json_list (List[Dict]): List of JSON data responses.
 
     Returns:
-        str: A string containing the CSV-formatted data.
+        set: A set of unique column names.
     """
-    csv_data = []
-    output = io.StringIO()
+    recorded_columns = set()
 
-    for json_data_list in json_data_lists:
-        for entry in json_data_list:
-            base_info = {
-                "athlete_id": entry["athlete_id"],
-                "device_id": entry["device_id"],
-                "stream_type": entry["stream_type"],
-                "player_id": entry["player_id"],
-                "name": f"{entry['athlete_first_name']} {entry['athlete_last_name']}",
-                "jersey": entry["jersey"],
-                "team_id": entry["team_id"],
-                "team_name": entry["team_name"]
-            }
-            for data_entry in entry["data"]:
-                row = {
-                    "ts": data_entry["ts"],
-                    "cs": data_entry["cs"],
-                    "lat": data_entry.get("lat", ""),
-                    "long": data_entry.get("long", ""),
-                    "o": data_entry.get("o", ""),
-                    "v": data_entry.get("v", ""),
-                    "a": data_entry.get("a", ""),
-                    "hr": data_entry.get("hr", ""),
-                    "pl": data_entry.get("pl", ""),
-                    "mp": data_entry.get("mp", ""),
-                    "sl": data_entry.get("sl", ""),
-                    "x": data_entry["x"],
-                    "y": data_entry["y"]
-                }
-                row.update(base_info)
-                csv_data.append(row)
+    for data_i in response_data_json_list:
+        recorded_columns.update(data_i.keys())
+        if "data" in data_i and isinstance(data_i["data"], list) and data_i["data"]:
+            recorded_columns.update(data_i["data"][0].keys())
 
-    header = [
-        "athlete_id", "device_id", "stream_type", "player_id", 
-        "name", "jersey", "team_id", "team_name", "ts","cs", 
-        "lat", "long", "o", "v", "a", "hr", "pl", "mp", "sl", "x", "y"
-    ]
+    return recorded_columns
 
-    writer = csv.DictWriter(output, fieldnames=header)
-    writer.writeheader()
-    for row in csv_data:
-        writer.writerow(row)
-    csv_content_in_memory = output.getvalue()
-    output.close()
-
-    return csv_content_in_memory
-
-
-def get_column_names_from_csv(csv_content: str) -> List[str]:
+def _get_key_links(response_data_json_list: List[Dict]) -> Union[Dict[str, int], None]:
     """
-    Extracts column names from a CSV content string.
+    Generates a mapping of key names to their indices in the JSON data responses.
 
     Args:
-        csv_content (str): A string containing CSV-formatted data.
+        response_data_json_list (List[Dict]): List of JSON data responses.
 
     Returns:
-        List[str]: A list of column names extracted from the CSV data.
+        Union[Dict[str, int], None]: A dictionary mapping key names to their indices or None if critical keys are missing.
     """
-    csv_file = io.StringIO(csv_content)
-    columns = csv_file.readline().strip().split(",")
-    return columns
+    for data_i in response_data_json_list:
+        data_i['name'] = f"{data_i['athlete_first_name']} {data_i['athlete_last_name']}"
 
+    key_names = list(get_key_names_from_json(response_data_json_list))
 
-def _get_column_links(csv_content: str) -> Union[None, Dict[str, int]]:
-    """
-    Maps column names from the CSV content to internal names and indexes.
-
-    Args:
-        csv_content (str): A string containing CSV-formatted data.
-
-    Returns:
-        Union[None, Dict[str, int]]: A dictionary mapping internal names to column indexes, 
-                                     or None if critical columns are missing.
-    """
-    recorded_columns = get_column_names_from_csv(csv_content)
     mapping = {
         "ts": "time",
         "device id": "sensor_id",
-        "mapped id": "mapped_id",
+        "athlete_id": "mapped_id",
+        "athlete_first_name": "athlete_first_name",
+        "athlete_last_name": "athlete_last_name",
+        "stream_type": "stream_type",
         "name": "name",
         "jersey": "number",
         "team_id": "group_id",
         "team_name": "group_name",
         "x": "x_coord",
         "y": "y_coord",
+        "cs": "cs",
+        "lat": "lat",
+        "long": "long",
+        "o": "o",
+        "v": "v",
+        "a": "a",
+        "hr": "hr",
+        "pl": "pl",
+        "mp": "mp",
+        "sl": "sl",
     }
 
-    necessary_columns = ["time", "x_coord", "y_coord"]
-    column_links = {mapping[key]: recorded_columns.index(key) for key in mapping if key in recorded_columns}
+    necessary_keys = ["time", "x_coord", "y_coord"]
+    key_links = {}
+    for key in mapping:
+        if key in key_names:
+            key_links.update({mapping[key]: key_names.index(key)})
 
-    if not all(column in column_links for column in necessary_columns):
+    if not all(columns in key_links for columns in necessary_keys):
         warnings.warn("Data file lacks critical information! No timestamp or coordinates found.")
         return None
 
-    return column_links
+    return key_links
 
-
-def _get_group_id(
-    recorded_group_identifier: List[str],
-    column_links: Dict[str, int],
-    single_line: List[str],
-) -> Union[str, None]:
+def get_meta_data(response_data_json_list: List[Dict]) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """
-    Extracts the group ID from a single line of CSV data.
+    Extracts metadata from the JSON data responses.
 
     Args:
-        recorded_group_identifier (List[str]): List of group identifiers available in the data.
-        column_links (Dict[str, int]): A dictionary mapping internal column names to CSV column indexes.
-        single_line (List[str]): A list of values representing a single line of CSV data.
+        response_data_json_list (List[Dict]): List of JSON data responses.
 
     Returns:
-        Union[str, None]: The group ID, or '0' if no group identifier is recorded.
+        Tuple[Dict[str, Dict[str, List[str]]], int, int, int]: 
+            - Dictionary mapping group IDs to player identifiers.
+            - Number of frames.
+            - Framerate.
+            - Null timestamp.
     """
-    if recorded_group_identifier:
-        group_identifier = recorded_group_identifier[0]
-        group_id = single_line[column_links[group_identifier]]
-    else:
-        group_id = "0"
+    framerate = 10
 
-    return group_id
-
-
-def get_meta_data(csv_content: str) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
-    """
-    Extracts metadata from the CSV content, including player IDs, frame rate, and number of frames.
-
-    Args:
-        csv_content (str): A string containing CSV-formatted data.
-
-    Returns:
-        Tuple[Dict[str, Dict[str, List[str]]], int, int, int]: A tuple containing:
-            - A dictionary of player IDs by group.
-            - The number of frames.
-            - The frame rate.
-            - The initial timestamp (t_null).
-    """
-    column_links = _get_column_links(csv_content)
-    if not column_links:
-        return {}, 0, 0, 0
-
+    key_links = _get_key_links(response_data_json_list) # should i do this with get_key_names_from_json() and a mapping,
+                                                        # since the key_links are not beeing used as such 
+                                                        # (beacause of how the json file looks #{key1, key2, key3 ... data[key8,key9,...]}) 
     sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
-    recorded_sensor_identifier = list(set(column_links) & sensor_identifier)
-    sensor_links = {key: index for key, index in column_links.items() if key in recorded_sensor_identifier}
-    group_identifier_set = {"group_id", "group_name"}
-    recorded_group_identifier = list(set(column_links) & group_identifier_set)
+    key_links_set = set(key_links)
 
+    recorded_sensor_identifier = list(key_links_set & sensor_identifier)
+    sensor_links = {
+        key: index
+        for (key, index) in key_links.items()
+        if key in recorded_sensor_identifier
+    }
+    group_identifier_set = {"group_id", "group_name"}
+    recorded_group_identifier = list(key_links_set & group_identifier_set)
     pID_dict = {}
     t = []
+    has_groups = len(recorded_group_identifier) > 0
+    if not has_groups:
+        warnings.warn("Since no group exist in data, dummy group '0' is created!")
 
-    csv_file = io.StringIO(csv_content)
-    csv_file.readline()  # Skip the header
+    reversed_group_mapping = {
+        "group_id": "team_id",
+        "group_name": "team_name",
+    }
 
-    while True:
-        line_string = csv_file.readline()
-        if not line_string:
-            break
+    reversed_sensor_mapping = {
+        "sensor_id": "device id",
+        "mapped_id": "athlete_id",
+        "name": "name",
+        "number": "jersey",
+    }
 
-        line = line_string.strip().split(",")
-        t.append(int(line[column_links["time"]]))
-        group_id = _get_group_id(recorded_group_identifier, column_links, line)
+    for data_i in response_data_json_list:
+        for entry in data_i["data"]:
+            t.append(int(entry["ts"]) * 100 + int(entry["cs"]))
+
+        group_identifier = recorded_group_identifier[0]
+        group_id = data_i[reversed_group_mapping[group_identifier]]# not doing it with key_liks beacause of how json looks like: 
+                                                                        #{key1, key2, key3 ... data[key8,key9,...]}
 
         if group_id not in pID_dict:
-            pID_dict[group_id] = {}
-
+            pID_dict.update({group_id: {}})
         for identifier in sensor_links:
             if identifier not in pID_dict[group_id]:
-                pID_dict[group_id][identifier] = []
-            if line[column_links[identifier]] not in pID_dict[group_id][identifier]:
-                pID_dict[group_id][identifier].append(line[column_links[identifier]])
+                pID_dict[group_id].update({identifier: []})
+            if data_i[reversed_sensor_mapping[identifier]] not in pID_dict[group_id][identifier]:
+                pID_dict[group_id][identifier].append(data_i[reversed_sensor_mapping[identifier]])
 
-    timestamps = sorted(set(t))
-    minimum_time_step = np.min(np.diff(timestamps))
-    # timestamps are in milliseconds. Magic number 1000 is needed for conversion to
-    # seconds.
-    framerate = 1000 / minimum_time_step
+    pID_dict = dict(sorted(pID_dict.items()))
 
-    if not framerate.is_integer():
-        warnings.warn(f"Non-integer frame rate: {framerate}. Rounding to nearest integer.")
-        framerate = int(framerate)
+    timestamps_cs = list(set(t))
+    timestamps_cs.sort()
 
-    number_of_frames = int((timestamps[-1] - timestamps[0]) / (1000 / framerate))
-    t_null = timestamps[0]
+    number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate))
+    t_null = timestamps_cs[0]
 
     return pID_dict, number_of_frames, framerate, t_null
-
 
 def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) -> str:
     """
@@ -288,8 +296,9 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
     available_identifier = [idt for idt in player_identifiers if idt in list(pID_dict.values())[0]]
     return available_identifier[0]
 
-
-def create_links_from_meta_data(pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None) -> Dict[str, Dict[str, int]]:
+def create_links_from_meta_data(
+    pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None
+) -> Dict[str, Dict[str, int]]:
     """
     Creates a mapping of player IDs to numerical indices based on the metadata.
 
@@ -309,62 +318,67 @@ def create_links_from_meta_data(pID_dict: Dict[str, Dict[str, List[str]]], ident
 
     return links
 
-
-def read_position_data_csv(csv_content: str) -> List[XY]:
+def read_position_data_from_json(response_data_json_list: List[Dict], coord_format: str = "xy") -> List[XY]:
     """
-    Reads position data from CSV content and converts it to a list of XY objects.
+    Reads position data from JSON data responses and returns a list of XY objects.
 
     Args:
-        csv_content (str): A string containing CSV-formatted position data.
+        response_data_json_list (List[Dict]): List of JSON data responses.
+        coord_format (str, optional): The coordinate format ["xy", "latlong"]. Defaults to "xy".
 
     Returns:
-        List[XY]: A list of XY objects representing the position data for each group.
+        List[XY]: A list of XY objects containing position data.
     """
-    pID_dict, number_of_frames, framerate, t_null = get_meta_data(csv_content)
-    if not pID_dict:
-        return []
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(response_data_json_list)
 
     links = create_links_from_meta_data(pID_dict)
-    column_links = _get_column_links(csv_content)
-    group_identifier_set = {"group_id", "group_name"}
-    recorded_group_identifier = list(set(column_links) & group_identifier_set)
 
+    key_links = _get_key_links(response_data_json_list)
+    key_links_set = set(key_links)
+    group_identifier_set = {"group_id", "group_name"}
+    recorded_group_identifier = list(key_links_set & group_identifier_set)
     identifier = _get_available_sensor_identifier(pID_dict)
 
+    reversed_group_mapping = {
+        "group_id": "team_id",
+        "group_name": "team_name",
+    }
     number_of_sensors = {}
     xydata = {}
+
     for group in links:
-        number_of_sensors[group] = len(links[group])
-        xydata[group] = np.full([number_of_frames + 1, number_of_sensors[group] * 2], np.nan)
+        number_of_sensors.update({group: len(links[group])})
+        xydata.update({group: np.full([number_of_frames + 1, number_of_sensors[group] * 2], np.nan)})
 
-    csv_file = io.StringIO(csv_content)
-    csv_file.readline()  # Skip the header
+    for data_i in response_data_json_list:
+        for entry in data_i["data"]:
+            if coord_format == "xy":
+                x_coordinate = entry["x"] / 10  # convert mm to cm
+                y_coordinate = entry["y"] / 10  # convert mm to cm
+            elif coord_format == "latlong":
+                x_coordinate = entry["lat"]
+                y_coordinate = entry["long"]
+            else:
+                raise ValueError(f"Expected coordinate format to be ['xy', 'latlong'], but got {coord_format} instead.")
 
-    while True:
-        line_string = csv_file.readline()
-        if not line_string:
-            break
-        
-        line = line_string.strip().split(",")
-        t = int(line[column_links["time"]])
-        frame_idx = round((t - t_null) * framerate / 1000)
+            group_identifier = recorded_group_identifier[0]
+            group_id = data_i[reversed_group_mapping[group_identifier]] # not doing it with key_liks beacause of how json looks like: 
+                                                                        #{key1, key2, key3 ... data[key8,key9,...]}
 
-        group_id = _get_group_id(recorded_group_identifier, column_links, line)
-        if group_id not in xydata:
-            continue
+            x_col = links[group_id][data_i[identifier]] * 2
+            y_col = x_col + 1
 
-        for idx, sensor_id in enumerate(links[group_id]):
-            x = line[column_links["x_coord"]]
-            y = line[column_links["y_coord"]]
+            row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate))
 
-            try:
-                x = float(x)
-                y = float(y)
-            except ValueError:
-                continue
+            if x_coordinate != "":
+                xydata[group_id][row, x_col] = x_coordinate
 
-            sensor_idx = links[group_id][sensor_id]
-            xydata[group_id][frame_idx, sensor_idx * 2] = x
-            xydata[group_id][frame_idx, sensor_idx * 2 + 1] = y
+            if y_coordinate != "":
+                xydata[group_id][row, y_col] = y_coordinate
 
-    return [XY(xydata[group], framerate=framerate) for group in xydata]
+    data_objects = []
+
+    for group_id in xydata:
+        data_objects.append(XY(xy=xydata[group_id], framerate=framerate))
+
+    return data_objects
