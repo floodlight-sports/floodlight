@@ -9,20 +9,35 @@ import io
 import json
 import os
 
-# for testing: so that data has not to be downloaded every run
+class APIRequestError(Exception):
+    """
+    Custom error class for API request failures.
 
-def saveResponse(response: requests.Response, endpoint: str) -> None:
+    Parameters
+    ----------
+    message : str
+        Error message to be displayed.
+    """
+    def __init__(self, message: str):
+        super().__init__(message)
+
+def write_response(response: requests.Response, endpoint: str) -> None:
     """
     Saves the response from an API request to a JSON file.
 
-    Args:
-        response (requests.Response): The response object from the API request.
-        endpoint (str): The endpoint to determine the directory for saving the file.
+    Parameters
+    ----------
+    response : requests.Response
+        The response object from the API request.
+    endpoint : str
+        The endpoint to determine the directory for saving the file.
 
-    Returns:
-        None
+    Returns
+    -------
+    None
     """
-    if response.status_code == 200:
+    response_ok = 200
+    if response.status_code == response_ok:
         response_data = response.json()[0]
         os.makedirs(endpoint, exist_ok=True)
         with open(os.path.join(endpoint, "response.json"), "w") as json_file:
@@ -31,63 +46,63 @@ def saveResponse(response: requests.Response, endpoint: str) -> None:
     else:
         print(f"Error: {response.status_code} - {response.text}")
 
-
-def load_responses(endpoint: str) -> List[Dict]:
+def read_response(endpoint: str) -> List[Dict]:
     """
-    Loads and returns a list of JSON data responses from the specified directory.
+    Loads and returns a list of response_data from the specified directory.
 
-    Args:
-        endpoint (str): The directory containing the JSON files.
+    Parameters
+    ----------
+    endpoint : str
+        The directory containing the JSON files.
 
-    Returns:
-        List[Dict]: A list of JSON data responses.
+    Returns
+    -------
+    List[Dict]
+        A list of response_data.
 
-    Raises:
-        FileNotFoundError: If the specified directory does not exist.
+    Raises
+    ------
+    FileNotFoundError
+        If the specified directory does not exist.
     """
-    response_data_json_list = []
+    response_data = []
     
-    # Check if the endpoint directory exists
     if os.path.exists(endpoint):
-        # Walk through all directories and files in the given directory
         for root, dirs, files in os.walk(endpoint):
             for filename in files:
                 if filename.endswith(".json"):
                     file_path = os.path.join(root, filename)
-                    
-                    # Load the JSON file and append the data to the list
                     with open(file_path, "r") as json_file:
                         data = json.load(json_file)
-                        response_data_json_list.append(data)
+                        response_data.append(data)
     else:
         raise FileNotFoundError(f"Directory {endpoint} does not exist.")
     
-    return response_data_json_list
+    return response_data
 
-## for testing end 
-
-# Custom Errors
-class APIRequestError(Exception):
-    """
-    Custom error class for API request failures.
-    """
-    def __init__(self, message: str):
-        super().__init__(message)
-
-def _getAllplayerFormActivity_response(baseUrl: str, api_token: str, activity_id: str) -> requests.Response:
+def get_response(baseUrl: str, api_token: str, activity_id: str) -> Tuple[List[Dict], str]:
     """
     Fetches data for all players involved in a specific activity.
 
-    Args:
-        baseUrl (str): The base URL for the API requests.
-        api_token (str): The API token for authentication.
-        activity_id (str): The unique identifier for the activity to fetch players from.
+    Parameters
+    ----------
+    baseUrl : str
+        The base URL for the API requests.
+    api_token : str
+        The API token for authentication.
+    activity_id : str
+        The unique identifier for the activity to fetch players from.
 
-    Returns:
-        requests.Response: The response object containing player data.
+    Returns
+    -------
+    Tuple[List[Dict], str]
+        - List of dictionaries containing player data.
+        - Endpoint string used for the API request.
 
-    Raises:
-        APIRequestError: If the API request fails with a status code other than 200.
+    Raises
+    ------
+    APIRequestError
+        If the API request fails with a status code other than 200.
     """
     headers = {
         "accept": "application/json",
@@ -96,87 +111,123 @@ def _getAllplayerFormActivity_response(baseUrl: str, api_token: str, activity_id
     }
     endpoint = f"activities/{activity_id}/athletes/"
     response = requests.get(baseUrl + endpoint, headers=headers)
-    if response.status_code == 200:
-        return response
+    response_ok =200
+    if response.status_code == response_ok:
+        response_data = response.json()
+        
+        return response_data, endpoint
     else:
         raise APIRequestError(f"API request failed with status code {response.status_code}")
 
-def getResponse_data_json_list(baseUrl: str, api_token: str, activity_id: str) -> List[Dict]:
+def getResponse_data_dict_list(baseUrl: str, api_token: str, activity_id: str, response: List[Dict]) -> List[Dict]:
     """
     Retrieves sensor data for each player involved in a specific activity.
 
-    Args:
-        baseUrl (str): The base URL for the API requests.
-        api_token (str): The API token for authentication.
-        activity_id (str): The unique identifier for the activity.
+    Parameters
+    ----------
+    baseUrl : str
+        The base URL for the API requests.
+    api_token : str
+        The API token for authentication.
+    activity_id : str
+        The unique identifier for the activity.
+    response : List[Dict]
+        The response containing player data.
 
-    Returns:
-        List[Dict]: A list of JSON data responses for each player, containing sensor data.
+    Returns
+    -------
+    List[Dict]
+        A list of response_data for each player, containing sensor data.
 
-    Raises:
-        APIRequestError: If any API request fails with a status code other than 200.
+    Raises
+    ------
+    APIRequestError
+        If any API request fails with a status code other than 200.
     """
     headers = {
         "accept": "application/json",
         "authorization": f"Bearer {api_token}",
         "nulls": "0"
     }
-    allPlayersFromActivity_response = _getAllplayerFormActivity_response(baseUrl, api_token, activity_id)
-    allPlayersFromActivity_JSON = allPlayersFromActivity_response.json()
-    playerIDsInActivity_list = list(set(i["id"] for i in allPlayersFromActivity_JSON))
-    response_data_json_list = []
 
-    for i in playerIDsInActivity_list:
+    player_ids = list(set(i["id"] for i in response))
+    player_ids.sort()
+    response_data_dict_list = []
+
+    response_ok =200
+    for i in player_ids:
         url = f'activities/{activity_id}/athletes/{i}/sensor'
-        response_data_json_i = requests.get(baseUrl + url, headers=headers)
-        if response_data_json_i.status_code == 200:
-            response_data_json_list.append(response_data_json_i.json()[0])
-            saveResponse(response_data_json_i, url)
+        player_data = requests.get(baseUrl + url, headers=headers)
+        
+        if player_data.status_code == response_ok:
+            response_data_dict_list.append(player_data.json()[0])
         else:
-            raise APIRequestError(f"API request failed with status code {response_data_json_i.status_code}")
+            raise APIRequestError(f"API request failed with status code {player_data.status_code}")
 
-    return response_data_json_list
+    return response_data_dict_list
 
-def get_key_names_from_json(response_data_json_list: List[Dict]) -> set:
+def get_key_names_from_dict_list(response_data_dict_list: List[Dict]) -> set:
     """
-    Extracts unique column names from a list of JSON data responses.
+    Extracts unique key names from a list of response_data.
 
-    Args:
-        response_data_json_list (List[Dict]): List of JSON data responses.
+    Parameters
+    ----------
+    response_data_dict_list : List[Dict]
+        List of response_data.
 
-    Returns:
-        set: A set of unique column names.
+    Returns
+    -------
+    set
+        A set of unique key names.
     """
-    recorded_columns = set()
+    
+    mapping = {
+    "ts": "time",
+    "device id": "sensor_id",
+    "athlete_id": "mapped_id",
+    "stream_type": "stream_type",
+    "name": "name",
+    "jersey": "number",
+    "team_id": "group_id",
+    "team_name": "group_name",
+    "x": "x_coord",
+    "y": "y_coord",
+    "cs": "cs",
+    "lat": "lat",
+    "long": "long",
+    }
 
-    for data_i in response_data_json_list:
-        recorded_columns.update(data_i.keys())
-        if "data" in data_i and isinstance(data_i["data"], list) and data_i["data"]:
-            recorded_columns.update(data_i["data"][0].keys())
+    recorded_keys = set()
 
-    return recorded_columns
+    for athlete_entry in response_data_dict_list:
+        recorded_keys.update(key for key in athlete_entry.keys() if key in mapping)
+        if len(athlete_entry["data"]) != 0:
+            recorded_keys.update(key for key in athlete_entry["data"][0].keys() if key in mapping)
 
-def _get_key_links(response_data_json_list: List[Dict]) -> Union[Dict[str, int], None]:
+    return recorded_keys
+
+def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy") -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """
-    Generates a mapping of key names to their indices in the JSON data responses.
+    Extracts metadata from the response_data.
 
-    Args:
-        response_data_json_list (List[Dict]): List of JSON data responses.
+    Parameters
+    ----------
+    response_data_dict_list : List[Dict]
+        List of response_data.
 
-    Returns:
-        Union[Dict[str, int], None]: A dictionary mapping key names to their indices or None if critical keys are missing.
+    Returns
+    -------
+    Tuple[Dict[str, Dict[str, List[str]]], int, int, int]
+        - Dictionary mapping group IDs to player identifiers.
+        - Number of frames.
+        - Framerate.
+        - Null timestamp.
     """
-    for data_i in response_data_json_list:
-        data_i['name'] = f"{data_i['athlete_first_name']} {data_i['athlete_last_name']}"
-
-    key_names = list(get_key_names_from_json(response_data_json_list))
 
     mapping = {
         "ts": "time",
         "device id": "sensor_id",
         "athlete_id": "mapped_id",
-        "athlete_first_name": "athlete_first_name",
-        "athlete_last_name": "athlete_last_name",
         "stream_type": "stream_type",
         "name": "name",
         "jersey": "number",
@@ -187,57 +238,21 @@ def _get_key_links(response_data_json_list: List[Dict]) -> Union[Dict[str, int],
         "cs": "cs",
         "lat": "lat",
         "long": "long",
-        "o": "o",
-        "v": "v",
-        "a": "a",
-        "hr": "hr",
-        "pl": "pl",
-        "mp": "mp",
-        "sl": "sl",
     }
-
-    necessary_keys = ["time", "x_coord", "y_coord"]
-    key_links = {}
-    for key in mapping:
-        if key in key_names:
-            key_links.update({mapping[key]: key_names.index(key)})
-
-    if not all(columns in key_links for columns in necessary_keys):
-        warnings.warn("Data file lacks critical information! No timestamp or coordinates found.")
-        return None
-
-    return key_links
-
-def get_meta_data(response_data_json_list: List[Dict]) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
-    """
-    Extracts metadata from the JSON data responses.
-
-    Args:
-        response_data_json_list (List[Dict]): List of JSON data responses.
-
-    Returns:
-        Tuple[Dict[str, Dict[str, List[str]]], int, int, int]: 
-            - Dictionary mapping group IDs to player identifiers.
-            - Number of frames.
-            - Framerate.
-            - Null timestamp.
-    """
-    framerate = 10
-
-    key_links = _get_key_links(response_data_json_list) # should i do this with get_key_names_from_json() and a mapping,
-                                                        # since the key_links are not beeing used as such 
-                                                        # (beacause of how the json file looks #{key1, key2, key3 ... data[key8,key9,...]}) 
+    
+    key_names = list(get_key_names_from_dict_list(response_data_dict_list))
+    key_names_mapped = [mapping[i] for i in key_names]
     sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
-    key_links_set = set(key_links)
+    key_names_mapped_set = set(key_names_mapped)
 
-    recorded_sensor_identifier = list(key_links_set & sensor_identifier)
+    recorded_sensor_identifier = list(key_names_mapped_set & sensor_identifier)
     sensor_links = {
         key: index
-        for (key, index) in key_links.items()
+        for (key, index) in key_names_mapped.items()
         if key in recorded_sensor_identifier
     }
     group_identifier_set = {"group_id", "group_name"}
-    recorded_group_identifier = list(key_links_set & group_identifier_set)
+    recorded_group_identifier = list(key_names_mapped_set & group_identifier_set)
     pID_dict = {}
     t = []
     has_groups = len(recorded_group_identifier) > 0
@@ -256,28 +271,40 @@ def get_meta_data(response_data_json_list: List[Dict]) -> Tuple[Dict[str, Dict[s
         "number": "jersey",
     }
 
-    for data_i in response_data_json_list:
-        for entry in data_i["data"]:
-            t.append(int(entry["ts"]) * 100 + int(entry["cs"]))
+    from collections import Counter
+    max_count = 0
+    for athlete_entry in response_data_dict_list:
+        athlete_t = []
+        for entry in athlete_entry["data"]:
+            t.append(int(entry["ts"]) * 100 + int(entry["cs"])) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
+ 
+            athlete_t.append(int(entry["ts"]))
+        timestamps_athlete_count = Counter(athlete_t)
 
+        if timestamps_athlete_count:
+            max_count_athlete = max(timestamps_athlete_count.values())
+    
         group_identifier = recorded_group_identifier[0]
-        group_id = data_i[reversed_group_mapping[group_identifier]]# not doing it with key_liks beacause of how json looks like: 
-                                                                        #{key1, key2, key3 ... data[key8,key9,...]}
+        group_id = athlete_entry[reversed_group_mapping[group_identifier]]
 
         if group_id not in pID_dict:
             pID_dict.update({group_id: {}})
         for identifier in sensor_links:
             if identifier not in pID_dict[group_id]:
                 pID_dict[group_id].update({identifier: []})
-            if data_i[reversed_sensor_mapping[identifier]] not in pID_dict[group_id][identifier]:
-                pID_dict[group_id][identifier].append(data_i[reversed_sensor_mapping[identifier]])
-
+            if athlete_entry[reversed_sensor_mapping[identifier]] not in pID_dict[group_id][identifier]:
+                pID_dict[group_id][identifier].append(athlete_entry[reversed_sensor_mapping[identifier]])
+    
+    framerate = max(max_count, max_count_athlete)
     pID_dict = dict(sorted(pID_dict.items()))
 
     timestamps_cs = list(set(t))
     timestamps_cs.sort()
 
-    number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate))
+    print(framerate)
+
+
+    number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate)) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
     t_null = timestamps_cs[0]
 
     return pID_dict, number_of_frames, framerate, t_null
@@ -286,11 +313,15 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
     """
     Determines an available sensor identifier from the metadata.
 
-    Args:
-        pID_dict (Dict[str, Dict[str, List[str]]]): Metadata dictionary containing player IDs by group.
+    Parameters
+    ----------
+    pID_dict : Dict[str, Dict[str, List[str]]]
+        Metadata dictionary containing player IDs by group.
 
-    Returns:
-        str: The available sensor identifier.
+    Returns
+    -------
+    str
+        The available sensor identifier.
     """
     player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
     available_identifier = [idt for idt in player_identifiers if idt in list(pID_dict.values())[0]]
@@ -302,12 +333,17 @@ def create_links_from_meta_data(
     """
     Creates a mapping of player IDs to numerical indices based on the metadata.
 
-    Args:
-        pID_dict (Dict[str, Dict[str, List[str]]]): Metadata dictionary containing player IDs by group.
-        identifier (str, optional): The sensor identifier to use for mapping. Defaults to the available identifier.
+    Parameters
+    ----------
+    pID_dict : Dict[str, Dict[str, List[str]]]
+        Metadata dictionary containing player IDs by group.
+    identifier : str, optional
+        The sensor identifier to use for mapping. Defaults to the available identifier.
 
-    Returns:
-        Dict[str, Dict[str, int]]: A dictionary mapping group IDs to player ID indices.
+    Returns
+    -------
+    Dict[str, Dict[str, int]]
+        A dictionary mapping group IDs to player ID indices.
     """
     if identifier is None:
         identifier = _get_available_sensor_identifier(pID_dict)
@@ -318,23 +354,51 @@ def create_links_from_meta_data(
 
     return links
 
-def read_position_data_from_json(response_data_json_list: List[Dict], coord_format: str = "xy") -> List[XY]:
+def read_position_data_from_dict_list(response_data_dict_list: List[Dict], coord_format: str = "xy") -> List[XY]:
     """
-    Reads position data from JSON data responses and returns a list of XY objects.
+    Reads position data from responses data and returns a list of XY objects.
 
-    Args:
-        response_data_json_list (List[Dict]): List of JSON data responses.
-        coord_format (str, optional): The coordinate format ["xy", "latlong"]. Defaults to "xy".
+    Parameters
+    ----------
+    response_data_dict_list : List[Dict]
+        List of response_data.
+    coord_format : str, optional
+        The coordinate format ["xy", "latlong"]. Defaults to "xy".
 
-    Returns:
-        List[XY]: A list of XY objects containing position data.
+    Returns
+    -------
+    List[XY]
+        A list of XY objects containing position data.
+    
+    Raises
+    ------
+    ValueError
+        If an invalid coordinate format is specified.
     """
-    pID_dict, number_of_frames, framerate, t_null = get_meta_data(response_data_json_list)
+    mapping = {
+    "ts": "time",
+    "device id": "sensor_id",
+    "athlete_id": "mapped_id",
+    "stream_type": "stream_type",
+    "name": "name",
+    "jersey": "number",
+    "team_id": "group_id",
+    "team_name": "group_name",
+    "x": "x_coord",
+    "y": "y_coord",
+    "cs": "cs",
+    "lat": "lat",
+    "long": "long",
+    }
+
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(response_data_dict_list)
 
     links = create_links_from_meta_data(pID_dict)
 
-    key_links = _get_key_links(response_data_json_list)
-    key_links_set = set(key_links)
+    key_names = get_key_names_from_dict_list(response_data_dict_list)
+    key_names_mapped = [mapping[i] for i in list(key_names)]
+   
+    key_links_set = set(key_names_mapped)
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(key_links_set & group_identifier_set)
     identifier = _get_available_sensor_identifier(pID_dict)
@@ -350,11 +414,11 @@ def read_position_data_from_json(response_data_json_list: List[Dict], coord_form
         number_of_sensors.update({group: len(links[group])})
         xydata.update({group: np.full([number_of_frames + 1, number_of_sensors[group] * 2], np.nan)})
 
-    for data_i in response_data_json_list:
-        for entry in data_i["data"]:
+    for athlete_entry in response_data_dict_list:
+        for entry in athlete_entry["data"]:
             if coord_format == "xy":
-                x_coordinate = entry["x"] / 10  # convert mm to cm
-                y_coordinate = entry["y"] / 10  # convert mm to cm
+                x_coordinate = entry["x"] 
+                y_coordinate = entry["y"] 
             elif coord_format == "latlong":
                 x_coordinate = entry["lat"]
                 y_coordinate = entry["long"]
@@ -362,13 +426,12 @@ def read_position_data_from_json(response_data_json_list: List[Dict], coord_form
                 raise ValueError(f"Expected coordinate format to be ['xy', 'latlong'], but got {coord_format} instead.")
 
             group_identifier = recorded_group_identifier[0]
-            group_id = data_i[reversed_group_mapping[group_identifier]] # not doing it with key_liks beacause of how json looks like: 
-                                                                        #{key1, key2, key3 ... data[key8,key9,...]}
+            group_id = athlete_entry[reversed_group_mapping[group_identifier]]
 
-            x_col = links[group_id][data_i[identifier]] * 2
+            x_col = links[group_id][athlete_entry[identifier]] * 2
             y_col = x_col + 1
 
-            row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate))
+            row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate)) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
 
             if x_coordinate != "":
                 xydata[group_id][row, x_col] = x_coordinate
@@ -380,5 +443,53 @@ def read_position_data_from_json(response_data_json_list: List[Dict], coord_form
 
     for group_id in xydata:
         data_objects.append(XY(xy=xydata[group_id], framerate=framerate))
+
+    return data_objects
+
+def read_position_data_from_activity(base_url: str, api_token: str, activity_id: str, save: bool = False, pathToRespone: str = None, coord_format: str = "xy") -> List[XY]:
+    """
+    Reads position data for a specific activity either from a saved response or by making an API request.
+
+    Parameters
+    ----------
+    base_url : str
+        The base URL for the API requests.
+    api_token : str
+        The API token for authentication.
+    activity_id : str
+        The unique identifier for the activity.
+    save : bool, optional
+        Whether to save the response to a file. Defaults to False.
+    pathToRespone : str, optional
+        The path to the saved response directory. If provided, data will be read from this path instead of making an API request.
+    coord_format : str, optional
+        The format of the coordinates to be returned (e.g., "xy"). Defaults to "xy".
+
+    Returns
+    -------
+    List[XY]
+        A list of XY objects containing position data.
+
+    Conditional Behavior
+    --------------------
+    1. If `pathToRespone` is provided:
+       - The function reads the response data from the specified file path, skipping any API requests.
+
+    2. If `pathToRespone` is not provided:
+       - The function makes an API request to fetch the data.
+       - If `save` is set to `True`, the fetched response is saved to a file.
+       - If `save` is `False`, the response data is processed directly without saving.
+    
+    """
+    if pathToRespone: 
+        response_data_dict_list = read_response(pathToRespone)
+    else:
+        response, endpoint = get_response(base_url, api_token, activity_id)
+        if save:
+            write_response(response, endpoint)
+        else:
+            response_data_dict_list = getResponse_data_dict_list(base_url, api_token, activity_id, response)
+    
+    data_objects = read_position_data_from_dict_list(response_data_dict_list, coord_format)
 
     return data_objects
