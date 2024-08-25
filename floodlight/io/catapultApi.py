@@ -4,10 +4,10 @@ from floodlight.core.xy import XY
 from typing import List, Dict, Tuple, Union, Any
 from pathlib import Path
 import warnings
-import csv
-import io
 import json
 import os
+from collections import Counter
+
 
 class APIRequestError(Exception):
     """
@@ -20,6 +20,58 @@ class APIRequestError(Exception):
     """
     def __init__(self, message: str):
         super().__init__(message)
+
+def get_mappings() -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str]]:
+    """
+    Returns dictionaries containing mappings between various key names.
+
+    This function provides three mappings:
+    1. A general mapping of key names to their corresponding new names.
+    2. A reversed mapping for group-related keys.
+    3. A reversed mapping for sensor-related keys.
+
+    Returns
+    -------
+    mapping : dict
+        A dictionary that maps original key names to their corresponding new key names.
+        The keys represent the original key names, and the values represent the new key names.
+    
+    reversed_group_mapping : dict
+        A dictionary that maps new key names for group-related fields back to their original key names.
+        The keys represent the new key names, and the values represent the original key names.
+    
+    reversed_sensor_mapping : dict
+        A dictionary that maps new key names for sensor-related fields back to their original key names.
+        The keys represent the new key names, and the values represent the original key names.
+    """
+    mapping = {
+        "ts": "time",
+        "device id": "sensor_id",
+        "athlete_id": "mapped_id",
+        "stream_type": "stream_type",
+        "name": "name",
+        "jersey": "number",
+        "team_id": "group_id",
+        "team_name": "group_name",
+        "x": "x_coord",
+        "y": "y_coord",
+        "cs": "cs",
+        "lat": "lat",
+        "long": "long",
+    }
+
+    reversed_group_mapping = {
+        "group_id": "team_id",
+        "group_name": "team_name",
+    }
+
+    reversed_sensor_mapping = {
+        "sensor_id": "device id",
+        "mapped_id": "athlete_id",
+        "name": "name",
+        "number": "jersey",
+    }
+    return mapping, reversed_group_mapping, reversed_sensor_mapping
 
 def write_response(response: requests.Response, endpoint: str) -> None:
     """
@@ -44,7 +96,7 @@ def write_response(response: requests.Response, endpoint: str) -> None:
             json.dump(response_data, json_file, indent=4)
             print(f"API response successfully saved in '{os.path.join(endpoint, 'response.json')}'")
     else:
-        print(f"Error: {response.status_code} - {response.text}")
+        raise ValueError(f"Expected status code 200, but got {response.status_code}. Response text: {response.text}")
 
 def read_response(endpoint: str) -> List[Dict]:
     """
@@ -64,34 +116,40 @@ def read_response(endpoint: str) -> List[Dict]:
     ------
     FileNotFoundError
         If the specified directory does not exist.
+
+    Note
+    ----
+    Ensure that this directory only contains the JSON files from the specific request in question, as unrelated .json files may cause issues.
     """
     response_data = []
-    
+
     if os.path.exists(endpoint):
-        for root, dirs, files in os.walk(endpoint):
-            for filename in files:
-                if filename.endswith(".json"):
-                    file_path = os.path.join(root, filename)
-                    with open(file_path, "r") as json_file:
-                        data = json.load(json_file)
-                        response_data.append(data)
-    else:
-        raise FileNotFoundError(f"Directory {endpoint} does not exist.")
+        json_files = [os.path.join(root, f) for root, _, files in os.walk(endpoint) for f in files if f.endswith(".json")]
+        for file_path in json_files:
+            with open(file_path, "r") as json_file:
+                data = json.load(json_file)
+                response_data.append(data)
     
     return response_data
 
-def get_response(baseUrl: str, api_token: str, activity_id: str) -> Tuple[List[Dict], str]:
+
+def get_response(base_url: str, api_token: str, activity_id: str) -> Tuple[List[Dict], str]:
     """
     Fetches data for all players involved in a specific activity.
 
     Parameters
     ----------
-    baseUrl : str
+    base_url : str
         The base URL for the API requests.
+        Ensure you use the URL corresponding to the API for which you have credentials.
+        For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
+
     api_token : str
         The API token for authentication.
     activity_id : str
-        The unique identifier for the activity to fetch players from.
+        The unique identifier for the activity to fetch players from. 
+        Refer to the Catapult API documentation for details on how to obtain this ID:
+            https://docs.connect.catapultsports.com/reference/introduction.
 
     Returns
     -------
@@ -110,7 +168,7 @@ def get_response(baseUrl: str, api_token: str, activity_id: str) -> Tuple[List[D
         "nulls": "0"
     }
     endpoint = f"activities/{activity_id}/athletes/"
-    response = requests.get(baseUrl + endpoint, headers=headers)
+    response = requests.get(base_url + endpoint, headers=headers)
     response_ok =200
     if response.status_code == response_ok:
         response_data = response.json()
@@ -119,14 +177,16 @@ def get_response(baseUrl: str, api_token: str, activity_id: str) -> Tuple[List[D
     else:
         raise APIRequestError(f"API request failed with status code {response.status_code}")
 
-def getResponse_data_dict_list(baseUrl: str, api_token: str, activity_id: str, response: List[Dict]) -> List[Dict]:
+def get_response_data_dict_list(base_url: str, api_token: str, activity_id: str, response: List[Dict]) -> List[Dict]:
     """
     Retrieves sensor data for each player involved in a specific activity.
 
     Parameters
     ----------
-    baseUrl : str
+    base_url : str
         The base URL for the API requests.
+        Ensure you use the URL corresponding to the API for which you have credentials.
+        For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
     api_token : str
         The API token for authentication.
     activity_id : str
@@ -150,14 +210,13 @@ def getResponse_data_dict_list(baseUrl: str, api_token: str, activity_id: str, r
         "nulls": "0"
     }
 
-    player_ids = list(set(i["id"] for i in response))
-    player_ids.sort()
+    player_ids = sorted(set(i["id"] for i in response))
     response_data_dict_list = []
 
     response_ok =200
     for i in player_ids:
         url = f'activities/{activity_id}/athletes/{i}/sensor'
-        player_data = requests.get(baseUrl + url, headers=headers)
+        player_data = requests.get(base_url + url, headers=headers)
         
         if player_data.status_code == response_ok:
             response_data_dict_list.append(player_data.json()[0])
@@ -181,21 +240,7 @@ def get_key_names_from_dict_list(response_data_dict_list: List[Dict]) -> set:
         A set of unique key names.
     """
     
-    mapping = {
-    "ts": "time",
-    "device id": "sensor_id",
-    "athlete_id": "mapped_id",
-    "stream_type": "stream_type",
-    "name": "name",
-    "jersey": "number",
-    "team_id": "group_id",
-    "team_name": "group_name",
-    "x": "x_coord",
-    "y": "y_coord",
-    "cs": "cs",
-    "lat": "lat",
-    "long": "long",
-    }
+    mapping, _, _ = get_mappings()
 
     recorded_keys = set()
 
@@ -224,21 +269,7 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
         - Null timestamp.
     """
 
-    mapping = {
-        "ts": "time",
-        "device id": "sensor_id",
-        "athlete_id": "mapped_id",
-        "stream_type": "stream_type",
-        "name": "name",
-        "jersey": "number",
-        "team_id": "group_id",
-        "team_name": "group_name",
-        "x": "x_coord",
-        "y": "y_coord",
-        "cs": "cs",
-        "lat": "lat",
-        "long": "long",
-    }
+    mapping, reversed_group_mapping, reversed_sensor_mapping = get_mappings()
     
     key_names = list(get_key_names_from_dict_list(response_data_dict_list))
     key_names_mapped = [mapping[i] for i in key_names]
@@ -248,7 +279,7 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
     recorded_sensor_identifier = list(key_names_mapped_set & sensor_identifier)
     sensor_links = {
         key: index
-        for (key, index) in key_names_mapped.items()
+        for (index,key) in enumerate(key_names_mapped) #.items()
         if key in recorded_sensor_identifier
     }
     group_identifier_set = {"group_id", "group_name"}
@@ -259,39 +290,25 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
     if not has_groups:
         warnings.warn("Since no group exist in data, dummy group '0' is created!")
 
-    reversed_group_mapping = {
-        "group_id": "team_id",
-        "group_name": "team_name",
-    }
-
-    reversed_sensor_mapping = {
-        "sensor_id": "device id",
-        "mapped_id": "athlete_id",
-        "name": "name",
-        "number": "jersey",
-    }
-
-    from collections import Counter
     max_count = 0
     for athlete_entry in response_data_dict_list:
-        athlete_t = []
-        for entry in athlete_entry["data"]:
-            t.append(int(entry["ts"]) * 100 + int(entry["cs"])) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
- 
-            athlete_t.append(int(entry["ts"]))
+        athlete_t = [int(entry["ts"]) for entry in athlete_entry["data"]]
+        t.extend([int(entry["ts"]) * 100 + int(entry["cs"]) for entry in athlete_entry["data"]]) # timestamps are in centiseconds. Magic number 100 is needed for conversion to centiseconds
+    
         timestamps_athlete_count = Counter(athlete_t)
-
+    
         if timestamps_athlete_count:
             max_count_athlete = max(timestamps_athlete_count.values())
     
         group_identifier = recorded_group_identifier[0]
         group_id = athlete_entry[reversed_group_mapping[group_identifier]]
-
+    
         if group_id not in pID_dict:
-            pID_dict.update({group_id: {}})
+            pID_dict[group_id] = {}
+    
         for identifier in sensor_links:
             if identifier not in pID_dict[group_id]:
-                pID_dict[group_id].update({identifier: []})
+                pID_dict[group_id][identifier] = []
             if athlete_entry[reversed_sensor_mapping[identifier]] not in pID_dict[group_id][identifier]:
                 pID_dict[group_id][identifier].append(athlete_entry[reversed_sensor_mapping[identifier]])
     
@@ -300,9 +317,6 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
 
     timestamps_cs = list(set(t))
     timestamps_cs.sort()
-
-    print(framerate)
-
 
     number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate)) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
     t_null = timestamps_cs[0]
@@ -375,21 +389,7 @@ def read_position_data_from_dict_list(response_data_dict_list: List[Dict], coord
     ValueError
         If an invalid coordinate format is specified.
     """
-    mapping = {
-    "ts": "time",
-    "device id": "sensor_id",
-    "athlete_id": "mapped_id",
-    "stream_type": "stream_type",
-    "name": "name",
-    "jersey": "number",
-    "team_id": "group_id",
-    "team_name": "group_name",
-    "x": "x_coord",
-    "y": "y_coord",
-    "cs": "cs",
-    "lat": "lat",
-    "long": "long",
-    }
+    mapping, reversed_group_mapping, reversed_sensor_mapping = get_mappings()
 
     pID_dict, number_of_frames, framerate, t_null = get_meta_data(response_data_dict_list)
 
@@ -397,16 +397,11 @@ def read_position_data_from_dict_list(response_data_dict_list: List[Dict], coord
 
     key_names = get_key_names_from_dict_list(response_data_dict_list)
     key_names_mapped = [mapping[i] for i in list(key_names)]
-   
     key_links_set = set(key_names_mapped)
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(key_links_set & group_identifier_set)
     identifier = _get_available_sensor_identifier(pID_dict)
 
-    reversed_group_mapping = {
-        "group_id": "team_id",
-        "group_name": "team_name",
-    }
     number_of_sensors = {}
     xydata = {}
 
@@ -428,7 +423,7 @@ def read_position_data_from_dict_list(response_data_dict_list: List[Dict], coord
             group_identifier = recorded_group_identifier[0]
             group_id = athlete_entry[reversed_group_mapping[group_identifier]]
 
-            x_col = links[group_id][athlete_entry[identifier]] * 2
+            x_col = links[group_id][athlete_entry[reversed_sensor_mapping[identifier]]] * 2
             y_col = x_col + 1
 
             row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate)) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
@@ -454,6 +449,8 @@ def read_position_data_from_activity(base_url: str, api_token: str, activity_id:
     ----------
     base_url : str
         The base URL for the API requests.
+        Ensure you use the URL corresponding to the API for which you have credentials.
+        For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
     api_token : str
         The API token for authentication.
     activity_id : str
@@ -488,7 +485,7 @@ def read_position_data_from_activity(base_url: str, api_token: str, activity_id:
         if save:
             write_response(response, endpoint)
         else:
-            response_data_dict_list = getResponse_data_dict_list(base_url, api_token, activity_id, response)
+            response_data_dict_list = get_response_data_dict_list(base_url, api_token, activity_id, response)
     
     data_objects = read_position_data_from_dict_list(response_data_dict_list, coord_format)
 
