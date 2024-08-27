@@ -279,7 +279,7 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
     recorded_sensor_identifier = list(key_names_mapped_set & sensor_identifier)
     sensor_links = {
         key: index
-        for (index,key) in enumerate(key_names_mapped) #.items()
+        for (index,key) in enumerate(key_names_mapped) 
         if key in recorded_sensor_identifier
     }
     group_identifier_set = {"group_id", "group_name"}
@@ -293,8 +293,9 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
     max_count = 0
     for athlete_entry in response_data_dict_list:
         athlete_t = [int(entry["ts"]) for entry in athlete_entry["data"]]
-        t.extend([int(entry["ts"]) * 100 + int(entry["cs"]) for entry in athlete_entry["data"]]) # timestamps are in centiseconds. Magic number 100 is needed for conversion to centiseconds
-    
+        # Convert timestamps from seconds and centiseconds to centiseconds.
+        # The magic number 100 is used to scale the seconds and to combine them with the centiseconds parts.
+        t.extend([int(entry["ts"]) * 100 + int(entry["cs"]) for entry in athlete_entry["data"]]) 
         timestamps_athlete_count = Counter(athlete_t)
     
         if timestamps_athlete_count:
@@ -317,8 +318,9 @@ def get_meta_data(response_data_dict_list: List[Dict], coord_format: str = "xy")
 
     timestamps_cs = list(set(t))
     timestamps_cs.sort()
-
-    number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate)) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
+    # Calculate the number of frames based on the duration of the timestamps.
+    # Timestamps are in centiseconds. The magic number 100 is used to convert the centiseconds to seconds
+    number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate)) 
     t_null = timestamps_cs[0]
 
     return pID_dict, number_of_frames, framerate, t_null
@@ -425,8 +427,9 @@ def read_position_data_from_dict_list(response_data_dict_list: List[Dict], coord
 
             x_col = links[group_id][athlete_entry[reversed_sensor_mapping[identifier]]] * 2
             y_col = x_col + 1
-
-            row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate)) # timestamps are in centiseconds. Magic number 100 is needed for conversion to
+            # Calculate the row index based on the timestamp. 
+            # Timestamps are in centiseconds. The magic value 100 is used to convert centiseconds to seconds.
+            row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate)) 
 
             if x_coordinate != "":
                 xydata[group_id][row, x_col] = x_coordinate
