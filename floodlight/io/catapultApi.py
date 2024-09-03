@@ -127,7 +127,7 @@ def read_response(endpoint: str) -> List[Dict]:
         json_files = [os.path.join(root, f) for root, _, files in os.walk(endpoint) for f in files if f.endswith(".json")]
         for file_path in json_files:
             with open(file_path, "r") as json_file:
-                data = json.load(json_file)
+                data = json.load(json_file) 
                 response_data.append(data)
     
     return response_data
