@@ -1,5 +1,6 @@
 import json
 import os
+import requests
 from typing import Tuple, Dict
 from urllib.error import HTTPError, URLError
 
@@ -801,7 +802,7 @@ class StatsBombOpenDataset:
                 with open(season_file, "wb") as binary_file:
                     binary_file.write(download_from_url(season_host_url))
 
-class DFLDataset:
+class IDSSEDataset:
     """This dataset loads the DFL-Benchmark data set from the *An integrated dataset of
      synchronized spatiotemporal and event data in elite soccer* paper. [1]_
 
@@ -820,16 +821,16 @@ class DFLDataset:
     teams and the ball from the German Men's Handball Bundesliga (HBL). For a
     detailed description of the dataset read the accompanying paper.
     Data for one match can be queried calling the :func:`~DFLDataset.get`-method
-    specifying the match and segment. The following matches and segments are
+    specifying the match and segment. The following matches are
     available::
 
         matches = ['J03WMX', 'J03WN1', 'J03WPY', 'J03WOH', 'J03WQQ', 'J03WOY', 'J03WR9']
 
     Examples
     --------
-    >>> from floodlight.io.datasets import DFLDataset
+    >>> from floodlight.io.datasets import IDSSEDataset
 
-    >>> dataset = DFLDataset()
+    >>> dataset = IDSSEDataset()
     # get one sample
     >>> events_data_objects, position_data_objects = dataset.get(match_name="J03WMX")
     # get the corresponding pitch
@@ -843,34 +844,126 @@ class DFLDataset:
             in elite soccer. In Submission.
     """
 
-    def __init__(self, dataset_dir_name="dfl_dataset"):
-        self._EIGD_SCHEMA = "https"
-        self._EIGD_BASE_URL = (
-            "XXX"
+    def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
+        self._IDSSE_SCHEMA = "https"
+        self._IDSSE_BASE_URL = (
+            "figshare.com/ndownloader/files"
         )
-        self._EIGD_FILENAME = "dfl_pos.zip"
-        self._EIGD_HOST_URL = (
-            f"{self._EIGD_SCHEMA}://{self._EIGD_BASE_URL}/{self._EIGD_FILENAME}"
-        )
-        self._EIGD_FILE_EXT = "xml"
-        self._EIGD_FRAMERATE = 25
+        self._IDSSE_FILE_IDS_INFO = {
+            "J03WMX": "48392485",
+            "J03WN1": "48392491",
+            "J03WPY": "48392497",
+            "J03WOH": "48392515",
+            "J03WQQ": "48392488",
+            "J03WOY": "48392503",
+            "J03WR9": "48392494"
+        }
+        self._IDSSE_FILE_IDS_EVENT = {
+            "J03WMX": "48392524",
+            "J03WN1": "48392527",
+            "J03WPY": "48392542",
+            "J03WOH": "48392500",
+            "J03WQQ": "48392521",
+            "J03WOY": "48392518",
+            "J03WR9": "48392530"
+        }
+        self._IDSSE_FILE_IDS_POSITION = {
+            "J03WMX": "48392539",
+            "J03WN1": "48392512",
+            "J03WPY": "48392572",
+            "J03WOH": "48392578",
+            "J03WQQ": "48392545",
+            "J03WOY": "48392551",
+            "J03WR9": "48392563"
+        }
+        self._IDSSE_PRIVAT_LINK = "1f806cb3e755c6b54e05"
+        if match_id in self._IDSSE_FILE_IDS_INFO.keys():
+            self._IDSSE_HOST_URL_INFO = (
+                f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_INFO[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+            )
+            self._IDSSE_HOST_URL_EVENT = (
+                f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+            )
+            self._IDSSE_HOST_URL_POSITION = (
+                f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+            )
+        elif match_id == "all":
+            pass
+        else:
+            raise ValueError(f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or `all`, got {match_id} instead.")
+        self._IDSSE_FILE_EXT = "xml"
+        self._IDSSE_FRAMERATE = 25
 
         self._data_dir = os.path.join(DATA_DIR, dataset_dir_name)
 
         if not os.path.isdir(self._data_dir):
             os.makedirs(self._data_dir, exist_ok=True)
-        if not bool(os.listdir(self._data_dir)):
-            self._download_and_extract()
+
+        if match_id in self._IDSSE_FILE_IDS_INFO.keys():
+            if match_id in ["J03WMX", "J03WN1"]:
+                competition = "DFL-COM-000001"
+            else:
+                competition = "DFL-COM-000002"
+
+            self._IDSSE_INFO_FILE_NAME = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            self._IDSSE_EVENT_FILE_NAME = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            self._IDSSE_POSITION_FILE_NAME = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_INFO_FILE_NAME}"):
+                self._download_and_write(
+                    self._IDSSE_INFO_FILE_NAME,
+                    self._IDSSE_HOST_URL_INFO
+                )
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_EVENT_FILE_NAME}"):
+                self._download_and_write(
+                    self._IDSSE_EVENT_FILE_NAME,
+                    self._IDSSE_HOST_URL_EVENT
+                )
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_POSITION_FILE_NAME}"):
+                self._download_and_write(
+                    self._IDSSE_POSITION_FILE_NAME,
+                    self._IDSSE_HOST_URL_POSITION
+                )
+        elif match_id == "all":
+            for file_id in self._IDSSE_FILE_IDS_INFO:
+                if file_id in ["J03WMX", "J03WN1"]:
+                    competition = "DFL-COM-000001"
+                else:
+                    competition = "DFL-COM-000002"
+                self._IDSSE_HOST_URL_INFO = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_INFO[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+                self._IDSSE_HOST_URL_EVENT = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+                self._IDSSE_HOST_URL_POSITION = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+
+                self._IDSSE_INFO_FILE_NAME = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+                self._IDSSE_EVENT_FILE_NAME = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+                self._IDSSE_POSITION_FILE_NAME = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+
+                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_INFO_FILE_NAME}"):
+                    self._download_and_write(
+                        self._IDSSE_INFO_FILE_NAME,
+                        self._IDSSE_HOST_URL_INFO
+                    )
+                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_EVENT_FILE_NAME}"):
+                    self._download_and_write(
+                        self._IDSSE_EVENT_FILE_NAME,
+                        self._IDSSE_HOST_URL_EVENT
+                )
+                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_POSITION_FILE_NAME}"):
+                    self._download_and_write(
+                        self._IDSSE_POSITION_FILE_NAME,
+                        self._IDSSE_HOST_URL_POSITION
+
+                    )
 
     def get(
-        self, match_name: str = "J03WMX", teamsheet_home: Teamsheet = None, teamsheet_away: Teamsheet=None, events=True, positions=True
+        self, match_id: str = "J03WMX", teamsheet_home: Teamsheet = None, teamsheet_away: Teamsheet=None, events=True, positions=True
     ) -> Tuple[tuple[dict[str, dict[str, Events]], dict[str, Teamsheet], Pitch], tuple[dict[str, dict[str, XY]], dict[str, Code], dict[str, Code], dict[str, Teamsheet], Pitch]]:
 
         """Get event and position data from the DFL dataset.
 
         Parameters
         ----------
-        match_name : str, optional
+        match_id : str, optional
             Match name, check Notes section for valid arguments.
             Defaults to the first match ("J03WMX").
 
@@ -881,24 +974,24 @@ class DFLDataset:
             and ``floodlight.io.dfl.read_position_data_xml()`` functions for the requested match.
         """
 
-        if match_name in ["J03WMX", "J03WN1"]:
+        if match_id in ["J03WMX", "J03WN1"]:
             competition = "DFL-COM-000001"
         else:
             competition = "DFL-COM-000002"
 
         file_name_infos = os.path.join(
             self._data_dir,
-            f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_name}.{self._EIGD_FILE_EXT}"
+            f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
         )
 
         file_name_events = os.path.join(
             self._data_dir,
-            f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_name}.{self._EIGD_FILE_EXT}"
+            f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
         )
 
         file_name_positions = os.path.join(
             self._data_dir,
-            f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_name}.{self._EIGD_FILE_EXT}"
+            f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
         )
 
         if not os.path.isfile(file_name_infos):
@@ -934,12 +1027,12 @@ class DFLDataset:
         return Pitch.from_template("dfl", length=105, width=68)
 
 
-    def _download_and_extract(self) -> None:
+    def _download_and_write(self, file_name, host_url) -> None:
         """Downloads an archive file into temporary storage and
         extracts the content to the file system.
         """
-        file = f"{DATA_DIR}/dfl.zip"
-        with open(file, "wb") as binary_file:
-            binary_file.write(download_from_url(self._EIGD_HOST_URL))
-        extract_zip(file, self._data_dir)
-        os.remove(file)
+        file = f"{self._data_dir}/{file_name}"
+        response = requests.get(host_url, allow_redirects=True)
+        with open(file, "w", encoding="utf-8") as xml_file:
+            xml_file.write(response.text)
+        xml_file.close()
