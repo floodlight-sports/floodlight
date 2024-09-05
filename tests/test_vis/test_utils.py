@@ -1,4 +1,5 @@
 import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import pytest
 
