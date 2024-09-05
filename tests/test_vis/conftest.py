@@ -1,10 +1,10 @@
+import pytest
+import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import numpy as np
-import pytest
+import matplotlib.pyplot as plt     # noqa: 402
 
-from floodlight.core.xy import XY
+from floodlight.core.xy import XY   # noqa: 402
 
 
 @pytest.fixture()

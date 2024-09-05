@@ -1,10 +1,10 @@
+import pytest
+import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import numpy as np
-import pytest
+import matplotlib.pyplot as plt     # noqa: 402
 
-from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch
+from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch     # noqa: 402
 
 
 # Test def plot_*_pitch(
