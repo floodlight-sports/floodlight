@@ -802,29 +802,45 @@ class StatsBombOpenDataset:
                 with open(season_file, "wb") as binary_file:
                     binary_file.write(download_from_url(season_host_url))
 
+
 class IDSSEDataset:
-    """This dataset loads the DFL-Benchmark data set from the *An integrated dataset of
+    """This dataset loads the accompanying data set from the *An integrated dataset of
      synchronized spatiotemporal and event data in elite soccer* paper. [1]_
 
-    Upon instantiation, the class checks if the data already exists in the repository's
-    root ``.data``-folder, and will download the files (~2.44 GB) to this folder if not.
+    Upon instantiation, the class checks if the specified data already exists in the
+    repository's root ``.data``-folder, and will download the files to this folder if
+    not. The default setting is to load the first match from the dataset. However, any
+    individual match or the entire dataset (~2.4 GB) can be downloaded.
 
     Parameters
     ----------
     dataset_dir_name: str, optional
         Name of subdirectory where the dataset is stored within the root .data
         directory. Defaults to 'dfl_dataset'.
+    match_id: str, optional
+        Match-ID of either one of the matches or "all". Defaults to 'J03WMX'. Setting it
+        to one of the matches will download the data of this individual match, if it
+        does not exist in the repository's root ``.data``-folder. Setting it to 'all'
+        will download the data of all matches that do not exist in ``.data``.
 
     Notes
     -----
-    The dataset contains seven full matches of event and position data for both
-    teams and the ball from the German Men's Handball Bundesliga (HBL). For a
-    detailed description of the dataset read the accompanying paper.
-    Data for one match can be queried calling the :func:`~DFLDataset.get`-method
-    specifying the match and segment. The following matches are
-    available::
+    The dataset contains seven full matches of raw event and position data for both
+    teams and the ball from the German Men's Bundesliga season 2022/23 first and second
+    division. A detailed description of the dataset as well as the collection process
+    can be found in the accompanying paper. Data for one match can be queried calling
+    the :func:`~DFLDataset.get`-method by specifying the match. The following matches
+    are available::
 
-        matches = ['J03WMX', 'J03WN1', 'J03WPY', 'J03WOH', 'J03WQQ', 'J03WOY', 'J03WR9']
+        matches = {
+        'J03WMX': 1. FC Köln vs. FC Bayern München,
+        'J03WN1': VfL Bochum 1848 vs. Bayer 04 Leverkusen,
+        'J03WPY': Fortuna Düsseldorf vs. 1. FC Nürnberg,
+        'J03WOH': Fortuna Düsseldorf vs. SSV Jahn Regensburg,
+        'J03WQQ': Fortuna Düsseldorf vs. FC St. Pauli,
+        'J03WOY': Fortuna Düsseldorf vs. F.C. Hansa Rostock,
+        'J03WR9': Fortuna Düsseldorf vs. 1. FC Kaiserslautern
+        }
 
     Examples
     --------
@@ -832,23 +848,21 @@ class IDSSEDataset:
 
     >>> dataset = IDSSEDataset()
     # get one sample
-    >>> events_data_objects, position_data_objects = dataset.get(match_name="J03WMX")
+    >>> events_data_objects, position_data_objects = dataset.get()
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
 
 
     References
     ----------
-        .. [1] `Bassek, M., Müller-Budack, E., Ewerth, R., Weber, H., Rein, R., & Memmert,
-            D. (2024). An integrated dataset of synchronized spatiotemporal and event data
-            in elite soccer. In Submission.
+        .. [1] `Bassek, M., Müller-Budack, E., Ewerth, R., Weber, H., Rein, R., &
+            Memmert,D. (2024). An integrated dataset of synchronized spatiotemporal and
+            event data in elite soccer. In Submission.
     """
 
     def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
         self._IDSSE_SCHEMA = "https"
-        self._IDSSE_BASE_URL = (
-            "figshare.com/ndownloader/files"
-        )
+        self._IDSSE_BASE_URL = "figshare.com/ndownloader/files"
         self._IDSSE_FILE_IDS_INFO = {
             "J03WMX": "48392485",
             "J03WN1": "48392491",
@@ -856,7 +870,7 @@ class IDSSEDataset:
             "J03WOH": "48392515",
             "J03WQQ": "48392488",
             "J03WOY": "48392503",
-            "J03WR9": "48392494"
+            "J03WR9": "48392494",
         }
         self._IDSSE_FILE_IDS_EVENT = {
             "J03WMX": "48392524",
@@ -865,7 +879,7 @@ class IDSSEDataset:
             "J03WOH": "48392500",
             "J03WQQ": "48392521",
             "J03WOY": "48392518",
-            "J03WR9": "48392530"
+            "J03WR9": "48392530",
         }
         self._IDSSE_FILE_IDS_POSITION = {
             "J03WMX": "48392539",
@@ -874,23 +888,19 @@ class IDSSEDataset:
             "J03WOH": "48392578",
             "J03WQQ": "48392545",
             "J03WOY": "48392551",
-            "J03WR9": "48392563"
+            "J03WR9": "48392563",
         }
         self._IDSSE_PRIVAT_LINK = "1f806cb3e755c6b54e05"
         if match_id in self._IDSSE_FILE_IDS_INFO.keys():
-            self._IDSSE_HOST_URL_INFO = (
-                f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_INFO[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-            )
-            self._IDSSE_HOST_URL_EVENT = (
-                f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-            )
-            self._IDSSE_HOST_URL_POSITION = (
-                f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-            )
+            self._IDSSE_HOST_URL_INFO = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_INFO[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+            self._IDSSE_HOST_URL_EVENT = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+            self._IDSSE_HOST_URL_POSITION = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
         elif match_id == "all":
             pass
         else:
-            raise ValueError(f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or `all`, got {match_id} instead.")
+            raise ValueError(
+                f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or `all`, got {match_id} instead."
+            )
         self._IDSSE_FILE_EXT = "xml"
         self._IDSSE_FRAMERATE = 25
 
@@ -905,24 +915,21 @@ class IDSSEDataset:
             else:
                 competition = "DFL-COM-000002"
 
-            self._IDSSE_INFO_FILE_NAME = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
-            self._IDSSE_EVENT_FILE_NAME = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
-            self._IDSSE_POSITION_FILE_NAME = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            self._IDSSE_FILE_NAME_INFO = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            self._IDSSE_FILE_NAME_EVENT = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            self._IDSSE_FILE_NAME_POSITION = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
 
-            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_INFO_FILE_NAME}"):
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_INFO}"):
                 self._download_and_write(
-                    self._IDSSE_INFO_FILE_NAME,
-                    self._IDSSE_HOST_URL_INFO
+                    self._IDSSE_FILE_NAME_INFO, self._IDSSE_HOST_URL_INFO
                 )
-            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_EVENT_FILE_NAME}"):
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_EVENT}"):
                 self._download_and_write(
-                    self._IDSSE_EVENT_FILE_NAME,
-                    self._IDSSE_HOST_URL_EVENT
+                    self._IDSSE_FILE_NAME_EVENT, self._IDSSE_HOST_URL_EVENT
                 )
-            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_POSITION_FILE_NAME}"):
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_POSITION}"):
                 self._download_and_write(
-                    self._IDSSE_POSITION_FILE_NAME,
-                    self._IDSSE_HOST_URL_POSITION
+                    self._IDSSE_FILE_NAME_POSITION, self._IDSSE_HOST_URL_POSITION
                 )
         elif match_id == "all":
             for file_id in self._IDSSE_FILE_IDS_INFO:
@@ -934,44 +941,78 @@ class IDSSEDataset:
                 self._IDSSE_HOST_URL_EVENT = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
                 self._IDSSE_HOST_URL_POSITION = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
 
-                self._IDSSE_INFO_FILE_NAME = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
-                self._IDSSE_EVENT_FILE_NAME = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
-                self._IDSSE_POSITION_FILE_NAME = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+                self._IDSSE_FILE_NAME_INFO = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+                self._IDSSE_FILE_NAME_EVENT = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+                self._IDSSE_FILE_NAME_POSITION = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
 
-                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_INFO_FILE_NAME}"):
+                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_INFO}"):
                     self._download_and_write(
-                        self._IDSSE_INFO_FILE_NAME,
-                        self._IDSSE_HOST_URL_INFO
+                        self._IDSSE_FILE_NAME_INFO, self._IDSSE_HOST_URL_INFO
                     )
-                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_EVENT_FILE_NAME}"):
+                if not os.path.isfile(
+                    f"{self._data_dir}/{self._IDSSE_FILE_NAME_EVENT}"
+                ):
                     self._download_and_write(
-                        self._IDSSE_EVENT_FILE_NAME,
-                        self._IDSSE_HOST_URL_EVENT
-                )
-                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_POSITION_FILE_NAME}"):
+                        self._IDSSE_FILE_NAME_EVENT, self._IDSSE_HOST_URL_EVENT
+                    )
+                if not os.path.isfile(
+                    f"{self._data_dir}/{self._IDSSE_FILE_NAME_POSITION}"
+                ):
                     self._download_and_write(
-                        self._IDSSE_POSITION_FILE_NAME,
-                        self._IDSSE_HOST_URL_POSITION
-
+                        self._IDSSE_FILE_NAME_POSITION, self._IDSSE_HOST_URL_POSITION
                     )
 
     def get(
-        self, match_id: str = "J03WMX", teamsheet_home: Teamsheet = None, teamsheet_away: Teamsheet=None, events=True, positions=True
-    ) -> Tuple[tuple[dict[str, dict[str, Events]], dict[str, Teamsheet], Pitch], tuple[dict[str, dict[str, XY]], dict[str, Code], dict[str, Code], dict[str, Teamsheet], Pitch]]:
+        self,
+        match_id: str = "J03WMX",
+        teamsheet_home: Teamsheet = None,
+        teamsheet_away: Teamsheet = None,
+        events=True,
+        positions=True,
+    ) -> Tuple[
+        tuple[dict[str, dict[str, Events]], dict[str, Teamsheet], Pitch],
+        tuple[
+            dict[str, dict[str, XY]],
+            dict[str, Code],
+            dict[str, Code],
+            dict[str, Teamsheet],
+            Pitch,
+        ],
+    ]:
 
-        """Get event and position data from the DFL dataset.
+        """Get event and position data from the IDSSE dataset.
 
         Parameters
         ----------
         match_id : str, optional
             Match name, check Notes section for valid arguments.
-            Defaults to the first match ("J03WMX").
+            Defaults to the first match "J03WMX".
+        teamsheet_home: Teamsheet, optional
+            Teamsheet-object for the home team used to create link dictionaries of the
+                form `links[pID] = team`. If given as None (default), teamsheet is
+                extracted from the data.
+        teamsheet_away: Teamsheet, optional
+            Teamsheet-object for the home team used to create link dictionaries of the
+                form `links[pID] = team`. If given as None (default), teamsheet is
+                extracted from the data.
+        events: bool, optional
+            Specifies weather the event data should be returned. Default is True. If
+            false None will be returned instead of the event data objects.
+        positions: bool, optional
+            Specifies weather the position data should be returned. Default is True. If
+            false None will be returned instead of the event data objects. This will
+            improve performance considerably if only event data is required.
+
 
         Returns
         -------
-        match_data: Tuple[Tuple[Events, Teamsheets, Pitch], Tuple[dict[XY], dict[Code], dict[Code], dict[teamsheets], Pitch]
-            Returns a tuple of shape (event_data, position_data) as returned by the ``floodlight.io.dfl.read_event_data_xml()``
-            and ``floodlight.io.dfl.read_position_data_xml()`` functions for the requested match.
+        match_data: Tuple[Tuple[Events, Teamsheets, Pitch], Tuple[dict[XY], dict[Code],
+        dict[Code], dict[teamsheets], Pitch]
+            Returns a tuple of shape (event_data, position_data) as returned by the
+            ``floodlight.io.dfl.read_event_data_xml()`` and
+            ``floodlight.io.dfl.read_position_data_xml()`` functions for the requested
+            match. If any of the arguments ``events`` or ``positions`` are set to False,
+            Noneis returned instead of `event_data` or `position_data`, repectively.
         """
 
         if match_id in ["J03WMX", "J03WN1"]:
@@ -981,17 +1022,17 @@ class IDSSEDataset:
 
         file_name_infos = os.path.join(
             self._data_dir,
-            f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}",
         )
 
         file_name_events = os.path.join(
             self._data_dir,
-            f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}",
         )
 
         file_name_positions = os.path.join(
             self._data_dir,
-            f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}",
         )
 
         if not os.path.isfile(file_name_infos):
@@ -1007,14 +1048,14 @@ class IDSSEDataset:
                 file_name_events, file_name_infos, teamsheet_home, teamsheet_away
             )
         else:
-            events = None
+            data_objects_events = None
 
         if positions is True:
             data_objects_positions = read_position_data_xml(
                 file_name_positions, file_name_infos, teamsheet_home, teamsheet_away
             )
         else:
-            positions = None
+            data_objects_events = None
 
         # assemble
         match_data = (data_objects_events, data_objects_positions)
@@ -1025,7 +1066,6 @@ class IDSSEDataset:
     def get_pitch() -> Pitch:
         """Returns a Pitch object corresponding to the DFL-data."""
         return Pitch.from_template("dfl", length=105, width=68)
-
 
     def _download_and_write(self, file_name, host_url) -> None:
         """Downloads an archive file into temporary storage and
