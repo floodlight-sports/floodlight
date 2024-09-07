@@ -224,7 +224,7 @@ def test_translation_function(
     data_none.translate((3, 7))
     assert pd.DataFrame.equals(
         data_none.events[["at_x", "at_y"]],
-        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+        pd.DataFrame({"at_x": [np.nan, np.nan], "at_y": [np.nan, np.nan]}),
     )
 
     data_minimal_translated.translate((1, 2))
@@ -265,7 +265,7 @@ def test_scale_function(
     data_none.scale(factor=2)
     assert pd.DataFrame.equals(
         data_none.events[["at_x", "at_y"]],
-        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+        pd.DataFrame({"at_x": [np.nan, np.nan], "at_y": [np.nan, np.nan]}),
     )
 
     data_minimal_scaled.scale(2)
@@ -302,12 +302,12 @@ def test_reflect_function(
     data_none.reflect(axis="x")
     assert pd.DataFrame.equals(
         data_none.events[["at_x", "at_y"]],
-        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+        pd.DataFrame({"at_x": [np.nan, np.nan], "at_y": [np.nan, np.nan]}),
     )
     data_none.reflect(axis="y")
     assert pd.DataFrame.equals(
         data_none.events[["at_x", "at_y"]],
-        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+        pd.DataFrame({"at_x": [np.nan, np.nan], "at_y": [np.nan, np.nan]}),
     )
     with pytest.raises(ValueError):
         data_none.reflect(axis="z")
@@ -345,7 +345,7 @@ def test_rotate(
     data_none.rotate(90)
     assert pd.DataFrame.equals(
         data_none.events[["at_x", "at_y"]],
-        pd.DataFrame({"at_x": [np.NaN, np.NaN], "at_y": [np.NaN, np.NaN]}),
+        pd.DataFrame({"at_x": [np.nan, np.nan], "at_y": [np.nan, np.nan]}),
     )
 
     data_minimal_rotated.rotate(0)

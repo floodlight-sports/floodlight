@@ -24,7 +24,7 @@ def test_distance_model_fit_difference_central(example_xy_object_kinematics) -> 
     # Assert
     assert np.array_equal(
         np.round(distance_covered, 3),
-        np.array(((1, np.NaN), (1.118, 1.414), (1.414, np.NaN))),
+        np.array(((1, np.nan), (1.118, 1.414), (1.414, np.nan))),
         equal_nan=True,
     )
 
@@ -42,7 +42,7 @@ def test_distance_model_fit_difference_backward(example_xy_object_kinematics) ->
     # Assert
     assert np.array_equal(
         np.round(distance_covered, 3),
-        np.array(((0, 0), (1, np.NaN), (1.414, np.NaN))),
+        np.array(((0, 0), (1, np.nan), (1.414, np.nan))),
         equal_nan=True,
     )
 
@@ -60,7 +60,7 @@ def test_distance_covered(example_xy_object_kinematics) -> None:
     # Assert
     assert np.array_equal(
         np.round(distance_covered, 3),
-        np.array(((1, np.NaN), (1.118, 1.414), (1.414, np.NaN))),
+        np.array(((1, np.nan), (1.118, 1.414), (1.414, np.nan))),
         equal_nan=True,
     )
 
@@ -96,7 +96,7 @@ def test_velocity_model_fit_difference_central(example_xy_object_kinematics) -> 
     # Assert
     assert np.array_equal(
         np.round(velocity, 3),
-        np.array(((20, np.NaN), (22.361, 28.284), (28.284, np.NaN))),
+        np.array(((20, np.nan), (22.361, 28.284), (28.284, np.nan))),
         equal_nan=True,
     )
 
@@ -114,7 +114,7 @@ def test_velocity_model_fit_difference_backward(example_xy_object_kinematics) ->
     # Assert
     assert np.array_equal(
         np.round(velocity, 3),
-        np.array(((0, 0), (20, np.NaN), (28.284, np.NaN))),
+        np.array(((0, 0), (20, np.nan), (28.284, np.nan))),
         equal_nan=True,
     )
 
@@ -132,7 +132,7 @@ def test_velocity(example_xy_object_kinematics) -> None:
     # Assert
     assert np.array_equal(
         np.round(velocity, 3),
-        np.array(((20, np.NaN), (22.361, 28.284), (28.284, np.NaN))),
+        np.array(((20, np.nan), (22.361, 28.284), (28.284, np.nan))),
         equal_nan=True,
     )
 
@@ -150,7 +150,7 @@ def test_acceleration_model_difference_central(example_xy_object_kinematics) -> 
     # Assert
     assert np.array_equal(
         np.round(acceleration, 3),
-        np.array(((47.214, np.NaN), (82.843, np.NaN), (118.472, np.NaN))),
+        np.array(((47.214, np.nan), (82.843, np.nan), (118.472, np.nan))),
         equal_nan=True,
     )
 
@@ -168,7 +168,7 @@ def test_acceleration_model_difference_backward(example_xy_object_kinematics) ->
     # Assert
     assert np.array_equal(
         np.round(acceleration, 3),
-        np.array(((0, 0), (400, np.NaN), (165.685, np.NaN))),
+        np.array(((0, 0), (400, np.nan), (165.685, np.nan))),
         equal_nan=True,
     )
 
@@ -186,6 +186,6 @@ def test_acceleration(example_xy_object_kinematics) -> None:
     # Assert
     assert np.array_equal(
         np.round(acceleration, 3),
-        np.array(((47.214, np.NaN), (82.843, np.NaN), (118.472, np.NaN))),
+        np.array(((47.214, np.nan), (82.843, np.nan), (118.472, np.nan))),
         equal_nan=True,
     )
