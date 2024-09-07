@@ -480,16 +480,20 @@ class StatsBombOpenDataset:
                         f"vs. "
                         f"{info['away_team']['away_team_name']}",
                         "score": f"{info['home_score']}:{info['away_score']}",
-                        "stadium": info["stadium"]["name"]
-                        if "stadium" in info
-                        else None,
-                        "country": info["stadium"]["country"]["name"]
-                        if "stadium" in info
-                        else None,
-                        "sex": "f"
-                        if competition
-                        in ["FA Women's Super League", "NWSL", "Women's World Cup"]
-                        else "m",
+                        "stadium": (
+                            info["stadium"]["name"] if "stadium" in info else None
+                        ),
+                        "country": (
+                            info["stadium"]["country"]["name"]
+                            if "stadium" in info
+                            else None
+                        ),
+                        "sex": (
+                            "f"
+                            if competition
+                            in ["FA Women's Super League", "NWSL", "Women's World Cup"]
+                            else "m"
+                        ),
                         "StatsBomb360_status": info["match_status_360"],
                         "cID": cID,
                         "sID": sID,
@@ -891,14 +895,30 @@ class IDSSEDataset:
         }
         self._IDSSE_PRIVAT_LINK = "1f806cb3e755c6b54e05"
         if match_id in self._IDSSE_FILE_IDS_INFO.keys():
-            self._IDSSE_HOST_URL_INFO = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_INFO[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-            self._IDSSE_HOST_URL_EVENT = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-            self._IDSSE_HOST_URL_POSITION = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[match_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+            self._IDSSE_HOST_URL_INFO = (
+                f"{self._IDSSE_SCHEMA}://"
+                f"{self._IDSSE_BASE_URL}/"
+                f"{self._IDSSE_FILE_IDS_INFO[match_id]}"
+                f"?private_link={self._IDSSE_PRIVAT_LINK}"
+            )
+            self._IDSSE_HOST_URL_EVENT = (
+                f"{self._IDSSE_SCHEMA}://"
+                f"{self._IDSSE_BASE_URL}/"
+                f"{self._IDSSE_FILE_IDS_EVENT[match_id]}"
+                f"?private_link={self._IDSSE_PRIVAT_LINK}"
+            )
+            self._IDSSE_HOST_URL_POSITION = (
+                f"{self._IDSSE_SCHEMA}://"
+                f"{self._IDSSE_BASE_URL}/"
+                f"{self._IDSSE_FILE_IDS_POSITION[match_id]}"
+                f"?private_link={self._IDSSE_PRIVAT_LINK}"
+            )
         elif match_id == "all":
             pass
         else:
             raise ValueError(
-                f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or `all`, got {match_id} instead."
+                f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or"
+                f"`all`, got {match_id} instead."
             )
         self._IDSSE_FILE_EXT = "xml"
         self._IDSSE_FRAMERATE = 25
@@ -914,9 +934,22 @@ class IDSSEDataset:
             else:
                 competition = "DFL-COM-000002"
 
-            self._IDSSE_FILE_NAME_INFO = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
-            self._IDSSE_FILE_NAME_EVENT = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
-            self._IDSSE_FILE_NAME_POSITION = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}"
+            self._IDSSE_FILE_NAME_INFO = (
+                f"DFL_02_01_matchinformation_"
+                f"{competition}"
+                f"_DFL-MAT-{match_id}."
+                f"{self._IDSSE_FILE_EXT}"
+            )
+            self._IDSSE_FILE_NAME_EVENT = (
+                f"DFL_03_02_events_raw_"
+                f"{competition}_DFL-MAT-{match_id}."
+                f"{self._IDSSE_FILE_EXT}"
+            )
+            self._IDSSE_FILE_NAME_POSITION = (
+                f"DFL_04_03_positions_raw_observed_"
+                f"{competition}_DFL-MAT-{match_id}."
+                f"{self._IDSSE_FILE_EXT}"
+            )
 
             if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_INFO}"):
                 self._download_and_write(
@@ -936,13 +969,40 @@ class IDSSEDataset:
                     competition = "DFL-COM-000001"
                 else:
                     competition = "DFL-COM-000002"
-                self._IDSSE_HOST_URL_INFO = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_INFO[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-                self._IDSSE_HOST_URL_EVENT = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_EVENT[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
-                self._IDSSE_HOST_URL_POSITION = f"{self._IDSSE_SCHEMA}://{self._IDSSE_BASE_URL}/{self._IDSSE_FILE_IDS_POSITION[file_id]}?private_link={self._IDSSE_PRIVAT_LINK}"
+                self._IDSSE_HOST_URL_INFO = (
+                    f"{self._IDSSE_SCHEMA}://"
+                    f"{self._IDSSE_BASE_URL}/"
+                    f"{self._IDSSE_FILE_IDS_INFO[file_id]}"
+                    f"?private_link={self._IDSSE_PRIVAT_LINK}"
+                )
+                self._IDSSE_HOST_URL_EVENT = (
+                    f"{self._IDSSE_SCHEMA}://"
+                    f"{self._IDSSE_BASE_URL}/"
+                    f"{self._IDSSE_FILE_IDS_EVENT[file_id]}"
+                    f"?private_link={self._IDSSE_PRIVAT_LINK}"
+                )
+                self._IDSSE_HOST_URL_POSITION = (
+                    f"{self._IDSSE_SCHEMA}://"
+                    f"{self._IDSSE_BASE_URL}/"
+                    f"{self._IDSSE_FILE_IDS_POSITION[file_id]}"
+                    f"?private_link={self._IDSSE_PRIVAT_LINK}"
+                )
 
-                self._IDSSE_FILE_NAME_INFO = f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
-                self._IDSSE_FILE_NAME_EVENT = f"DFL_03_02_events_raw_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
-                self._IDSSE_FILE_NAME_POSITION = f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{file_id}.{self._IDSSE_FILE_EXT}"
+                self._IDSSE_FILE_NAME_INFO = (
+                    f"DFL_02_01_matchinformation_"
+                    f"{competition}_DFL-MAT-{file_id}."
+                    f"{self._IDSSE_FILE_EXT}"
+                )
+                self._IDSSE_FILE_NAME_EVENT = (
+                    f"DFL_03_02_events_raw_{competition}"
+                    f"_DFL-MAT-{file_id}."
+                    f"{self._IDSSE_FILE_EXT}"
+                )
+                self._IDSSE_FILE_NAME_POSITION = (
+                    f"DFL_04_03_positions_raw_observed_"
+                    f"{competition}_DFL-MAT-{file_id}."
+                    f"{self._IDSSE_FILE_EXT}"
+                )
 
                 if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_INFO}"):
                     self._download_and_write(
@@ -1020,17 +1080,23 @@ class IDSSEDataset:
 
         file_name_infos = os.path.join(
             self._data_dir,
-            f"DFL_02_01_matchinformation_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}",
+            f"DFL_02_01_matchinformation_"
+            f"{competition}_DFL-MAT-{match_id}."
+            f"{self._IDSSE_FILE_EXT}",
         )
 
         file_name_events = os.path.join(
             self._data_dir,
-            f"DFL_03_02_events_raw_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}",
+            f"DFL_03_02_events_raw_"
+            f"{competition}_DFL-MAT-{match_id}."
+            f"{self._IDSSE_FILE_EXT}",
         )
 
         file_name_positions = os.path.join(
             self._data_dir,
-            f"DFL_04_03_positions_raw_observed_{competition}_DFL-MAT-{match_id}.{self._IDSSE_FILE_EXT}",
+            f"DFL_04_03_positions_raw_observed_"
+            f"{competition}_DFL-MAT-{match_id}."
+            f"{self._IDSSE_FILE_EXT}",
         )
 
         if not os.path.isfile(file_name_infos):
