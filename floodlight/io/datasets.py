@@ -1,6 +1,5 @@
 import json
 import os
-import requests
 from typing import Tuple, Dict
 from urllib.error import HTTPError, URLError
 
@@ -979,7 +978,6 @@ class IDSSEDataset:
             Pitch,
         ],
     ]:
-
         """Get event and position data from the IDSSE dataset.
 
         Parameters
@@ -1068,11 +1066,11 @@ class IDSSEDataset:
         return Pitch.from_template("dfl", length=105, width=68)
 
     def _download_and_write(self, file_name, host_url) -> None:
-        """Downloads an archive file into temporary storage and
-        extracts the content to the file system.
+        """Downloads a text file into temporary storage and
+        writes the content to the file system.
         """
         file = f"{self._data_dir}/{file_name}"
-        response = requests.get(host_url, allow_redirects=True)
-        with open(file, "w", encoding="utf-8") as xml_file:
-            xml_file.write(response.text)
-        xml_file.close()
+        response = download_from_url(host_url)
+        with open(file, "wb") as binary_file:
+            binary_file.write(response)
+        binary_file.close()
