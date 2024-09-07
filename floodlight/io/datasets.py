@@ -12,8 +12,8 @@ from floodlight.io.statsbomb import (
     read_open_event_data_json,
     read_teamsheets_from_open_event_data_json,
 )
-from floodlight.io.dfl import read_event_data_xml, read_position_data_xml
 from floodlight import XY, Pitch, Events, Code
+from floodlight.io.dfl import read_event_data_xml, read_position_data_xml
 from floodlight.core.teamsheet import Teamsheet
 from floodlight.settings import DATA_DIR
 
@@ -819,7 +819,7 @@ class IDSSEDataset:
     ----------
     dataset_dir_name: str, optional
         Name of subdirectory where the dataset is stored within the root .data
-        directory. Defaults to 'dfl_dataset'.
+        directory. Defaults to 'idsse_dataset'.
     match_id: str, optional
         Match-ID of either one of the matches or "all". Defaults to 'J03WMX'. Setting it
         to one of the matches will download the data of this individual match, if it
@@ -832,7 +832,7 @@ class IDSSEDataset:
     teams and the ball from the German Men's Bundesliga season 2022/23 first and second
     division. A detailed description of the dataset as well as the collection process
     can be found in the accompanying paper. Data for one match can be queried calling
-    the :func:`~DFLDataset.get`-method by specifying the match. The following matches
+    the :func:`~IDSSEDataset.get`-method by specifying the match. The following matches
     are available::
 
         matches = {
@@ -851,16 +851,16 @@ class IDSSEDataset:
 
     >>> dataset = IDSSEDataset()
     # get one sample
-    >>> events_data_objects, position_data_objects = dataset.get()
+    >>> events_data_objects, position_data_objects = dataset.get("J03WMX")
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
 
 
     References
     ----------
-        .. [1] `Bassek, M., Müller-Budack, E., Ewerth, R., Weber, H., Rein, R., &
-            Memmert,D. (2024). An integrated dataset of synchronized spatiotemporal and
-            event data in elite soccer. In Submission.
+        .. [1] `Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
+        dataset of synchronized spatiotemporal andevent data in elite soccer. In
+        Submission.
     """
 
     def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
@@ -893,7 +893,7 @@ class IDSSEDataset:
             "J03WOY": "48392551",
             "J03WR9": "48392563",
         }
-        self._IDSSE_PRIVAT_LINK = "1f806cb3e755c6b54e05"
+        self._IDSSE_PRIVATE_LINK = "1f806cb3e755c6b54e05"
         if match_id in self._IDSSE_FILE_IDS_INFO.keys():
             self._IDSSE_HOST_URL_INFO = (
                 f"{self._IDSSE_SCHEMA}://"
@@ -921,7 +921,6 @@ class IDSSEDataset:
                 f"`all`, got {match_id} instead."
             )
         self._IDSSE_FILE_EXT = "xml"
-        self._IDSSE_FRAMERATE = 25
 
         self._data_dir = os.path.join(DATA_DIR, dataset_dir_name)
 
@@ -1021,6 +1020,21 @@ class IDSSEDataset:
                         self._IDSSE_FILE_NAME_POSITION, self._IDSSE_HOST_URL_POSITION
                     )
 
+    def _download_and_write(self, file_name, host_url) -> None:
+        """Downloads a text file into temporary storage and
+        writes the content to the file system.
+        """
+        file = f"{self._data_dir}/{file_name}"
+        response = download_from_url(host_url)
+        with open(file, "wb") as binary_file:
+            binary_file.write(response)
+        binary_file.close()
+
+    @staticmethod
+    def get_pitch() -> Pitch:
+        """Returns a Pitch object corresponding to the DFL-data."""
+        return Pitch.from_template("dfl", length=105, width=68)
+
     def get(
         self,
         match_id: str = "J03WMX",
@@ -1029,12 +1043,12 @@ class IDSSEDataset:
         events=True,
         positions=True,
     ) -> Tuple[
-        tuple[dict[str, dict[str, Events]], dict[str, Teamsheet], Pitch],
-        tuple[
-            dict[str, dict[str, XY]],
-            dict[str, Code],
-            dict[str, Code],
-            dict[str, Teamsheet],
+        Tuple[Dict[str, Dict[str, Events]], Dict[str, Teamsheet], Pitch],
+        Tuple[
+            Dict[str, Dict[str, XY]],
+            Dict[str, Code],
+            Dict[str, Code],
+            Dict[str, Teamsheet],
             Pitch,
         ],
     ]:
@@ -1054,23 +1068,23 @@ class IDSSEDataset:
                 form `links[pID] = team`. If given as None (default), teamsheet is
                 extracted from the data.
         events: bool, optional
-            Specifies weather the event data should be returned. Default is True. If
+            Specifies whether the event data should be returned. Default is True. If
             false None will be returned instead of the event data objects.
         positions: bool, optional
-            Specifies weather the position data should be returned. Default is True. If
-            false None will be returned instead of the event data objects. This will
+            Specifies whether the position data should be returned. Default is True. If
+            false None will be returned instead of the position data objects. This will
             improve performance considerably if only event data is required.
 
 
         Returns
         -------
-        match_data: Tuple[Tuple[Events, Teamsheets, Pitch], Tuple[dict[XY], dict[Code],
-        dict[Code], dict[teamsheets], Pitch]
+        match_data: Tuple[Tuple[Events, Teamsheets, Pitch], Tuple[Dict[XY], Dict[Code],
+        Dict[Code], Dict[Teamsheets], Pitch]
             Returns a tuple of shape (event_data, position_data) as returned by the
             ``floodlight.io.dfl.read_event_data_xml()`` and
             ``floodlight.io.dfl.read_position_data_xml()`` functions for the requested
             match. If any of the arguments ``events`` or ``positions`` are set to False,
-            Noneis returned instead of `event_data` or `position_data`, repectively.
+            None is returned instead of `event_data` or `position_data`, respectively.
         """
 
         if match_id in ["J03WMX", "J03WN1"]:
@@ -1106,7 +1120,6 @@ class IDSSEDataset:
             )
 
         # parse event data
-
         if events is True:
             data_objects_events = read_event_data_xml(
                 file_name_events, file_name_infos, teamsheet_home, teamsheet_away
@@ -1125,18 +1138,3 @@ class IDSSEDataset:
         match_data = (data_objects_events, data_objects_positions)
 
         return match_data
-
-    @staticmethod
-    def get_pitch() -> Pitch:
-        """Returns a Pitch object corresponding to the DFL-data."""
-        return Pitch.from_template("dfl", length=105, width=68)
-
-    def _download_and_write(self, file_name, host_url) -> None:
-        """Downloads a text file into temporary storage and
-        writes the content to the file system.
-        """
-        file = f"{self._data_dir}/{file_name}"
-        response = download_from_url(host_url)
-        with open(file, "wb") as binary_file:
-            binary_file.write(response)
-        binary_file.close()
