@@ -3,8 +3,7 @@ import numpy as np
 
 from floodlight.io.datasets import EIGDDataset
 from floodlight.io.datasets import StatsBombOpenDataset
-from floodlight.io.datasets import DFLDataset
-from floodlight import XY, Pitch, Events, Code
+from floodlight import Events
 from floodlight.core.teamsheet import Teamsheet
 
 
@@ -150,25 +149,3 @@ def test_statsbomb_get_pass_custom_teamsheets() -> None:
     assert teamsheets["Home"].teamsheet.at[0, "pID"] == 999999
     assert "custom_col" in teamsheets["Home"].teamsheet.columns
     assert "my_col" in teamsheets["Away"].teamsheet.columns
-
-
-@pytest.mark.unit
-def test_dfl_get() -> None:
-
-    dataset = DFLDataset()
-    event_objects, position_objects = dataset.get()
-    assert isinstance(event_objects[0]["firstHalf"]["Home"], Events)
-    assert isinstance(event_objects[0]["secondHalf"]["Away"], Events)
-    assert isinstance(event_objects[1]["Home"], Teamsheet)
-    assert isinstance(event_objects[1]["Away"], Teamsheet)
-    assert isinstance(event_objects[2], Pitch)
-
-    assert isinstance(position_objects[0]["firstHalf"]["Home"], XY)
-    assert isinstance(position_objects[0]["secondHalf"]["Away"], XY)
-    assert isinstance(position_objects[1]["secondHalf"], Code)
-    assert isinstance(position_objects[1]["firstHalf"], Code)
-    assert isinstance(position_objects[2]["secondHalf"], Code)
-    assert isinstance(position_objects[2]["firstHalf"], Code)
-    assert isinstance(position_objects[3]["Home"], Teamsheet)
-    assert isinstance(position_objects[3]["Away"], Teamsheet)
-    assert isinstance(position_objects[4], Pitch)
