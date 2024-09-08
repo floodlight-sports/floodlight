@@ -72,6 +72,8 @@ Collection of file parsing functionalities for different data providers as well 
    read_event_data_jsonl
    read_teamsheets_from_meta_json
 
+.. rubric:: Skillcorner
+
 .. currentmodule:: floodlight.io.skillcorner
 .. autosummary::
    :nosignatures:

@@ -1,9 +1,10 @@
-from typing import Dict, Tuple, Union
-
 import json
+
+from typing import Dict, Tuple, Union, List
 
 import numpy as np
 import pandas as pd
+
 from floodlight import Teamsheet, Code, XY, Pitch
 
 
@@ -25,7 +26,7 @@ def _read_json(file_path: str) -> Dict:
         return json.load(f)
 
 
-def get_meta_data(match_data: Dict[str, Union]) -> Tuple[int, int, list[int], int]:
+def get_meta_data(match_data: Dict[str, Union]) -> Tuple[int, int, List[int], int]:
     """
     Extract metadata from match data including team IDs, referee IDs, and ball ID.
 
@@ -57,9 +58,9 @@ def get_meta_data(match_data: Dict[str, Union]) -> Tuple[int, int, list[int], in
     return home_team_id, away_team_id, referee_ids, ball_id
 
 
-def get_team_sheets(match_data: Dict[str, Union]) -> dict[str, Teamsheet]:
+def get_team_sheets(match_data: Dict[str, Union]) -> Dict[str, Teamsheet]:
     """
-    Extract team sheets from match data and return them in a structured format.
+    Extract teamsheets from match data and return them as `Teamsheet` objects.
 
     Parameters
     ----------
@@ -70,8 +71,8 @@ def get_team_sheets(match_data: Dict[str, Union]) -> dict[str, Teamsheet]:
     Returns
     -------
     teamsheets: dict
-        A dictionary containing team sheets for 'Home', 'Away', and 'Ball'.
-        Each team sheet is an instance of the `Teamsheet` class, which includes
+        A dictionary containing teamsheets for 'Home' and 'Away'.
+        Each teamsheet is an instance of the `Teamsheet` class, which includes
         additional player information.
     """
     home_team_id, away_team_id, _, _ = get_meta_data(match_data)
@@ -79,7 +80,6 @@ def get_team_sheets(match_data: Dict[str, Union]) -> dict[str, Teamsheet]:
     players = {
         "Home": [x for x in match_data["players"] if x["team_id"] == home_team_id],
         "Away": [x for x in match_data["players"] if x["team_id"] == away_team_id],
-        "Ball": [match_data["ball"]],
     }
 
     teamsheets = {}
@@ -117,6 +117,7 @@ def get_pitch_from_match_data(match_data: Dict[str, Union]) -> Pitch:
         boundaries="flexible",
         sport="football",
     )
+
     return pitch
 
 
