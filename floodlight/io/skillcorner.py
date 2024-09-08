@@ -26,7 +26,9 @@ def _read_json(file_path: str) -> Dict:
         return json.load(f)
 
 
-def get_meta_data(match_data: Dict[str, Union]) -> Tuple[int, int, List[int], int]:
+def get_meta_data(
+    match_data: Dict[str, Union[List, str, Dict, int]]
+) -> Tuple[int, int, List[int], int]:
     """
     Extract metadata from match data including team IDs, referee IDs, and ball ID.
 
@@ -38,16 +40,15 @@ def get_meta_data(match_data: Dict[str, Union]) -> Tuple[int, int, List[int], in
 
     Returns
     -------
-    tuple
-        A tuple containing:
-        - home_team_id : int
-            The ID of the home team.
-        - away_team_id : int
-            The ID of the away team.
-        - referee_ids : list of int
-            A list of trackable object IDs for the referees.
-        - ball_id : int
-            The trackable object ID for the ball.
+    home_team_id : int
+        The ID of the home team.
+    away_team_id : int
+        The ID of the away team.
+    referee_ids : list of int
+        A list of trackable object IDs for the referees.
+    ball_id : int
+        The trackable object ID for the ball.
+
     """
     home_team_id = match_data["home_team"]["id"]
     away_team_id = match_data["away_team"]["id"]
@@ -58,7 +59,9 @@ def get_meta_data(match_data: Dict[str, Union]) -> Tuple[int, int, List[int], in
     return home_team_id, away_team_id, referee_ids, ball_id
 
 
-def get_team_sheets(match_data: Dict[str, Union]) -> Dict[str, Teamsheet]:
+def get_team_sheets(
+    match_data: Dict[str, Union[List, str, Dict, int]]
+) -> Dict[str, Teamsheet]:
     """
     Extract teamsheets from match data and return them as `Teamsheet` objects.
 
@@ -93,7 +96,9 @@ def get_team_sheets(match_data: Dict[str, Union]) -> Dict[str, Teamsheet]:
     return teamsheets
 
 
-def get_pitch_from_match_data(match_data: Dict[str, Union]) -> Pitch:
+def get_pitch_from_match_data(
+    match_data: Dict[str, Union[List, str, Dict, int]]
+) -> Pitch:
     """
     Create a Pitch object based on the dimensions provided in the match data.
 
@@ -134,13 +139,16 @@ def read_position_data_json(
     Pitch,
 ]:
     """
-    Parse and process position data and match data from the SkillCorner Open Dataset.
+    Parse and process position data and match data from the `SkillCorner Open Dataset
+    <https://github.com/SkillCorner/opendata>`_.
 
-    This dataset was published by SkillCorner in a joint initiative with Friends Of
-    Tracking. It contains 9 matches of broadcast tracking data in JSON format. The data
-    for each match is structured into two separate file. The match data file contains
-    meta information about the match and its competitors, like team and player's
-    identifiers. The structured data file contains the position data for each frame.
+    This dataset was published by `SkillCorner <https://www.skillcorner.com/>`_
+    in a joint initiative with `Friends Of Tracking
+    <https://www.youtube.com/channel/UCUBFJYcag8j2rm_9HkrrA7w>`_. It contains 9 matches
+    of broadcast tracking data in JSON format. The data for each match is structured
+    into two separate file. The match data file contains meta information about the
+    match and its competitors, like team and player's identifiers. The structured data
+    file contains the position data for each frame.
 
     Parameters
     ----------
@@ -155,18 +163,16 @@ def read_position_data_json(
 
     Returns
     -------
-    tuple
-        A tuple containing:
-        - xy_objects : dict
-            A dictionary containing XY objects for each half and each team.
-        - possession_objects_team : dict
-            A dictionary containing team possession codes for each half.
-        - possession_objects_player : dict
-            A dictionary containing player possession codes for each half.
-        - teamsheets : dict
-            A dictionary containing the teamsheets for 'Home', 'Away', and 'Ball'.
-        - pitch : Pitch
-            The Pitch object representing the match pitch.
+    xy_objects : dict
+        A dictionary containing XY objects for each half and each team.
+    possession_objects_team : dict
+        A dictionary containing team possession codes for each half.
+    possession_objects_player : dict
+        A dictionary containing player possession codes for each half.
+    teamsheets : dict
+        A dictionary containing the teamsheets for 'Home', 'Away', and 'Ball'.
+    pitch : Pitch
+        The Pitch object representing the match pitch.
     """
 
     # hard coded framerate, as it is specified in the documentation of the dataset
