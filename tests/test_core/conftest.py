@@ -174,8 +174,8 @@ def example_events_data_xy_none() -> pd.DataFrame:
     data = {
         "eID": [0, 0],
         "gameclock": [0.1, 0.2],
-        "at_x": [np.NAN, np.NAN],
-        "at_y": [np.NAN, np.NAN],
+        "at_x": [np.nan, np.nan],
+        "at_y": [np.nan, np.nan],
     }
     return pd.DataFrame(data)
 
