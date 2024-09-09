@@ -861,7 +861,7 @@ class IDSSEDataset:
     References
     ----------
         .. [1] `Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
-        dataset of synchronized spatiotemporal andevent data in elite soccer. In
+        dataset of synchronized spatiotemporal and event data in elite soccer. In
         Submission.
     """
 
@@ -1034,7 +1034,7 @@ class IDSSEDataset:
 
     @staticmethod
     def get_pitch() -> Pitch:
-        """Returns a Pitch object corresponding to the DFL-data."""
+        """Returns a Pitch object corresponding to the IDSSE-data."""
         return Pitch.from_template("dfl", length=105, width=68)
 
     def get(
