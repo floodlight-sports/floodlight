@@ -849,9 +849,11 @@ class IDSSEDataset:
     --------
     >>> from floodlight.io.datasets import IDSSEDataset
 
-    >>> dataset = IDSSEDataset()
+    >>> dataset = IDSSEDataset("J03WMX")
     # get one sample
-    >>> events_data_objects, position_data_objects = dataset.get("J03WMX")
+    >>> events, xy, possession, ballstatus, teamsheets, pitch_object = dataset.get(
+    >>> "J03WMX"
+    >>> )
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
 
