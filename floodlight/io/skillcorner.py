@@ -1,5 +1,4 @@
 import json
-
 from typing import Dict, Tuple, Union, List
 
 import numpy as np
@@ -8,25 +7,7 @@ import pandas as pd
 from floodlight import Teamsheet, Code, XY, Pitch
 
 
-def _read_json(file_path: str) -> Dict:
-    """
-    Read a JSON file from the given file path and return its content.
-
-    Parameters
-    ----------
-    file_path : str
-        The path to the JSON file to be read.
-
-    Returns
-    -------
-    dict
-        The content of the JSON file as a dictionary.
-    """
-    with open(file_path) as f:
-        return json.load(f)
-
-
-def get_meta_data(
+def _get_meta_data(
     match_data: Dict[str, Union[List, str, Dict, int]]
 ) -> Tuple[int, int, List[int], int]:
     """
@@ -78,7 +59,7 @@ def get_team_sheets(
         Each teamsheet is an instance of the `Teamsheet` class, which includes
         additional player information.
     """
-    home_team_id, away_team_id, _, _ = get_meta_data(match_data)
+    home_team_id, away_team_id, _, _ = _get_meta_data(match_data)
 
     players = {
         "Home": [x for x in match_data["players"] if x["team_id"] == home_team_id],
@@ -96,7 +77,7 @@ def get_team_sheets(
     return teamsheets
 
 
-def get_pitch_from_match_data(
+def _get_pitch_from_match_data(
     match_data: Dict[str, Union[List, str, Dict, int]]
 ) -> Pitch:
     """
@@ -140,13 +121,13 @@ def read_position_data_json(
 ]:
     """
     Parse and process position data and match data from the `SkillCorner Open Dataset
-    <https://github.com/SkillCorner/opendata>`_.
+    <https://github.com/SkillCorner/opendata>`_ from disk.
 
     This dataset was published by `SkillCorner <https://www.skillcorner.com/>`_
     in a joint initiative with `Friends Of Tracking
     <https://www.youtube.com/channel/UCUBFJYcag8j2rm_9HkrrA7w>`_. It contains 9 matches
     of broadcast tracking data in JSON format. The data for each match is structured
-    into two separate file. The match data file contains meta information about the
+    in two separate files. The match data file contains meta information about the
     match and its competitors, like team and player's identifiers. The structured data
     file contains the position data for each frame.
 
@@ -180,11 +161,13 @@ def read_position_data_json(
     # mapping for Code-object definitions attribute
     home_away_link = {"home team": 1, "away team": 2}
 
-    match_data = _read_json(file_path_structured_data)
-    positions = _read_json(file_path_match_data)
+    with open(file_path_structured_data) as f:
+        match_data = json.load(f)
+    with open(file_path_match_data) as f:
+        positions = json.load(f)
 
-    pitch = get_pitch_from_match_data(match_data)
-    home_team_id, away_team_id, referee_ids, ball_id = get_meta_data(match_data)
+    pitch = _get_pitch_from_match_data(match_data)
+    home_team_id, away_team_id, referee_ids, ball_id = _get_meta_data(match_data)
     teamsheets = get_team_sheets(match_data)
 
     if teamsheet_home is not None:
@@ -208,11 +191,11 @@ def read_position_data_json(
     # pre-allocate nd-arrays for xy- and possession-objects
     for half in frames:
         xy_objects.update({half: {}})
-        possession_objects_team.update({half: np.full((len(frames[half]),), np.NaN)})
-        possession_objects_player.update({half: np.full((len(frames[half]),), np.NaN)})
+        possession_objects_team.update({half: np.full((len(frames[half]),), np.nan)})
+        possession_objects_player.update({half: np.full((len(frames[half]),), np.nan)})
         for team in pID_links:
             xy_objects[half].update(
-                {team: np.full((len(frames[half]), len(teamsheets[team]) * 2), np.NaN)}
+                {team: np.full((len(frames[half]), len(teamsheets[team]) * 2), np.nan)}
             )
 
     # loop through half times
