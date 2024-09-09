@@ -21,6 +21,21 @@ Collection of file parsing functionalities for different data providers as well 
    utils
 
 
+.. rubric:: catapultApi
+   
+.. currentmodule:: floodlight.io.catapultApi
+.. autosummary::
+   :nosignatures:
+
+   create_links_from_meta_data
+   get_meta_data
+   get_response
+   get_response_data_dict_list
+   read_position_data_from_activity
+   read_position_data_from_dict_list
+   read_response
+   write_response
+   
 .. rubric:: Datasets
 
 .. currentmodule:: floodlight.io.datasets
