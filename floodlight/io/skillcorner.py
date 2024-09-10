@@ -17,7 +17,8 @@ def _get_meta_data(
     ----------
     match_data : dict
         A dictionary containing match data with keys 'home_team', 'away_team',
-        'referees', and 'ball'.
+        'referees', and 'ball'. It is returned when importing the match_data.json
+        provided by Skillcorner for each match.
 
     Returns
     -------
@@ -40,7 +41,7 @@ def _get_meta_data(
     return home_team_id, away_team_id, referee_ids, ball_id
 
 
-def get_team_sheets(
+def _get_teamsheets(
     match_data: Dict[str, Union[List, str, Dict, int]]
 ) -> Dict[str, Teamsheet]:
     """
@@ -50,7 +51,8 @@ def get_team_sheets(
     ----------
     match_data : dict
         A dictionary containing match data with keys 'home_team', 'away_team',
-        'players', and 'ball'.
+        'players', and 'ball'. It is returned when importing the match_data.json
+        provided by Skillcorner for each match.
 
     Returns
     -------
@@ -87,6 +89,8 @@ def _get_pitch_from_match_data(
     ----------
     match_data : dict
         A dictionary containing match data with keys 'pitch_length' and 'pitch_width'.
+        It is returned by the `_get_meta_data()`-function that extracts relevant
+        information from the match_data.json content.
 
     Returns
     -------
@@ -161,14 +165,14 @@ def read_position_data_json(
     # mapping for Code-object definitions attribute
     home_away_link = {"home team": 1, "away team": 2}
 
-    with open(file_path_structured_data) as f:
-        match_data = json.load(f)
     with open(file_path_match_data) as f:
+        match_data = json.load(f)
+    with open(file_path_structured_data) as f:
         positions = json.load(f)
 
     pitch = _get_pitch_from_match_data(match_data)
     home_team_id, away_team_id, referee_ids, ball_id = _get_meta_data(match_data)
-    teamsheets = get_team_sheets(match_data)
+    teamsheets = _get_teamsheets(match_data)
 
     if teamsheet_home is not None:
         teamsheets["Home"] = teamsheet_home
@@ -197,6 +201,7 @@ def read_position_data_json(
             xy_objects[half].update(
                 {team: np.full((len(frames[half]), len(teamsheets[team]) * 2), np.nan)}
             )
+        xy_objects[half].update({"Ball": np.full((len(frames[half]), 2), np.nan)})
 
     # loop through half times
     for half in frames:
@@ -231,11 +236,9 @@ def read_position_data_json(
                     y_column = x_column + 1
                     xy_objects[half]["Away"][t, x_column] = tracked_object["x"]
                     xy_objects[half]["Away"][t, y_column] = tracked_object["y"]
-                elif pID in pID_links["Ball"]:
-                    x_column = pID_links["Ball"][tracked_object["trackable_object"]] * 2
-                    y_column = x_column + 1
-                    xy_objects[half]["Ball"][t, x_column] = tracked_object["x"]
-                    xy_objects[half]["Ball"][t, y_column] = tracked_object["y"]
+                elif pID is ball_id:
+                    xy_objects[half]["Ball"][t, 0] = tracked_object["x"]
+                    xy_objects[half]["Ball"][t, 1] = tracked_object["y"]
                 # do not track referee
                 elif pID in referee_ids:
                     pass
