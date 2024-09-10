@@ -27,6 +27,7 @@ Collection of file parsing functionalities for different data providers as well 
    :nosignatures:
 
    EIGDDataset
+   IDSSEDataset
    StatsBombOpenDataset
    ToyDataset
 
