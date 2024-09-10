@@ -13,6 +13,7 @@ Collection of file parsing functionalities for different data providers as well 
    kinexon
    opta
    secondspectrum
+   skillcorner
    sportradar
    statsbomb
    statsperform
@@ -71,6 +72,15 @@ Collection of file parsing functionalities for different data providers as well 
    read_position_data_jsonl
    read_event_data_jsonl
    read_teamsheets_from_meta_json
+
+.. rubric:: Skillcorner
+
+.. currentmodule:: floodlight.io.skillcorner
+.. autosummary::
+   :nosignatures:
+
+   get_team_sheets
+   read_position_data_json
 
 .. rubric:: Sportradar
 
