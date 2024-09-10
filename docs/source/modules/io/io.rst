@@ -79,7 +79,6 @@ Collection of file parsing functionalities for different data providers as well 
 .. autosummary::
    :nosignatures:
 
-   get_team_sheets
    read_position_data_json
 
 .. rubric:: Sportradar

@@ -808,7 +808,7 @@ class StatsBombOpenDataset:
 
 class IDSSEDataset:
     """This dataset loads the accompanying data set from the *An integrated dataset of
-     synchronized spatiotemporal and event data in elite soccer* paper. [1]_
+    synchronized spatiotemporal and event data in elite soccer* paper. [2]_
 
     Upon instantiation, the class checks if the specified data already exists in the
     repository's root ``.data``-folder, and will download the files to this folder if
@@ -821,7 +821,7 @@ class IDSSEDataset:
         Name of subdirectory where the dataset is stored within the root .data
         directory. Defaults to 'idsse_dataset'.
     match_id: str, optional
-        Match-ID of either one of the matches or "all". Defaults to 'J03WMX'. Setting it
+        Match-ID of either one of the matches or 'all'. Defaults to 'J03WMX'. Setting it
         to one of the matches will download the data of this individual match, if it
         does not exist in the repository's root ``.data``-folder. Setting it to 'all'
         will download the data of all matches that do not exist in ``.data``.
@@ -851,18 +851,16 @@ class IDSSEDataset:
 
     >>> dataset = IDSSEDataset("J03WMX")
     # get one sample
-    >>> events, xy, possession, ballstatus, teamsheets, pitch_object = dataset.get(
-    >>> "J03WMX"
-    >>> )
+    >>> events, xy, possession, ballstatus, teamsheets, pitch = dataset.get("J03WMX")
     # get the corresponding pitch
     >>> pitch = dataset.get_pitch()
 
 
     References
     ----------
-        .. [1] `Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
-        dataset of synchronized spatiotemporal and event data in elite soccer. In
-        Submission.
+        .. [2] `Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
+            dataset of synchronized spatiotemporal and event data in elite soccer. In
+            Submission.`
     """
 
     def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
