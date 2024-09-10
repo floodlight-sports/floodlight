@@ -13,6 +13,7 @@ from floodlight.io.statsbomb import (
     read_teamsheets_from_open_event_data_json,
 )
 from floodlight import XY, Pitch, Events, Code
+from floodlight.io.dfl import read_event_data_xml, read_position_data_xml
 from floodlight.core.teamsheet import Teamsheet
 from floodlight.settings import DATA_DIR
 
@@ -479,16 +480,20 @@ class StatsBombOpenDataset:
                         f"vs. "
                         f"{info['away_team']['away_team_name']}",
                         "score": f"{info['home_score']}:{info['away_score']}",
-                        "stadium": info["stadium"]["name"]
-                        if "stadium" in info
-                        else None,
-                        "country": info["stadium"]["country"]["name"]
-                        if "stadium" in info
-                        else None,
-                        "sex": "f"
-                        if competition
-                        in ["FA Women's Super League", "NWSL", "Women's World Cup"]
-                        else "m",
+                        "stadium": (
+                            info["stadium"]["name"] if "stadium" in info else None
+                        ),
+                        "country": (
+                            info["stadium"]["country"]["name"]
+                            if "stadium" in info
+                            else None
+                        ),
+                        "sex": (
+                            "f"
+                            if competition
+                            in ["FA Women's Super League", "NWSL", "Women's World Cup"]
+                            else "m"
+                        ),
                         "StatsBomb360_status": info["match_status_360"],
                         "cID": cID,
                         "sID": sID,
@@ -799,3 +804,352 @@ class StatsBombOpenDataset:
                 )
                 with open(season_file, "wb") as binary_file:
                     binary_file.write(download_from_url(season_host_url))
+
+
+class IDSSEDataset:
+    """This dataset loads the accompanying data set from the *An integrated dataset of
+    synchronized spatiotemporal and event data in elite soccer* paper. [2]_
+
+    Upon instantiation, the class checks if the specified data already exists in the
+    repository's root ``.data``-folder, and will download the files to this folder if
+    not. The default setting is to load the first match from the dataset. However, any
+    individual match or the entire dataset (~2.4 GB) can be downloaded.
+
+    Parameters
+    ----------
+    dataset_dir_name: str, optional
+        Name of subdirectory where the dataset is stored within the root .data
+        directory. Defaults to 'idsse_dataset'.
+    match_id: str, optional
+        Match-ID of either one of the matches or 'all'. Defaults to 'J03WMX'. Setting it
+        to one of the matches will download the data of this individual match, if it
+        does not exist in the repository's root ``.data``-folder. Setting it to 'all'
+        will download the data of all matches that do not exist in ``.data``.
+
+    Notes
+    -----
+    The dataset contains seven full matches of raw event and position data for both
+    teams and the ball from the German Men's Bundesliga season 2022/23 first and second
+    division. A detailed description of the dataset as well as the collection process
+    can be found in the accompanying paper. Data for one match can be queried calling
+    the :func:`~IDSSEDataset.get`-method by specifying the match. The following matches
+    are available::
+
+        matches = {
+        'J03WMX': 1. FC Köln vs. FC Bayern München,
+        'J03WN1': VfL Bochum 1848 vs. Bayer 04 Leverkusen,
+        'J03WPY': Fortuna Düsseldorf vs. 1. FC Nürnberg,
+        'J03WOH': Fortuna Düsseldorf vs. SSV Jahn Regensburg,
+        'J03WQQ': Fortuna Düsseldorf vs. FC St. Pauli,
+        'J03WOY': Fortuna Düsseldorf vs. F.C. Hansa Rostock,
+        'J03WR9': Fortuna Düsseldorf vs. 1. FC Kaiserslautern
+        }
+
+    Examples
+    --------
+    >>> from floodlight.io.datasets import IDSSEDataset
+
+    >>> dataset = IDSSEDataset("J03WMX")
+    # get one sample
+    >>> events, xy, possession, ballstatus, teamsheets, pitch = dataset.get("J03WMX")
+    # get the corresponding pitch
+    >>> pitch = dataset.get_pitch()
+
+
+    References
+    ----------
+        .. [2] `Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
+            dataset of synchronized spatiotemporal and event data in elite soccer. In
+            Submission.`
+    """
+
+    def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
+        self._IDSSE_SCHEMA = "https"
+        self._IDSSE_BASE_URL = "figshare.com/ndownloader/files"
+        self._IDSSE_FILE_IDS_INFO = {
+            "J03WMX": "48392485",
+            "J03WN1": "48392491",
+            "J03WPY": "48392497",
+            "J03WOH": "48392515",
+            "J03WQQ": "48392488",
+            "J03WOY": "48392503",
+            "J03WR9": "48392494",
+        }
+        self._IDSSE_FILE_IDS_EVENT = {
+            "J03WMX": "48392524",
+            "J03WN1": "48392527",
+            "J03WPY": "48392542",
+            "J03WOH": "48392500",
+            "J03WQQ": "48392521",
+            "J03WOY": "48392518",
+            "J03WR9": "48392530",
+        }
+        self._IDSSE_FILE_IDS_POSITION = {
+            "J03WMX": "48392539",
+            "J03WN1": "48392512",
+            "J03WPY": "48392572",
+            "J03WOH": "48392578",
+            "J03WQQ": "48392545",
+            "J03WOY": "48392551",
+            "J03WR9": "48392563",
+        }
+        self._IDSSE_PRIVATE_LINK = "1f806cb3e755c6b54e05"
+        if match_id in self._IDSSE_FILE_IDS_INFO.keys():
+            self._IDSSE_HOST_URL_INFO = (
+                f"{self._IDSSE_SCHEMA}://"
+                f"{self._IDSSE_BASE_URL}/"
+                f"{self._IDSSE_FILE_IDS_INFO[match_id]}"
+                f"?private_link={self._IDSSE_PRIVATE_LINK}"
+            )
+            self._IDSSE_HOST_URL_EVENT = (
+                f"{self._IDSSE_SCHEMA}://"
+                f"{self._IDSSE_BASE_URL}/"
+                f"{self._IDSSE_FILE_IDS_EVENT[match_id]}"
+                f"?private_link={self._IDSSE_PRIVATE_LINK}"
+            )
+            self._IDSSE_HOST_URL_POSITION = (
+                f"{self._IDSSE_SCHEMA}://"
+                f"{self._IDSSE_BASE_URL}/"
+                f"{self._IDSSE_FILE_IDS_POSITION[match_id]}"
+                f"?private_link={self._IDSSE_PRIVATE_LINK}"
+            )
+        elif match_id == "all":
+            pass
+        else:
+            raise ValueError(
+                f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or"
+                f"`all`, got {match_id} instead."
+            )
+        self._IDSSE_FILE_EXT = "xml"
+
+        self._data_dir = os.path.join(DATA_DIR, dataset_dir_name)
+
+        if not os.path.isdir(self._data_dir):
+            os.makedirs(self._data_dir, exist_ok=True)
+
+        if match_id in self._IDSSE_FILE_IDS_INFO.keys():
+            if match_id in ["J03WMX", "J03WN1"]:
+                competition = "DFL-COM-000001"
+            else:
+                competition = "DFL-COM-000002"
+
+            self._IDSSE_FILE_NAME_INFO = (
+                f"DFL_02_01_matchinformation_"
+                f"{competition}"
+                f"_DFL-MAT-{match_id}."
+                f"{self._IDSSE_FILE_EXT}"
+            )
+            self._IDSSE_FILE_NAME_EVENT = (
+                f"DFL_03_02_events_raw_"
+                f"{competition}_DFL-MAT-{match_id}."
+                f"{self._IDSSE_FILE_EXT}"
+            )
+            self._IDSSE_FILE_NAME_POSITION = (
+                f"DFL_04_03_positions_raw_observed_"
+                f"{competition}_DFL-MAT-{match_id}."
+                f"{self._IDSSE_FILE_EXT}"
+            )
+
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_INFO}"):
+                self._download_and_write(
+                    self._IDSSE_FILE_NAME_INFO, self._IDSSE_HOST_URL_INFO
+                )
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_EVENT}"):
+                self._download_and_write(
+                    self._IDSSE_FILE_NAME_EVENT, self._IDSSE_HOST_URL_EVENT
+                )
+            if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_POSITION}"):
+                self._download_and_write(
+                    self._IDSSE_FILE_NAME_POSITION, self._IDSSE_HOST_URL_POSITION
+                )
+        elif match_id == "all":
+            for file_id in self._IDSSE_FILE_IDS_INFO:
+                if file_id in ["J03WMX", "J03WN1"]:
+                    competition = "DFL-COM-000001"
+                else:
+                    competition = "DFL-COM-000002"
+                self._IDSSE_HOST_URL_INFO = (
+                    f"{self._IDSSE_SCHEMA}://"
+                    f"{self._IDSSE_BASE_URL}/"
+                    f"{self._IDSSE_FILE_IDS_INFO[file_id]}"
+                    f"?private_link={self._IDSSE_PRIVATE_LINK}"
+                )
+                self._IDSSE_HOST_URL_EVENT = (
+                    f"{self._IDSSE_SCHEMA}://"
+                    f"{self._IDSSE_BASE_URL}/"
+                    f"{self._IDSSE_FILE_IDS_EVENT[file_id]}"
+                    f"?private_link={self._IDSSE_PRIVATE_LINK}"
+                )
+                self._IDSSE_HOST_URL_POSITION = (
+                    f"{self._IDSSE_SCHEMA}://"
+                    f"{self._IDSSE_BASE_URL}/"
+                    f"{self._IDSSE_FILE_IDS_POSITION[file_id]}"
+                    f"?private_link={self._IDSSE_PRIVATE_LINK}"
+                )
+
+                self._IDSSE_FILE_NAME_INFO = (
+                    f"DFL_02_01_matchinformation_"
+                    f"{competition}_DFL-MAT-{file_id}."
+                    f"{self._IDSSE_FILE_EXT}"
+                )
+                self._IDSSE_FILE_NAME_EVENT = (
+                    f"DFL_03_02_events_raw_{competition}"
+                    f"_DFL-MAT-{file_id}."
+                    f"{self._IDSSE_FILE_EXT}"
+                )
+                self._IDSSE_FILE_NAME_POSITION = (
+                    f"DFL_04_03_positions_raw_observed_"
+                    f"{competition}_DFL-MAT-{file_id}."
+                    f"{self._IDSSE_FILE_EXT}"
+                )
+
+                if not os.path.isfile(f"{self._data_dir}/{self._IDSSE_FILE_NAME_INFO}"):
+                    self._download_and_write(
+                        self._IDSSE_FILE_NAME_INFO, self._IDSSE_HOST_URL_INFO
+                    )
+                if not os.path.isfile(
+                    f"{self._data_dir}/{self._IDSSE_FILE_NAME_EVENT}"
+                ):
+                    self._download_and_write(
+                        self._IDSSE_FILE_NAME_EVENT, self._IDSSE_HOST_URL_EVENT
+                    )
+                if not os.path.isfile(
+                    f"{self._data_dir}/{self._IDSSE_FILE_NAME_POSITION}"
+                ):
+                    self._download_and_write(
+                        self._IDSSE_FILE_NAME_POSITION, self._IDSSE_HOST_URL_POSITION
+                    )
+
+    def _download_and_write(self, file_name, host_url) -> None:
+        """Downloads a text file into temporary storage and
+        writes the content to the file system.
+        """
+        file = f"{self._data_dir}/{file_name}"
+        response = download_from_url(host_url)
+        with open(file, "wb") as binary_file:
+            binary_file.write(response)
+        binary_file.close()
+
+    @staticmethod
+    def get_pitch() -> Pitch:
+        """Returns a Pitch object corresponding to the IDSSE-data."""
+        return Pitch.from_template("dfl", length=105, width=68)
+
+    def get(
+        self,
+        match_id: str = "J03WMX",
+        teamsheet_home: Teamsheet = None,
+        teamsheet_away: Teamsheet = None,
+        events=True,
+        positions=True,
+    ) -> Tuple[
+        Dict[str, Dict[str, Events]],
+        Dict[str, Dict[str, XY]],
+        Dict[str, Code],
+        Dict[str, Code],
+        Dict[str, Teamsheet],
+        Pitch,
+    ]:
+        """Get event and position data from the IDSSE dataset.
+
+        Parameters
+        ----------
+        match_id : str, optional
+            Match name, check Notes section for valid arguments.
+            Defaults to the first match "J03WMX".
+        teamsheet_home: Teamsheet, optional
+            Teamsheet-object for the home team used to create link dictionaries of the
+                form `links[pID] = team`. If given as None (default), teamsheet is
+                extracted from the data.
+        teamsheet_away: Teamsheet, optional
+            Teamsheet-object for the home team used to create link dictionaries of the
+                form `links[pID] = team`. If given as None (default), teamsheet is
+                extracted from the data.
+        events: bool, optional
+            Specifies whether the event data should be returned. Default is True. If
+            false None will be returned instead of the events-objects.
+        positions: bool, optional
+            Specifies whether the position data should be returned. Default is True. If
+            false None will be returned instead of the XY-objects, possession-objects,
+            and ballstatus-objects. This will improve performance considerably if only
+            event data is required.
+
+
+        Returns
+        -------
+        match_data: Tuple[Dict[str, Dict[str, Events]], Dict[str, Dict[str, XY]],
+        Dict[str, Code], Dict[str, Code], Dict[str, Teamsheet],Pitch
+            Returns a tuple of shape (events_objects, xy_objects, possession_objects,
+            ballstatus_objects, teamsheets_objects, pitch_object) as returned by the
+            ``floodlight.io.dfl.read_event_data_xml()`` and
+            ``floodlight.io.dfl.read_position_data_xml()`` functions for the requested
+            match. If any of the arguments ``events`` or ``positions`` are set to False,
+            None is returned instead of `event_data` or `xy_objects`,
+            `possession_objects`, and `ballstatus_objects`, respectively.
+        """
+
+        if match_id in ["J03WMX", "J03WN1"]:
+            competition = "DFL-COM-000001"
+        else:
+            competition = "DFL-COM-000002"
+
+        file_name_infos = os.path.join(
+            self._data_dir,
+            f"DFL_02_01_matchinformation_"
+            f"{competition}_DFL-MAT-{match_id}."
+            f"{self._IDSSE_FILE_EXT}",
+        )
+
+        file_name_events = os.path.join(
+            self._data_dir,
+            f"DFL_03_02_events_raw_"
+            f"{competition}_DFL-MAT-{match_id}."
+            f"{self._IDSSE_FILE_EXT}",
+        )
+
+        file_name_positions = os.path.join(
+            self._data_dir,
+            f"DFL_04_03_positions_raw_observed_"
+            f"{competition}_DFL-MAT-{match_id}."
+            f"{self._IDSSE_FILE_EXT}",
+        )
+
+        if not os.path.isfile(file_name_infos):
+            raise FileNotFoundError(
+                f"Could not load file, check class description for valid match "
+                f"and segment values ({file_name_infos})."
+            )
+
+        # parse event data
+        if events is True:
+            events_objects, teamsheets_objects, pitch_object = read_event_data_xml(
+                file_name_events, file_name_infos, teamsheet_home, teamsheet_away
+            )
+        else:
+            events_objects, teamsheets_objects, pitch_object = (None, None, None)
+
+        # parse position data
+        if positions is True:
+            (
+                xy_objects,
+                possession_objects,
+                ballstatus_objects,
+                teamsheets_objects,
+                pitch_object,
+            ) = read_position_data_xml(
+                file_name_positions, file_name_infos, teamsheet_home, teamsheet_away
+            )
+        else:
+            xy_objects, possession_objects, ballstatus_objects = (None, None, None)
+
+        # assemble
+        match_data = (
+            events_objects,
+            xy_objects,
+            possession_objects,
+            ballstatus_objects,
+            teamsheets_objects,
+            pitch_object,
+        )
+
+        return match_data

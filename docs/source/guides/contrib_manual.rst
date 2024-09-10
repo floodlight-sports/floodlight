@@ -45,7 +45,7 @@ Poetry requires a system-wide installation that's different on Windows and MacOS
 
 .. code-block:: shell
 
-    (Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py -UseBasicParsing).Content | python -
+    (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
 
 
 3. The installer will tell you the path of the installed executable. Add the path to your system ``PATH`` if that's not done automatically.

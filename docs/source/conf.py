@@ -2,19 +2,20 @@ import datetime
 import os
 import sys
 
-from floodlight import __version__
-
 # -- Path setup --------------------------------------------------------------
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../.."))
+
+import floodlight   # noqa: 402
 
 
 # -- Project information -----------------------------------------------------
 project = "floodlight"
+version = floodlight.__version__
 year = datetime.datetime.now().year
 author = "Dominik Raabe"
 copyright = f"{year}, {author}"
 
-release = f"{__version__}"
+release = f"v{version}"
 
 
 # -- General configuration ---------------------------------------------------
