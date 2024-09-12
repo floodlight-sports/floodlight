@@ -1,5 +1,8 @@
+from typing import Tuple
+
 import pytest
 import numpy as np
+
 from floodlight import Pitch, XY
 
 
@@ -29,7 +32,7 @@ def example_xy_object_geometry():
 @pytest.fixture()
 def example_xy_object_kinematics():
     xy = XY(
-        xy=np.array(((0, 0, -1, 1), (0, 1, np.NAN, np.NAN), (1, 2, 1, -1))),
+        xy=np.array(((0, 0, -1, 1), (0, 1, np.nan, np.nan), (1, 2, 1, -1))),
         framerate=20,
     )
     return xy
@@ -66,7 +69,7 @@ def example_pitch_dfl():
 
 
 @pytest.fixture()
-def example_xy_objects_space_control() -> XY:
+def example_xy_objects_space_control() -> Tuple[XY, XY]:
     xy1 = XY(
         xy=np.array(
             (

@@ -1,6 +1,6 @@
-===================
-floodlight.io.types
-===================
+======================
+floodlight.utils.types
+======================
 
 floodlight specific typing objects
 

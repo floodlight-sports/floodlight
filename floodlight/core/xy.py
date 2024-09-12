@@ -138,7 +138,7 @@ class XY:
         it previously has a non-floating dtype.
         """
         # cast to float
-        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+        if self.xy.dtype not in [np.float64, np.float32, float]:
             self.xy = self.xy.astype(np.float32, copy=False)
 
         self.x = np.round(self.x + shift[0], 3)
@@ -162,7 +162,7 @@ class XY:
         it previously has a non-floating dtype.
         """
         # cast to float
-        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+        if self.xy.dtype not in [np.float64, np.float32, float]:
             self.xy = self.xy.astype(np.float32, copy=False)
 
         if axis is None:
@@ -210,7 +210,7 @@ class XY:
                 f"Expected alpha to be from -360 to 360, got {alpha} instead"
             )
         # cast to float
-        if self.xy.dtype not in [np.float_, np.float64, np.float32, float]:
+        if self.xy.dtype not in [np.float64, np.float32, float]:
             self.xy = self.xy.astype(np.float32, copy=False)
 
         # construct rotation matrix
