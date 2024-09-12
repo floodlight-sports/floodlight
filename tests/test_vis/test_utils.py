@@ -1,8 +1,9 @@
-import matplotlib
-from matplotlib import pyplot as plt
 import pytest
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot as plt    # noqa: 402
 
-from floodlight.vis.utils import check_axes_given
+from floodlight.vis.utils import check_axes_given   # noqa: 402
 
 
 # Test check_axes_given(func
