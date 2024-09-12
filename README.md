@@ -100,7 +100,7 @@ and if you want to add more just open an issue!
 - Tracking data
 - Event data
 - Pitch information
-- Teamsheets with player information (*new*)
+- Teamsheets with player information
 - Codes such as ball possession information
 - Properties such as distances or advanced computations
 
@@ -110,14 +110,16 @@ and if you want to add more just open an issue!
 - **DFL/STS**: Tracking data, Event data, Teamsheets, Codes
 - **Kinexon**: Tracking data
 - **Opta**: Event data (F24 feeds)
-- **Second Spectrum**: Tracking data, Event data (*new*)
-- **Sportradar**: Event data (*new*)
+- **Second Spectrum**: Tracking data, Event data
+- **Skillcorner**: Tracking data from the Skillcorner Open Dataset (*new*)
+- **Sportradar**: Event data
 - **StatsPerform**: Tracking data, Event data (with URL access)
 - **StatsBomb**: Event data
 
 #### Datasets
 
 - EIGD-H (Handball tracking data)
+- IDSSE (Football tracking and event data) (*new*)
 - StatsBomb OpenData (Football event data)
 
 #### Manipulation and Plotting
@@ -133,7 +135,7 @@ and if you want to add more just open an issue!
 - Centroids
 - Distances, Velocities & Accelerations
 - Metabolic Power & Equivalent Distances
-- Voronoi Space Control (*new*)
+- Voronoi Space Control
 
 ### Installation
 

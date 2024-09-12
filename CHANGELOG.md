@@ -1,9 +1,12 @@
 # Changelog
 
-## 0.4.0 (2023-02-03)
+## 0.5.0 (2024-09-10)
 
 #### New Features
 
+* parser skillcorner open dataset ([#143](https://github.com/floodlight-sports/floodlight/issues/143))
+* add IDSSE dataset ([#147](https://github.com/floodlight-sports/floodlight/issues/147))
+* add delimiter option ([#149](https://github.com/floodlight-sports/floodlight/issues/149))
 * add discretized voronoi model ([#124](https://github.com/floodlight-sports/floodlight/issues/124))
 * add parser for metadata and teamsheets in json format ([#113](https://github.com/floodlight-sports/floodlight/issues/113))
 * integrate teamsheet logic to tracab parser ([#112](https://github.com/floodlight-sports/floodlight/issues/112))
@@ -33,6 +36,11 @@
 * streamline IO function names ([#115](https://github.com/floodlight-sports/floodlight/issues/115))
 #### Docs
 
+* update readme
+* update and fix docs
+* fix poetry install command ([#133](https://github.com/floodlight-sports/floodlight/issues/133))
+* update changelog
+* update docs build
 * fix butterworth cutoff freq doc ([#94](https://github.com/floodlight-sports/floodlight/issues/94))
 * update tutorial matchsheets ([#95](https://github.com/floodlight-sports/floodlight/issues/95))
 * update changelog
@@ -43,6 +51,8 @@
 * add paper reference
 #### Others
 
+* refresh package build ([#148](https://github.com/floodlight-sports/floodlight/issues/148))
+* bump version
 * bump version
 * add dependency pytest-cov
 * add dependency coverage
@@ -54,7 +64,7 @@
 * update module init
 * update columns in tests
 
-Full set of changes: [`0.3.1...0.4.0`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.4.0)
+Full set of changes: [`0.3.1...0.5.0`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.5.0)
 
 ## 0.3.1 (2022-06-06)
 
@@ -112,9 +122,6 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 #### New Features
 
 * add butterworth and savgol lowpass filter ([#51](https://github.com/floodlight-sports/floodlight/issues/51))
-* add data transformation for eigd dataset
-* add statsperform parser - standard format ([#41](https://github.com/floodlight-sports/floodlight/issues/41))
-* add statsbomb open data parser and dataset ([#59](https://github.com/floodlight-sports/floodlight/issues/59))
 * adds xy plotting methods with tests and docs ([#61](https://github.com/floodlight-sports/floodlight/issues/61))
 * add pitch.plot method for football and handball ([#44](https://github.com/floodlight-sports/floodlight/issues/44))
 * add vis module
@@ -122,7 +129,6 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 * add metabolic power model ([#48](https://github.com/floodlight-sports/floodlight/issues/48))
 * add require_fit decorator
 * add kinematics module - distance, velocity, acceleration models ([#45](https://github.com/floodlight-sports/floodlight/issues/45))
-* create io eigd dataset ([#55](https://github.com/floodlight-sports/floodlight/issues/55))
 * add is_fitted property
 * add centroid-based model and measures
 * add base-, team-, and dyadic properties
@@ -134,6 +140,10 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 * add comparison dunder methods
 * add models module
 * add playerproperty class
+* add data transformation for eigd dataset
+* add statsperform parser - standard format ([#41](https://github.com/floodlight-sports/floodlight/issues/41))
+* add statsbomb open data parser and dataset ([#59](https://github.com/floodlight-sports/floodlight/issues/59))
+* create io eigd dataset ([#55](https://github.com/floodlight-sports/floodlight/issues/55))
 #### Fixes
 
 * broken link
@@ -144,18 +154,18 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 * broken link
 * dfl events parser warnings, statsperform xID ([#66](https://github.com/floodlight-sports/floodlight/issues/66))
 * minor fixes ([#65](https://github.com/floodlight-sports/floodlight/issues/65))
+* typo
+* typo
 * xID indexing for dfl parser
 * xID indexing for tracab parser
 * extracting of zip with temorary file ([#58](https://github.com/floodlight-sports/floodlight/issues/58))
-* typo
-* typo
 * dfl parser xml element access and memory release ([#52](https://github.com/floodlight-sports/floodlight/issues/52))
 #### Refactorings
 
 * refactor get and convert as general function
-* sample_data.py -> ToyDataset() ([#57](https://github.com/floodlight-sports/floodlight/issues/57))
 * change axis arguments from {0, 1} to {'x', 'y'}
 * colum checks return empty lists instead of None
+* sample_data.py -> ToyDataset() ([#57](https://github.com/floodlight-sports/floodlight/issues/57))
 #### Docs
 
 * update changelog
@@ -163,10 +173,10 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 * add transforms module reference page
 * add models module referene page
 * add vis submodule
+* add property module reference
 * add io module reference page
 * correct xID indexing documentation
 * include datasets in docs
-* add property module reference
 #### Others
 
 * release 0.3.0
@@ -180,8 +190,6 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 * update templates
 * explicitly loop through players
 * docstrings and errors
-* add tests for dataset templates
-* add test for eigd transform
 * add tests for geometry model
 * add test for require fit decorator
 * add tests for base model
@@ -191,6 +199,8 @@ Full set of changes: [`0.3.0...0.3.1`](https://github.com/floodlight-sports/floo
 * add tests for is_metrical property
 * add tests for find_sequences method
 * add tests for dunder methods
+* add tests for dataset templates
+* add test for eigd transform
 
 Full set of changes: [`0.2.1...0.3.0`](https://github.com/floodlight-sports/floodlight/compare/0.2.1...0.3.0)
 
