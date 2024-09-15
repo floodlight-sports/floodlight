@@ -1,6 +1,6 @@
 =====================
-floodlight.io.catapultApi
+floodlight.io.catapult
 =====================
 
-.. automodule:: floodlight.io.catapultApi
+.. automodule:: floodlight.io.catapult
     :members:
