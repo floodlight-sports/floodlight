@@ -7,13 +7,17 @@ import numpy as np
 from floodlight.core.xy import XY
 
 
-def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
+def get_column_names_from_csv(
+    filepath_data: Union[str, Path], delimiter: str = ","
+) -> List[str]:
     """Reads first line of a Kinexon.csv-file and extracts the column names.
 
     Parameters
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter: str
+        Column delimiter used in the Kinexon.csv file. Defaults to ','.
 
     Returns
     -------
@@ -22,12 +26,14 @@ def get_column_names_from_csv(filepath_data: Union[str, Path]) -> List[str]:
     """
 
     with open(str(filepath_data), encoding="utf-8") as f:
-        columns = f.readline().split(",")
+        columns = f.readline().split(delimiter)
 
     return columns
 
 
-def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, int]]:
+def _get_column_links(
+    filepath_data: Union[str, Path], delimiter: str = ","
+) -> Union[None, Dict[str, int]]:
     """Creates a dictionary with the relevant recorded columns and their
     corresponding column index in the Kinexon.csv-file.
 
@@ -35,6 +41,8 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter: str
+        Column delimiter used in the Kinexon.csv file. Defaults to ','.
 
     Returns
     -------
@@ -52,7 +60,7 @@ def _get_column_links(filepath_data: Union[str, Path]) -> Union[None, Dict[str, 
             - y_coord: 'y in m'
     """
 
-    recorded_columns = get_column_names_from_csv(str(filepath_data))
+    recorded_columns = get_column_names_from_csv(str(filepath_data), delimiter)
 
     # relevant columns
     mapping = {
@@ -145,7 +153,7 @@ def _get_group_id(
 
 
 def get_meta_data(
-    filepath_data: Union[str, Path]
+    filepath_data: Union[str, Path], delimiter: str = ","
 ) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """Reads Kinexon's position data file and extracts meta-data about groups, sensors,
     length and framerate.
@@ -154,6 +162,8 @@ def get_meta_data(
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon.csv-file.
+    delimiter: str, optional
+        Column delimiter used in the Kinexon.csv file. Defaults to ','.
 
     Returns
     -------
@@ -177,7 +187,7 @@ def get_meta_data(
         Timestamp of the first recorded frame
     """
 
-    column_links = _get_column_links(str(filepath_data))
+    column_links = _get_column_links(str(filepath_data), delimiter)
     sensor_identifier = {"name", "number", "sensor_id", "mapped_id"}
     column_links_set = set(column_links)
     recorded_sensor_identifier = list(column_links_set & sensor_identifier)
@@ -208,7 +218,7 @@ def get_meta_data(
             if len(line_string) == 0:
                 break
             # split str
-            line = line_string.split(",")
+            line = line_string.split(delimiter)
             # extract frames timestamp
             t.append(int(line[column_links["time"]]))
             # extract group_id
@@ -334,7 +344,9 @@ def create_links_from_meta_data(
     return links
 
 
-def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
+def read_position_data_csv(
+    filepath_data: Union[str, Path], delimiter: str = ","
+) -> List[XY]:
     """Parses a Kinexon csv file and extracts position data.
 
     Kinexon's local positioning system delivers one .csv file containing the position
@@ -345,6 +357,9 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
     ----------
     filepath_data: str or pathlib.Path
         Full path to Kinexon .csv-file.
+    delimiter: str
+        Column delimiter used in the Kinexon.csv file. Defaults to ','.
+
 
     Returns
     -------
@@ -356,12 +371,14 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
     """
 
     # get metadata
-    pID_dict, number_of_frames, framerate, t_null = get_meta_data(filepath_data)
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(
+        filepath_data, delimiter
+    )
 
     # get links
     links = create_links_from_meta_data(pID_dict)
     # get column-links
-    column_links = _get_column_links(filepath_data)
+    column_links = _get_column_links(filepath_data, delimiter)
     column_links_set = set(column_links)
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(column_links_set & group_identifier_set)
@@ -392,7 +409,7 @@ def read_position_data_csv(filepath_data: Union[str, Path]) -> List[XY]:
             if len(line_string) == 0:
                 break
             # split str
-            line = line_string.split(",")
+            line = line_string.split(delimiter)
             timestamp = int(line[column_links["time"]])
             # set group
             group_id = _get_group_id(recorded_group_identifier, column_links, line)
