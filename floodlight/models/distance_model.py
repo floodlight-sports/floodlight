@@ -3,7 +3,7 @@ from scipy.spatial.distance import cdist
 from typing import Tuple
 
 from floodlight import XY
-from floodlight.core.property import TeamProperty, PlayerProperty
+from floodlight.core.property import TeamProperty
 from floodlight.models.base import BaseModel, requires_fit
 
 
