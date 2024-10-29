@@ -101,7 +101,11 @@ class DistanceModel(BaseModel):
                 continue
             pairwise_distances = cdist(points.reshape(-1, 2), points.reshape(-1, 2))
             pairwise_distances[pairwise_distances == 0] = np.nan
-            dtnm[t] = np.nanmin(pairwise_distances, axis=1).mean()
+            if np.isnan(pairwise_distances).all():
+                dtnm[t] = np.nan  # or some other value if you prefer
+            else:
+                dtnm[t] = np.nanmin(pairwise_distances, axis=1).mean()        
+            
         return TeamProperty(property=dtnm, name='distance_to_nearest_mate', framerate=xyobj.framerate)
 
     def _calc_dtno(self, xyobj1: XY, xyobj2: XY) -> tuple[TeamProperty, TeamProperty]:
