@@ -111,19 +111,74 @@ class SpatialMetricsModel(BaseModel):
         return self._eps
 
     def plot_convex_hull(self, xyobj: XY, frame: int, ax: plt.Axes):
-        """Plot the convex hull on an existing football pitch.
+        """
+        Plot the convex hull on an existing football pitch.
 
         Parameters
         ----------
         xyobj : XY
-            Player spatiotemporal data for which the convex hull is
-            calculated.
+            Player spatiotemporal data for which the convex hull is calculated.
         frame : int
             The frame index to plot.
-        ax : plt.Axes
-            The matplotlib axes to plot on. Must be initialized with a
-            football pitch.
+        ax : matplotlib.axes._axes.Axes
+            The matplotlib axes to plot on. Must be initialized with a football pitch.
+
+        Examples
+        --------
+        Plotting a convex hull for player positions on a football pitch:
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from floodlight.core.xy import XY
+        from floodlight.models.spatialMetricsModel import SpatialMetricsModel
+        from floodlight.vis.pitches import plot_football_pitch
+        from floodlight.vis.positions import plot_positions
+
+        # Initialize some player position data
+        data = np.array([
+            [
+                10, 42, 59, 43, 61,
+                21, 63, 57, 36, 57,
+                18, 27, 15, 24, 18,
+                11, 51, 49, 39, 1,
+                57, 58
+            ],
+            [
+                22, 29, 32, 107, 54,
+                25, 50, 8, 40, 69,
+                21, 25, 98, 64, 101,
+                102, 88, 36, 93, 55,
+                57, 43
+            ]
+        ])
+        xy = XY(data)
+
+        # Initialize the plot
+        fig, ax = plt.subplots()
+
+        # Plot the football pitch
+        plot_football_pitch(
+            xlim=(0, 108), ylim=(0, 68), length=108, width=68, unit='m',
+            color_scheme='standard', show_axis_ticks=False, ax=ax
+        )
+
+        # Plot positions for the first frame
+        plot_positions(xy=xy, frame=0, ball=False, ax=ax)
+
+        # Instantiate the SpatialMetricsModel
+        smm = SpatialMetricsModel()
+
+        # Fit the model with position data
+        smm.fit(xy)
+
+        # Plot convex hull for the first frame using the existing ax
+        smm.plot_convex_hull(xy, ax=ax, frame=0)
+
+        plt.show()  # Display the plot
+
+        .. image:: ../../_img/sample_plot_convex_hull_on_pitch.png
         """
+
         if ax is None:
             raise ValueError("An existing matplotlib Axes object must be provided.")
 
