@@ -73,7 +73,7 @@ class SpatialMetricsModel(BaseModel):
         else:
             raise ValueError("Expected one or two XY objects.")
 
-    # needed to ensure there are enough needed valid coordinaates pairs
+    # ensure there are enough needed valid coordinaates pairs
     def count_valid_pairs(points):
         # Split list into pairs and filter for valid pairs
         pairs = [(points[i], points[i + 1]) for i in range(0, len(points), 2)]
