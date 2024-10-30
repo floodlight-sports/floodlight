@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull, QhullError
 import numpy as np
+import math
 from floodlight import XY
 from floodlight.core.property import TeamProperty
 from floodlight.models.base import BaseModel, requires_fit
@@ -72,16 +73,32 @@ class SpatialMetricsModel(BaseModel):
         else:
             raise ValueError("Expected one or two XY objects.")
 
+    # needed to ensure there are enough needed valid coordinaates pairs
+    def count_valid_pairs(points):
+        # Split list into pairs and filter for valid pairs
+        pairs = [(points[i], points[i + 1]) for i in range(0, len(points), 2)]
+        valid_pairs = [
+            pair
+            for pair in pairs
+            if not (isinstance(pair[0], float) and math.isnan(pair[0]))
+            and not (isinstance(pair[1], float) and math.isnan(pair[1]))
+        ]
+
+        return len(valid_pairs)
+
     def _calc_chulls(self, xyobj: XY) -> TeamProperty:
         """Calculate convex hull area for each frame of all available points."""
         chulls = np.full((len(xyobj), 1), np.nan)
         for t in range(len(xyobj)):
             points = xyobj.frame(t)[~np.isnan(xyobj.frame(t))]
-            if len(points) < 6:
+            if SpatialMetricsModel.count_valid_pairs(points) < 3:
                 continue
-            chulls[t] = ConvexHull(points.reshape(-1, 2)).volume
+            reshaped_points = points.reshape(-1, 2)
+            # make sure the area of convex hull is not 0
+            if len(np.unique(reshaped_points, axis=0)) > 2:
+                chulls[t] = ConvexHull(reshaped_points).volume
         return TeamProperty(
-            property=chulls, name='convex_hull_area', framerate=xyobj.framerate
+            property=chulls, name="convex_hull_area", framerate=xyobj.framerate
         )
 
     def _calc_eps(self, xyobj1: XY, xyobj2: XY) -> TeamProperty:
@@ -90,14 +107,25 @@ class SpatialMetricsModel(BaseModel):
         for t in range(len(xyobj1)):
             points1 = xyobj1.frame(t)[~np.isnan(xyobj1.frame(t))]
             points2 = xyobj2.frame(t)[~np.isnan(xyobj2.frame(t))]
-            if len(points1) + len(points2) < 6:
+
+            # ensure there are enough needed valid coordinaates pairs
+            if (
+                SpatialMetricsModel.count_valid_pairs(points1) < 1
+                or SpatialMetricsModel.count_valid_pairs(points2) < 1
+            ):
+                # Log a warning if entire second team is NaN (optional)
+                if len(points2) == 0:
+                    print(f"Warning: Frame {t} - Second team data is all NaN.")
                 continue
-            eps[t] = ConvexHull(
-                np.concatenate((points1, points2)).reshape(-1, 2)
-            ).volume
+
+            # Proceed with convex hull calculation if valid points are sufficient
+            if len(points1) + len(points2) >= 6:
+                eps[t] = ConvexHull(
+                    np.concatenate((points1, points2)).reshape(-1, 2)
+                ).volume
+
         return TeamProperty(
-            property=eps, name='effective_playing_space',
-            framerate=xyobj1.framerate
+            property=eps, name="effective_playing_space", framerate=xyobj1.framerate
         )
 
     @requires_fit
@@ -108,6 +136,7 @@ class SpatialMetricsModel(BaseModel):
     @requires_fit
     def effective_playing_space(self) -> TeamProperty:
         """Returns the effective playing space as computed by the fit method."""
+
         return self._eps
 
     def plot_convex_hull(self, xyobj: XY, frame: int, ax: plt.Axes):
@@ -197,12 +226,14 @@ class SpatialMetricsModel(BaseModel):
             hull = ConvexHull(points)
             hull_points = points[hull.vertices]
             hull_points = np.vstack([hull_points, hull_points[0]])
-            ax.plot(hull_points[:, 0], hull_points[:, 1], 'r-', lw=2, label='Convex Hull')
-            ax.fill(hull_points[:, 0], hull_points[:, 1], 'r', alpha=0.3)
+            ax.plot(
+                hull_points[:, 0], hull_points[:, 1], "r-", lw=2, label="Convex Hull"
+            )
+            ax.fill(hull_points[:, 0], hull_points[:, 1], "r", alpha=0.3)
         except (QhullError, IndexError):
             print("ConvexHull computation failed.")
 
-        ax.set_title(f'Convex Hull for Frame {frame}')
-        ax.set_xlabel('X Coordinate')
-        ax.set_ylabel('Y Coordinate')
+        ax.set_title(f"Convex Hull for Frame {frame}")
+        ax.set_xlabel("X Coordinate")
+        ax.set_ylabel("Y Coordinate")
         ax.legend()
