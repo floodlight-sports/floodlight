@@ -171,7 +171,8 @@ def filepath_empty() -> str:
     path = ".data\\EMPTY"
     return path
 
-#Sample response from catapult api with only zeros
+
+# Sample response from catapult api with only zeros
 @pytest.fixture
 def activity_players_info_zeros():
     return [
@@ -218,7 +219,7 @@ def activity_players_info_zeros():
     ]
 
 
-#Sample response from catapult api with only None
+# Sample response from catapult api with only None
 @pytest.fixture
 def activity_players_info_none():
     return [
@@ -265,7 +266,7 @@ def activity_players_info_none():
     ]
 
 
-#Sample sensor response from catapult api
+# Sample sensor response from catapult api
 @pytest.fixture
 def players_sensor_data_dict_list():
     return [
@@ -311,7 +312,8 @@ def players_sensor_data_dict_list():
         },
     ]
 
-#All none sensor response from catapult api with 
+
+# All none sensor response from catapult api with
 @pytest.fixture
 def players_sensor_data_dict_list_none():
     return [
@@ -336,7 +338,7 @@ def players_sensor_data_dict_list_none():
     ]
 
 
-#All zero sensor response from catapult api with
+# All zero sensor response from catapult api with
 @pytest.fixture
 def players_sensor_data_dict_list_zeros():
     return [

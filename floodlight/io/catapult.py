@@ -2,12 +2,12 @@ import os
 import json
 import warnings
 from collections import Counter
-from typing import List, Dict, Tuple 
+from typing import List, Dict, Tuple
 import numpy as np
-import requests  
+import requests
 import pickle
 
-from floodlight.core.xy import XY 
+from floodlight.core.xy import XY
 from floodlight.utils.exceptions import APIRequestError
 
 
@@ -24,11 +24,11 @@ def _get_mappings() -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str]]:
     mapping : dict
         A dictionary that maps original key names to their corresponding new key names.
         The keys represent the original key names, and the values represent the new key names.
-    
+
     reversed_group_mapping : dict
         A dictionary that maps new key names for group-related fields back to their original key names.
         The keys represent the new key names, and the values represent the original key names.
-    
+
     reversed_sensor_mapping : dict
         A dictionary that maps new key names for sensor-related fields back to their original key names.
         The keys represent the new key names, and the values represent the original key names.
@@ -62,6 +62,7 @@ def _get_mappings() -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str]]:
     }
     return mapping, reversed_group_mapping, reversed_sensor_mapping
 
+
 def dump_list_of_dicts(data: List[Dict], file_path: str, file_format: str) -> None:
     """
     Serializes a list of dictionaries into a file in the specified format (pickle or JSON).
@@ -84,28 +85,29 @@ def dump_list_of_dicts(data: List[Dict], file_path: str, file_format: str) -> No
     ValueError
         If the specified file_format is not 'pickle' or 'json'.
     """
-    
+
     # Check if the file format is 'pickle'
-    if file_format == 'pickle':
+    if file_format == "pickle":
         # Open the file in binary write mode and serialize data using pickle
-        with open(file_path, 'wb') as file:
+        with open(file_path, "wb") as file:
             pickle.dump(data, file)
             print(f"Data successfully serialized to '{file_path}' as pickle.")
-    
+
     # Check if the file format is 'json'
-    elif file_format == 'json':
+    elif file_format == "json":
         # Open the file in text write mode and serialize data using JSON with indentation for readability
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
             print(f"Data successfully serialized to '{file_path}' as JSON.")
-    
+
     # Raise an error if an unsupported file format is provided
     else:
         raise ValueError("Invalid file format specified. Use 'pickle' or 'json'.")
-    
+
+
 def load_list_of_dicts(file_path: str) -> List[Dict]:
     """
-    Deserializes a list of dictionaries from a file. The file format is determined by its extension 
+    Deserializes a list of dictionaries from a file. The file format is determined by its extension
     (.pkl for pickle files and .json for JSON files).
 
     Parameters
@@ -117,7 +119,7 @@ def load_list_of_dicts(file_path: str) -> List[Dict]:
     -------
     List[Dict]
         The deserialized list of dictionaries.
-    
+
     Raises
     ------
     FileNotFoundError
@@ -125,12 +127,12 @@ def load_list_of_dicts(file_path: str) -> List[Dict]:
     ValueError
         If the file format is not recognized.
     """
-    
+
     # Check if the file has a .pkl extension, indicating it's a pickle file
-    if file_path.endswith('.pkl'):
+    if file_path.endswith(".pkl"):
         try:
             # Open the file in binary read mode and deserialize using pickle
-            with open(file_path, 'rb') as file:
+            with open(file_path, "rb") as file:
                 data = pickle.load(file)
                 print(f"Data successfully loaded from '{file_path}' as pickle.")
                 return data
@@ -144,10 +146,10 @@ def load_list_of_dicts(file_path: str) -> List[Dict]:
             return []
 
     # Check if the file has a .json extension, indicating it's a JSON file
-    elif file_path.endswith('.json'):
+    elif file_path.endswith(".json"):
         try:
             # Open the file in text read mode and deserialize using JSON
-            with open(file_path, 'r') as file:
+            with open(file_path, "r") as file:
                 data = json.load(file)
                 print(f"Data successfully loaded from '{file_path}' as JSON.")
                 return data
@@ -159,12 +161,17 @@ def load_list_of_dicts(file_path: str) -> List[Dict]:
         except json.JSONDecodeError as e:
             print(f"Error: An error occurred while loading the JSON file: {e}")
             return []
-    
+
     # Raise an error if the file extension is not recognized
     else:
-        raise ValueError("Unsupported file format. Use '.pkl' for pickle files or '.json' for JSON files.")
+        raise ValueError(
+            "Unsupported file format. Use '.pkl' for pickle files or '.json' for JSON files."
+        )
 
-def get_activity_players_info(base_url: str, api_token: str, activity_id: str) -> Tuple[List[Dict], str]:
+
+def get_activity_players_info(
+    base_url: str, api_token: str, activity_id: str
+) -> Tuple[List[Dict], str]:
     """
     Fetches player data for all players involved in a specific activity.
 
@@ -243,8 +250,9 @@ def get_activity_players_info(base_url: str, api_token: str, activity_id: str) -
     headers = {
         "accept": "application/json",
         "authorization": f"Bearer {api_token}",
-        "nulls": "0"  }
-    
+        "nulls": "0",
+    }
+
     # Create the endpoint URL for fetching players associated with the given activity_id
     endpoint = f"activities/{activity_id}/athletes/"
     # Make the GET request to the API
@@ -257,24 +265,27 @@ def get_activity_players_info(base_url: str, api_token: str, activity_id: str) -
         activity_players_info = activity_players_info_response.json()
 
         return activity_players_info, endpoint
-    
+
     # Raise an error if the request failed
     else:
         raise APIRequestError(
-            message="API request failed", 
-            status_code=activity_players_info_response.status_code, 
-            endpoint=endpoint, 
-            response_text=activity_players_info_response.text
+            message="API request failed",
+            status_code=activity_players_info_response.status_code,
+            endpoint=endpoint,
+            response_text=activity_players_info_response.text,
         )
-    
-def get_players_sensor_data_dict_list(base_url: str, api_token: str, activity_id: str, activity_players_info: List[Dict]) -> List[Dict]:
+
+
+def get_players_sensor_data_dict_list(
+    base_url: str, api_token: str, activity_id: str, activity_players_info: List[Dict]
+) -> List[Dict]:
     """
     Retrieves sensor data for each player involved in a specific activity.
 
     Example
     -------
     An example of the `players_sensor_data_dict_list` looks like:
-    
+
     {
         "athlete_id": "33ffcf-8b1b-46d6-876c-e8d9bf254a7a",
         "device_id": 50576,
@@ -313,7 +324,7 @@ def get_players_sensor_data_dict_list(base_url: str, api_token: str, activity_id
     Parameters
     ----------
     base_url : str
-        The base URL for the API requests. Ensure you use the URL corresponding to the API for which you have credentials. 
+        The base URL for the API requests. Ensure you use the URL corresponding to the API for which you have credentials.
         For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
     api_token : str
         The API token for authentication.
@@ -335,35 +346,52 @@ def get_players_sensor_data_dict_list(base_url: str, api_token: str, activity_id
 
     # Setting up headers for the API request
     headers = {
-        "accept": "application/json",  
-        "authorization": f"Bearer {api_token}",  
-        "nulls": "0" 
+        "accept": "application/json",
+        "authorization": f"Bearer {api_token}",
+        "nulls": "0",
     }
 
     # Extracting unique player IDs from the provided activity_players_info, ensuring the list is sorted
     player_ids = sorted(set(i["id"] for i in activity_players_info))
     players_sensor_data_dict_list = []
 
-    response_ok = 200 # Expected HTTP status code for a successful request
+    response_ok = 200  # Expected HTTP status code for a successful request
     # Loop through each player's ID to fetch their sensor data
     for i in player_ids:
         # Construct the API endpoint for fetching sensor data of the current player
-        endpoint = f'activities/{activity_id}/athletes/{i}/sensor'
+        endpoint = f"activities/{activity_id}/athletes/{i}/sensor"
         player_data_response = requests.get(base_url + endpoint, headers=headers)
         # Check if the request was successful
         if player_data_response.status_code == response_ok:
+            try:
+                player_data = player_data_response.json()
 
-            players_sensor_data_dict_list.append(player_data_response.json()[0])
+                # Check if the response is not empty and contains the expected structure
+                if (
+                    player_data
+                    and isinstance(player_data, list)
+                    and len(player_data) > 0
+                ):
+                    players_sensor_data_dict_list.append(player_data[0])
+                else:
+                    print(
+                        f"Warning: No valid sensor data found for player in activity {activity_id}. Response: {player_data}"
+                    )
+
+            except (IndexError, KeyError) as e:
+                print(
+                    f"Error: Issue processing sensor data for activity {activity_id}. Exception: {e}"
+                )
         else:
             # Raise an error if the request failed, providing details about the failure
             raise APIRequestError(
-                message="API request failed", 
-                status_code=player_data_response.status_code, 
-                endpoint=endpoint, 
-                response_text=player_data_response.text
+                message="API request failed",
+                status_code=player_data_response.status_code,
+                endpoint=endpoint,
+                response_text=player_data_response.text,
             )
-
     return players_sensor_data_dict_list
+
 
 def _get_key_names_from_dict_list(players_sensor_data_dict_list: List[Dict]) -> set:
     """
@@ -372,15 +400,15 @@ def _get_key_names_from_dict_list(players_sensor_data_dict_list: List[Dict]) -> 
     Parameters
     ----------
     players_sensor_data_dict_list : List[Dict]
-        A list of dictionaries, each containing sensor data for a player. 
-        Each dictionary represents a player's sensor data and typically includes 
-        metadata and a list of data entries, where each data entry is a dictionary 
+        A list of dictionaries, each containing sensor data for a player.
+        Each dictionary represents a player's sensor data and typically includes
+        metadata and a list of data entries, where each data entry is a dictionary
         with various sensor measurements.
 
     Returns
     -------
     set
-        A set of unique key names found in the dictionaries within the list. 
+        A set of unique key names found in the dictionaries within the list.
         This includes keys from both the main dictionary and the nested data entries.
     """
     mapping, _, _ = _get_mappings()
@@ -390,25 +418,27 @@ def _get_key_names_from_dict_list(players_sensor_data_dict_list: List[Dict]) -> 
     for athlete_entry in players_sensor_data_dict_list:
         # Update with keys from the main athlete entry dictionary if they are in the mapping
         recorded_keys.update(key for key in athlete_entry.keys() if key in mapping)
-        
+
         # Update with keys from the nested 'data' entries if they are in the mapping
         if athlete_entry["data"]:
             recorded_keys.update(
                 key for key in athlete_entry["data"][0].keys() if key in mapping
             )
-
     return recorded_keys
-    
-def get_meta_data(players_sensor_data_dict_list: List[Dict]) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
+
+
+def get_meta_data(
+    players_sensor_data_dict_list: List[Dict],
+) -> Tuple[Dict[str, Dict[str, List[str]]], int, int, int]:
     """
     Extracts metadata from the list of player sensor data dictionaries.
 
     Parameters
     ----------
     players_sensor_data_dict_list : List[Dict]
-        A list of dictionaries, each containing sensor data for a player. 
-        Each dictionary represents a player's sensor data and typically includes 
-        metadata and a list of data entries, where each data entry is a dictionary 
+        A list of dictionaries, each containing sensor data for a player.
+        Each dictionary represents a player's sensor data and typically includes
+        metadata and a list of data entries, where each data entry is a dictionary
         with various sensor measurements.
 
     Returns
@@ -445,7 +475,7 @@ def get_meta_data(players_sensor_data_dict_list: List[Dict]) -> Tuple[Dict[str, 
     # Initialize dictionaries to store player IDs and timestamps
     pID_dict = {}
     t = []
-    
+    max_count_athlete = 0
     # Check if there are any group identifiers present in the data
     has_groups = len(recorded_group_identifier) > 0
     if not has_groups:
@@ -455,9 +485,18 @@ def get_meta_data(players_sensor_data_dict_list: List[Dict]) -> Tuple[Dict[str, 
     max_count = 0
     for athlete_entry in players_sensor_data_dict_list:
         # Extract and convert timestamps from each data entry to centiseconds
-        athlete_t = [int(entry["ts"]) for entry in athlete_entry["data"]]
-        t.extend([int(entry["ts"]) * 100 + int(entry["cs"]) for entry in athlete_entry["data"]])
-        
+        athlete_t = []
+        for entry in athlete_entry["data"]:
+            try:
+                ts = int(entry["ts"])
+                cs = (
+                    int(entry["cs"]) if entry["cs"] is not None else 0
+                )  # Default to 0 if cs is None
+                athlete_t.append(ts)
+                t.append(ts * 100 + cs)
+            except TypeError:
+                print(f"Skipping entry due to TypeError: {entry}")
+
         # Count occurrences of each timestamp
         timestamps_athlete_count = Counter(athlete_t)
 
@@ -467,7 +506,6 @@ def get_meta_data(players_sensor_data_dict_list: List[Dict]) -> Tuple[Dict[str, 
         # Extract group ID from the current athlete entry
         group_identifier = recorded_group_identifier[0]
         group_id = athlete_entry[reversed_group_mapping[group_identifier]]
-
         if group_id not in pID_dict:
             pID_dict[group_id] = {}
 
@@ -475,23 +513,42 @@ def get_meta_data(players_sensor_data_dict_list: List[Dict]) -> Tuple[Dict[str, 
         for identifier in sensor_links:
             if identifier not in pID_dict[group_id]:
                 pID_dict[group_id][identifier] = []
-            if athlete_entry[reversed_sensor_mapping[identifier]] not in pID_dict[group_id][identifier]:
-                pID_dict[group_id][identifier].append(athlete_entry[reversed_sensor_mapping[identifier]])
+            if (
+                athlete_entry[reversed_sensor_mapping[identifier]]
+                not in pID_dict[group_id][identifier]
+            ):
+                pID_dict[group_id][identifier].append(
+                    athlete_entry[reversed_sensor_mapping[identifier]]
+                )
 
     # Determine the framerate from the maximum count of timestamps
     framerate = max(max_count, max_count_athlete)
-    
+
     # Sort and process the collected timestamps
-    pID_dict = dict(sorted(pID_dict.items()))
+    # Filter out keys that are None or not integers/strings (or other types you expect)
+    valid_pID_dict = {
+        k: v for k, v in pID_dict.items() if k is not None and isinstance(k, (int, str))
+    }
+
+    # Sort the filtered dictionary
+    sorted_pID_dict = dict(sorted(valid_pID_dict.items()))
+
+    # Update the original dictionary
+    pID_dict = sorted_pID_dict
     timestamps_cs = list(set(t))
     timestamps_cs.sort()
 
+    if not timestamps_cs:
+        raise ValueError(
+            "The timestamps_cs list is empty. Cannot calculate the number of frames."
+        )
     # Calculate the number of frames based on the duration of the timestamps
     # The magic number 100 is used to convert centiseconds to seconds.
     number_of_frames = int((timestamps_cs[-1] - timestamps_cs[0]) / (100 / framerate))
     t_null = timestamps_cs[0]
 
     return pID_dict, number_of_frames, framerate, t_null
+
 
 def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) -> str:
     """
@@ -509,8 +566,16 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
         ("name", "mapped_id", "sensor_id", "number") and returns the first one found in the metadata.
     """
     player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
-    available_identifier = [idt for idt in player_identifiers if idt in list(pID_dict.values())[0]]
+    # Check if the pID_dict is empty
+    if not pID_dict.values():
+        return {}  # Return empty dict if the pID_dict is empty
+
+    available_identifier = [
+        idt for idt in player_identifiers if idt in list(pID_dict.values())[0]
+    ]
+
     return available_identifier[0]
+
 
 def _create_links_from_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None
@@ -536,20 +601,24 @@ def _create_links_from_meta_data(
 
     links = {}
     for group_id in pID_dict:
-        links[group_id] = {ID: xID for xID, ID in enumerate(pID_dict[group_id][identifier])}
-
+        links[group_id] = {
+            ID: xID for xID, ID in enumerate(pID_dict[group_id][identifier])
+        }
     return links
 
-def read_position_data_from_dict_list(players_sensor_data_dict_list: List[Dict], coord_format: str = "xy") -> List[XY]:
+
+def read_position_data_from_dict_list(
+    players_sensor_data_dict_list: List[Dict], coord_format: str = "xy"
+) -> List[XY]:
     """
     Reads position data from players_sensor_data_dict_list and returns a list of XY objects.
 
     Parameters
     ----------
-    players_sensor_data_dict_list : List[Dict] 
-        A list of dictionaries, each containing sensor data for a player. 
-        Each dictionary represents a player's sensor data and typically includes 
-        metadata and a list of data entries, where each data entry is a dictionary 
+    players_sensor_data_dict_list : List[Dict]
+        A list of dictionaries, each containing sensor data for a player.
+        Each dictionary represents a player's sensor data and typically includes
+        metadata and a list of data entries, where each data entry is a dictionary
         with various sensor measurements.
 
     coord_format : str, optional
@@ -563,7 +632,7 @@ def read_position_data_from_dict_list(players_sensor_data_dict_list: List[Dict],
     -------
     List[XY]
         A list of XY objects containing position data.
-    
+
     Raises
     ------
     ValueError
@@ -572,7 +641,9 @@ def read_position_data_from_dict_list(players_sensor_data_dict_list: List[Dict],
     mapping, reversed_group_mapping, reversed_sensor_mapping = _get_mappings()
 
     # Extract metadata from the sensor data
-    pID_dict, number_of_frames, framerate, t_null = get_meta_data(players_sensor_data_dict_list)
+    pID_dict, number_of_frames, framerate, t_null = get_meta_data(
+        players_sensor_data_dict_list
+    )
 
     # Create a mapping of player IDs to numerical indices
     links = _create_links_from_meta_data(pID_dict)
@@ -593,7 +664,13 @@ def read_position_data_from_dict_list(players_sensor_data_dict_list: List[Dict],
     # Initialize data structures for storing position data
     for group in links:
         number_of_sensors.update({group: len(links[group])})
-        xydata.update({group: np.full([number_of_frames + 1, number_of_sensors[group] * 2], np.nan)})
+        xydata.update(
+            {
+                group: np.full(
+                    [number_of_frames + 1, number_of_sensors[group] * 2], np.nan
+                )
+            }
+        )
 
     # Process each athlete's data
     for athlete_entry in players_sensor_data_dict_list:
@@ -606,18 +683,24 @@ def read_position_data_from_dict_list(players_sensor_data_dict_list: List[Dict],
                 x_coordinate = entry["lat"]
                 y_coordinate = entry["long"]
             else:
-                raise ValueError(f"Expected coordinate format to be ['xy', 'latlong'], but got {coord_format} instead.")
+                raise ValueError(
+                    f"Expected coordinate format to be ['xy', 'latlong'], but got {coord_format} instead."
+                )
 
             # Get the group ID and calculate the column indices for x and y coordinates
             group_identifier = recorded_group_identifier[0]
             group_id = athlete_entry[reversed_group_mapping[group_identifier]]
 
-            x_col = links[group_id][athlete_entry[reversed_sensor_mapping[identifier]]] * 2
+            x_col = (
+                links[group_id][athlete_entry[reversed_sensor_mapping[identifier]]] * 2
+            )
             y_col = x_col + 1
 
             # Calculate the row index based on the timestamp
             # Timestamps are in centiseconds. The magic value 100 is used to convert centiseconds to seconds.
-            row = int((int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate))
+            row = int(
+                (int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate)
+            )
 
             # Store the coordinates in the appropriate position in the data array
             if x_coordinate != "":
@@ -630,10 +713,18 @@ def read_position_data_from_dict_list(players_sensor_data_dict_list: List[Dict],
     data_objects = []
     for group_id in xydata:
         data_objects.append(XY(xy=xydata[group_id], framerate=framerate))
-
     return data_objects
 
-def read_position_data_from_activity(base_url: str, api_token: str, activity_id: str, save: bool = False, save_format: str ="pkl", path_to_players_sensor_data_dict_list: str = None, coord_format: str = "xy") -> List[XY]:
+
+def read_position_data_from_activity(
+    base_url: str,
+    api_token: str,
+    activity_id: str,
+    save: bool = False,
+    save_format: str = "pkl",
+    path_to_players_sensor_data_dict_list: str = None,
+    coord_format: str = "xy",
+) -> List[XY]:
     """
     Reads position data for a specific activity either from a saved response or by making an API request.
 
@@ -707,25 +798,41 @@ def read_position_data_from_activity(base_url: str, api_token: str, activity_id:
     - Data is read from the specified file path.
     - Position data is processed using the "latlong" coordinate format.
     """
-    
+
     # Check if a path to a saved response is provided
-    if path_to_players_sensor_data_dict_list: 
+    if path_to_players_sensor_data_dict_list:
         # Read data from a specified file path
-        players_sensor_data_dict_list = load_list_of_dicts(path_to_players_sensor_data_dict_list)
+        players_sensor_data_dict_list = load_list_of_dicts(
+            path_to_players_sensor_data_dict_list
+        )
     else:
         # Fetch player information for the activity from the API
-        activity_players_info, endpoint = get_activity_players_info(base_url, api_token, activity_id)
+        activity_players_info, endpoint = get_activity_players_info(
+            base_url, api_token, activity_id
+        )
 
         # Fetch sensor data for the players involved in the activity
-        players_sensor_data_dict_list = get_players_sensor_data_dict_list(base_url, api_token, activity_id, activity_players_info)
-        
+        players_sensor_data_dict_list = get_players_sensor_data_dict_list(
+            base_url, api_token, activity_id, activity_players_info
+        )
+
         if save:
             if save_format == "pickle":
-                dump_list_of_dicts(players_sensor_data_dict_list, endpoint + "/players_sensor_data_dict_list.pkl", file_format="pickle")
+                dump_list_of_dicts(
+                    players_sensor_data_dict_list,
+                    endpoint + "/players_sensor_data_dict_list.pkl",
+                    file_format="pickle",
+                )
             elif save_format == "json":
-                dump_list_of_dicts(players_sensor_data_dict_list, endpoint + "/players_sensor_data_dict_list.json", file_format="json")
+                dump_list_of_dicts(
+                    players_sensor_data_dict_list,
+                    endpoint + "/players_sensor_data_dict_list.json",
+                    file_format="json",
+                )
 
     # Convert the raw data dictionaries into XY objects
-    data_objects = read_position_data_from_dict_list(players_sensor_data_dict_list, coord_format)
+    data_objects = read_position_data_from_dict_list(
+        players_sensor_data_dict_list, coord_format
+    )
 
     return data_objects
