@@ -1,13 +1,14 @@
 import numpy as np
 from scipy.spatial.distance import cdist
-from typing import Tuple
+import math
 
 from floodlight import XY
-from floodlight.core.property import TeamProperty, PlayerProperty
+from floodlight.core.property import TeamProperty
 from floodlight.models.base import BaseModel, requires_fit
 
 
-MIN_POINTS = 4  # Minimum points for valid distance calculation
+MIN_COORDINATE_PAIRS = 2  # Minimum points for valid distance calculation
+
 
 class DistanceModel(BaseModel):
     """Computations based on distances between players, including distances to nearest mates,
@@ -73,11 +74,22 @@ class DistanceModel(BaseModel):
     def fit(self, xy1: XY, xy2: XY = None) -> None:
         """
         Fit the model to the given data and calculate distances and spread.
+    def fit(self, xy1: XY, xy2: XY = None) -> None:
+        """
+        Fit the model to the given data and calculate distances and spread.
 
         Parameters
         ----------
         xy1 : XY
+        xy1 : XY
             Player spatiotemporal data for which the calculations are based.
+        xy2 : XY, optional
+            Second set of player spatiotemporal data used for calculating distances to
+            opponents. If not provided, distances to nearest mates and team spread are calculated.
+
+        Returns
+        -------
+        None
         xy2 : XY, optional
             Second set of player spatiotemporal data used for calculating distances to
             opponents. If not provided, distances to nearest mates and team spread are calculated.
@@ -92,17 +104,37 @@ class DistanceModel(BaseModel):
         else:
             self._dtno1, self._dtno2 = self._calc_dtno(xy1, xy2)
 
+    # ensure there are enough needed valid coordinaates pairs
+    def count_valid_pairs(points):
+        # Split list into pairs and filter for valid pairs
+        pairs = [(points[i], points[i + 1]) for i in range(0, len(points), 2)]
+        valid_pairs = [
+            pair
+            for pair in pairs
+            if not (isinstance(pair[0], float) and math.isnan(pair[0]))
+            and not (isinstance(pair[1], float) and math.isnan(pair[1]))
+        ]
+
+        return len(valid_pairs)
+
     def _calc_dtnm(self, xyobj: XY) -> TeamProperty:
         """Calculate distance to nearest mate."""
         dtnm = np.full((len(xyobj), 1), np.nan)
         for t in range(len(xyobj)):
             points = xyobj.frame(t)[~np.isnan(xyobj.frame(t))]
-            if len(points) < MIN_POINTS:
+
+            if DistanceModel.count_valid_pairs(points) < MIN_COORDINATE_PAIRS:
                 continue
             pairwise_distances = cdist(points.reshape(-1, 2), points.reshape(-1, 2))
             pairwise_distances[pairwise_distances == 0] = np.nan
-            dtnm[t] = np.nanmin(pairwise_distances, axis=1).mean()
-        return TeamProperty(property=dtnm, name='distance_to_nearest_mate', framerate=xyobj.framerate)
+            if np.isnan(pairwise_distances).all():
+                dtnm[t] = np.nan  # or some other value if you prefer
+            else:
+                dtnm[t] = np.nanmin(pairwise_distances, axis=1).mean()
+
+        return TeamProperty(
+            property=dtnm, name="distance_to_nearest_mate", framerate=xyobj.framerate
+        )
 
     def _calc_dtno(self, xyobj1: XY, xyobj2: XY) -> tuple[TeamProperty, TeamProperty]:
         """Calculate distances of xyobj1 to nearest opponents xyobj2."""
@@ -116,8 +148,18 @@ class DistanceModel(BaseModel):
             pairwise_distances = cdist(points1.reshape(-1, 2), points2.reshape(-1, 2))
             dtnm1[t] = np.nanmin(pairwise_distances, axis=1).mean()
             dtnm2[t] = np.nanmin(pairwise_distances, axis=0).mean()
-        return (TeamProperty(property=dtnm1, name='distance_to_nearest_opponents_1', framerate=xyobj1.framerate),
-                TeamProperty(property=dtnm2, name='distance_to_nearest_opponents_2', framerate=xyobj2.framerate))
+        return (
+            TeamProperty(
+                property=dtnm1,
+                name="distance_to_nearest_opponents_1",
+                framerate=xyobj1.framerate,
+            ),
+            TeamProperty(
+                property=dtnm2,
+                name="distance_to_nearest_opponents_2",
+                framerate=xyobj2.framerate,
+            ),
+        )
 
     def _calc_team_spread(self, xyobj: XY) -> TeamProperty:
         """Calculate team spread."""
@@ -128,7 +170,9 @@ class DistanceModel(BaseModel):
                 continue
             pairwise_distances = cdist(points.reshape(-1, 2), points.reshape(-1, 2))
             spread[t] = np.linalg.norm(np.tril(pairwise_distances), ord="fro")
-        return TeamProperty(property=spread, name='team_spread', framerate=xyobj.framerate)
+        return TeamProperty(
+            property=spread, name="team_spread", framerate=xyobj.framerate
+        )
 
     @requires_fit
     def distance_to_nearest_mate(self) -> TeamProperty:
