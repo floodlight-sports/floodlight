@@ -260,21 +260,17 @@ def get_activity_players_info(
     response_ok = 200  # Define the success status code
 
     # Check if the request was successful (status code 200)
-    if activity_players_info_response.status_code == response_ok:
-        # Parse the JSON response to get player data
-        activity_players_info = activity_players_info_response.json()
-
-        return activity_players_info, endpoint
-
-    # Raise an error if the request failed
-    else:
+    if activity_players_info_response.status_code != response_ok:
         raise APIRequestError(
             message="API request failed",
             status_code=activity_players_info_response.status_code,
             endpoint=endpoint,
-            response_text=activity_players_info_response.text,
-        )
-
+            response_text=activity_players_info_response.text
+        )    
+        
+    # Parse the JSON response to get player data
+    activity_players_info = activity_players_info_response.json()
+    return activity_players_info, endpoint
 
 def get_players_sensor_data_dict_list(
     base_url: str, api_token: str, activity_id: str, activity_players_info: List[Dict]
@@ -362,34 +358,26 @@ def get_players_sensor_data_dict_list(
         endpoint = f"activities/{activity_id}/athletes/{i}/sensor"
         player_data_response = requests.get(base_url + endpoint, headers=headers)
         # Check if the request was successful
-        if player_data_response.status_code == response_ok:
-            try:
-                player_data = player_data_response.json()
-
-                # Check if the response is not empty and contains the expected structure
-                if (
-                    player_data
-                    and isinstance(player_data, list)
-                    and len(player_data) > 0
-                ):
-                    players_sensor_data_dict_list.append(player_data[0])
-                else:
-                    print(
-                        f"Warning: No valid sensor data found for player in activity {activity_id}. Response: {player_data}"
-                    )
-
-            except (IndexError, KeyError) as e:
-                print(
-                    f"Error: Issue processing sensor data for activity {activity_id}. Exception: {e}"
-                )
-        else:
-            # Raise an error if the request failed, providing details about the failure
+    
+        if player_data_response.status_code != response_ok:
             raise APIRequestError(
                 message="API request failed",
                 status_code=player_data_response.status_code,
                 endpoint=endpoint,
-                response_text=player_data_response.text,
-            )
+                response_text=player_data_response.text
+            )    
+        try:
+            player_data = player_data_response.json()
+            # Check if the response is not empty and contains the expected structure
+            if player_data and isinstance(player_data, list) and len(player_data) > 0:
+                players_sensor_data_dict_list.append(player_data[0])
+            else:
+                print(
+                    f"Warning: No valid sensor data found for player in activity {activity_id}. Response: {player_data}"
+                )
+        except (IndexError, KeyError) as e:
+            print(f"Error: Issue processing sensor data for activity {activity_id}. Exception: {e}")
+
     return players_sensor_data_dict_list
 
 
