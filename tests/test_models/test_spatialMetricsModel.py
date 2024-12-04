@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from floodlight import XY
 from floodlight.models.spatialMetricsModel import SpatialMetricsModel
 from floodlight.core.property import TeamProperty
 
