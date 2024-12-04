@@ -11,14 +11,17 @@ MIN_COORDINATE_PAIRS = 2  # Minimum points for valid distance calculation
 
 
 class DistanceModel(BaseModel):
-    """Computations based on distances between players, including distances to nearest mates,
-    distances to nearest opponents, and team spread.
+    """Computations based on distances between players
+        , including distances to nearest mates,
+        distances to nearest opponents, and team spread.
 
-    Upon calling the :func:`~DistanceModel.fit`-method, this model performs the following
-    calculations based on the given data:
+        Upon calling the :func:`~DistanceModel.fit`-method,
+        this model performs the following
+        calculations based on the given data:
 
         - Distance to Nearest Mate --> :func:`~DistanceModel.distance_to_nearest_mate`
-        - Distance to Nearest Opponents --> :func:`~DistanceModel.distance_to_nearest_opponents`
+        - Distance to Nearest Opponents
+            --> :func:`~DistanceModel.distance_to_nearest_opponents`
         - Team Spread --> :func:`~DistanceModel.team_spread`
 
     Notes
@@ -26,16 +29,16 @@ class DistanceModel(BaseModel):
     The calculations are performed as follows:
 
     - Distance to Nearest Mate:
-        For each player, the Euclidean distance to the nearest other player in the same frame
-        is computed.
+        For each player, the Euclidean distance to the nearest other
+        player in the same frameis computed.
 
     - Distance to Nearest Opponents:
-        For each player in `xy1`, the Euclidean distance to the nearest opponent in `xy2` is
-        computed, and vice versa.
+        For each player in `xy1`, the Euclidean distance to the
+        nearest opponent in `xy2` is computed, and vice versa.
 
     - Team Spread:
-        The Frobenius norm of the lower triangular matrix of player-to-player distances is
-        computed to represent the spread of the team.
+        The Frobenius norm of the lower triangular matrix of player-to-player
+        distances is computed to represent the spread of the team.
 
     Examples
     --------
@@ -50,13 +53,16 @@ class DistanceModel(BaseModel):
     # Calculate distances to nearest mates
     >>> dm.fit(xy1)
     >>> dm.distance_to_nearest_mate()
-    TeamProperty(property=array([1.58113883, nan]), name='distance_to_nearest_mate', framerate=None)
+    TeamProperty(property=array([1.58113883, nan]),
+        name='distance_to_nearest_mate', framerate=None)
 
     # Calculate distances to nearest opponents
     >>> dm.fit(xy1, xy2)
     >>> dm.distance_to_nearest_opponents()
-    (TeamProperty(property=array([1.0, 2.0]), name='distance_to_nearest_opponents_1', framerate=None),
-     TeamProperty(property=array([1.5, 2.5]), name='distance_to_nearest_opponents_2', framerate=None))
+    (TeamProperty(property=array([1.0, 2.0]),
+         name='distance_to_nearest_opponents_1', framerate=None),
+     TeamProperty(property=array([1.5, 2.5]),
+         name='distance_to_nearest_opponents_2', framerate=None))
 
     # Calculate team spread
     >>> dm.fit(xy1)
@@ -74,9 +80,6 @@ class DistanceModel(BaseModel):
     def fit(self, xy1: XY, xy2: XY = None) -> None:
         """
         Fit the model to the given data and calculate distances and spread.
-    def fit(self, xy1: XY, xy2: XY = None) -> None:
-        """
-        Fit the model to the given data and calculate distances and spread.
 
         Parameters
         ----------
@@ -85,14 +88,16 @@ class DistanceModel(BaseModel):
             Player spatiotemporal data for which the calculations are based.
         xy2 : XY, optional
             Second set of player spatiotemporal data used for calculating distances to
-            opponents. If not provided, distances to nearest mates and team spread are calculated.
+            opponents. If not provided, distances to nearest mates and team spread are
+            calculated.
 
         Returns
         -------
         None
         xy2 : XY, optional
             Second set of player spatiotemporal data used for calculating distances to
-            opponents. If not provided, distances to nearest mates and team spread are calculated.
+            opponents. If not provided, distances to nearest mates and team spread are
+            calculated.
 
         Returns
         -------
@@ -181,7 +186,8 @@ class DistanceModel(BaseModel):
 
     @requires_fit
     def distance_to_nearest_opponents(self) -> tuple[TeamProperty, TeamProperty]:
-        """Returns the distance to nearest opponents for both xy1 and xy2 as computed by the fit method."""
+        """Returns the distance to nearest opponents for both xy1 and xy2 as
+        computed by the fit method."""
         return self._dtno1, self._dtno2
 
     @requires_fit

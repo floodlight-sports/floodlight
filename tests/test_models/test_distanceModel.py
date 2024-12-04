@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
+
 from floodlight import XY
 from floodlight.models.distance_model import DistanceModel
-import pytest
 
 
 @pytest.mark.unit
@@ -13,7 +14,7 @@ def test_distance_model_nearest_mate(xy_data):
 
     assert dtnm is not None
     assert isinstance(dtnm.property, np.ndarray)
-    assert dtnm.property.shape[0] == 2 
+    assert dtnm.property.shape[0] == 2
 
 
 @pytest.mark.unit
@@ -25,7 +26,7 @@ def test_distance_model_team_spread(xy_data):
 
     assert spread is not None
     assert isinstance(spread.property, np.ndarray)
-    assert spread.property.shape[0] == 2  
+    assert spread.property.shape[0] == 2
 
 
 @pytest.mark.unit
@@ -93,7 +94,7 @@ def test_distance_model_opponents(xy_data):
     assert dtno2 is not None
     assert isinstance(dtno1.property, np.ndarray)
     assert isinstance(dtno2.property, np.ndarray)
-    assert dtno1.property.shape[0] == 2  
+    assert dtno1.property.shape[0] == 2
     assert dtno2.property.shape[0] == 2
 
 
