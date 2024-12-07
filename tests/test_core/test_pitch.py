@@ -151,6 +151,7 @@ def test_center_property() -> None:
 #   ax: plt.axes = None,
 #   **kwargs)
 
+
 # Test return
 @pytest.mark.plot
 def test_plot_football_return_matplotlib_axes_without_given_as_argument(

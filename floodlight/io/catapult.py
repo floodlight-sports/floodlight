@@ -1,4 +1,3 @@
-import os
 import json
 import warnings
 from collections import Counter
@@ -23,15 +22,20 @@ def _get_mappings() -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str]]:
     -------
     mapping : dict
         A dictionary that maps original key names to their corresponding new key names.
-        The keys represent the original key names, and the values represent the new key names.
+        The keys represent the original key names, and the values represent the new key
+        names.
 
     reversed_group_mapping : dict
-        A dictionary that maps new key names for group-related fields back to their original key names.
-        The keys represent the new key names, and the values represent the original key names.
+        A dictionary that maps new key names for group-related fields back to their
+        original key names.
+        The keys represent the new key names, and the values represent the
+        original key names.
 
     reversed_sensor_mapping : dict
-        A dictionary that maps new key names for sensor-related fields back to their original key names.
-        The keys represent the new key names, and the values represent the original key names.
+        A dictionary that maps new key names for sensor-related fields back to their
+        original key names.
+        The keys represent the new key names, and the values represent the
+        original key names.
     """
     mapping = {
         "ts": "time",
@@ -65,7 +69,8 @@ def _get_mappings() -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str]]:
 
 def dump_list_of_dicts(data: List[Dict], file_path: str, file_format: str) -> None:
     """
-    Serializes a list of dictionaries into a file in the specified format (pickle or JSON).
+    Serializes a list of dictionaries into a file in
+        the specified format (pickle or JSON).
 
     Parameters
     ----------
@@ -95,7 +100,8 @@ def dump_list_of_dicts(data: List[Dict], file_path: str, file_format: str) -> No
 
     # Check if the file format is 'json'
     elif file_format == "json":
-        # Open the file in text write mode and serialize data using JSON with indentation for readability
+        # Open the file in text write mode and serialize data using
+        #     JSON with indentation for readability
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
             print(f"Data successfully serialized to '{file_path}' as JSON.")
@@ -107,7 +113,8 @@ def dump_list_of_dicts(data: List[Dict], file_path: str, file_format: str) -> No
 
 def load_list_of_dicts(file_path: str) -> List[Dict]:
     """
-    Deserializes a list of dictionaries from a file. The file format is determined by its extension
+    Deserializes a list of dictionaries from a file.
+    The file format is determined by its extension
     (.pkl for pickle files and .json for JSON files).
 
     Parameters
@@ -165,7 +172,8 @@ def load_list_of_dicts(file_path: str) -> List[Dict]:
     # Raise an error if the file extension is not recognized
     else:
         raise ValueError(
-            "Unsupported file format. Use '.pkl' for pickle files or '.json' for JSON files."
+            "Unsupported file format. Use '.pkl' for pickle files \
+                or '.json' for JSON files."
         )
 
 
@@ -227,7 +235,8 @@ def get_activity_players_info(
     base_url : str
         The base URL for the API requests.
         Ensure you use the URL corresponding to the API for which you have credentials.
-        For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
+        For example, to access the European API,
+        use "https://connect-eu.catapultsports.com/api/v6/".
     api_token : str
         The API token for authentication.
     activity_id : str
@@ -237,7 +246,8 @@ def get_activity_players_info(
     Returns
     -------
     Tuple[List[Dict], str]
-        - List of dictionaries containing player data of each player participating in the specified activity.
+        - List of dictionaries containing player data of
+            each player participating in the specified activity.
         - Endpoint string used for the API request.
 
     Raises
@@ -265,12 +275,13 @@ def get_activity_players_info(
             message="API request failed",
             status_code=activity_players_info_response.status_code,
             endpoint=endpoint,
-            response_text=activity_players_info_response.text
-        )    
-        
+            response_text=activity_players_info_response.text,
+        )
+
     # Parse the JSON response to get player data
     activity_players_info = activity_players_info_response.json()
     return activity_players_info, endpoint
+
 
 def get_players_sensor_data_dict_list(
     base_url: str, api_token: str, activity_id: str, activity_players_info: List[Dict]
@@ -320,8 +331,10 @@ def get_players_sensor_data_dict_list(
     Parameters
     ----------
     base_url : str
-        The base URL for the API requests. Ensure you use the URL corresponding to the API for which you have credentials.
-        For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
+        The base URL for the API requests. Ensure you use the URL corresponding
+          to the API for which you have credentials.
+        For example, to access the European API,
+            use "https://connect-eu.catapultsports.com/api/v6/".
     api_token : str
         The API token for authentication.
     activity_id : str
@@ -347,7 +360,8 @@ def get_players_sensor_data_dict_list(
         "nulls": "0",
     }
 
-    # Extracting unique player IDs from the provided activity_players_info, ensuring the list is sorted
+    # Extracting unique player IDs from the provided activity_players_info
+    #  ensuring the list is sorted
     player_ids = sorted(set(i["id"] for i in activity_players_info))
     players_sensor_data_dict_list = []
 
@@ -358,14 +372,14 @@ def get_players_sensor_data_dict_list(
         endpoint = f"activities/{activity_id}/athletes/{i}/sensor"
         player_data_response = requests.get(base_url + endpoint, headers=headers)
         # Check if the request was successful
-    
+
         if player_data_response.status_code != response_ok:
             raise APIRequestError(
                 message="API request failed",
                 status_code=player_data_response.status_code,
                 endpoint=endpoint,
-                response_text=player_data_response.text
-            )    
+                response_text=player_data_response.text,
+            )
         try:
             player_data = player_data_response.json()
             # Check if the response is not empty and contains the expected structure
@@ -373,10 +387,14 @@ def get_players_sensor_data_dict_list(
                 players_sensor_data_dict_list.append(player_data[0])
             else:
                 print(
-                    f"Warning: No valid sensor data found for player in activity {activity_id}. Response: {player_data}"
+                    f"Warning: No valid sensor data found for player in activity \
+                        {activity_id}. Response: {player_data}"
                 )
         except (IndexError, KeyError) as e:
-            print(f"Error: Issue processing sensor data for activity {activity_id}. Exception: {e}")
+            print(
+                f"Error: Issue processing sensor data for \
+                    activity {activity_id}. Exception: {e}"
+            )
 
     return players_sensor_data_dict_list
 
@@ -404,7 +422,8 @@ def _get_key_names_from_dict_list(players_sensor_data_dict_list: List[Dict]) -> 
     recorded_keys = set()
 
     for athlete_entry in players_sensor_data_dict_list:
-        # Update with keys from the main athlete entry dictionary if they are in the mapping
+        # Update with keys from the main athlete entry dictionary
+        #   if they are in the mapping
         recorded_keys.update(key for key in athlete_entry.keys() if key in mapping)
 
         # Update with keys from the nested 'data' entries if they are in the mapping
@@ -440,7 +459,8 @@ def get_meta_data(
     # Get mappings for sensor and group identifiers
     mapping, reversed_group_mapping, reversed_sensor_mapping = _get_mappings()
 
-    # Extract key names from the list of dictionaries and map them using the provided mappings
+    # Extract key names from the list of dictionaries
+    #   and map them using the provided mappings
     key_names = list(_get_key_names_from_dict_list(players_sensor_data_dict_list))
     key_names_mapped = [mapping[i] for i in key_names]
 
@@ -497,7 +517,8 @@ def get_meta_data(
         if group_id not in pID_dict:
             pID_dict[group_id] = {}
 
-        # Update the player ID dictionary with sensor identifiers and their corresponding values
+        # Update the player ID dictionary with sensor
+        #   identifiers and their corresponding values
         for identifier in sensor_links:
             if identifier not in pID_dict[group_id]:
                 pID_dict[group_id][identifier] = []
@@ -550,8 +571,10 @@ def _get_available_sensor_identifier(pID_dict: Dict[str, Dict[str, List[str]]]) 
     Returns
     -------
     str
-        The available sensor identifier. This function checks for the presence of known sensor identifiers
-        ("name", "mapped_id", "sensor_id", "number") and returns the first one found in the metadata.
+        The available sensor identifier. This function checks for
+          the presence of known sensor identifiers
+          ("name", "mapped_id", "sensor_id", "number")
+          and returns the first one found in the metadata.
     """
     player_identifiers = ["name", "mapped_id", "sensor_id", "number"]
     # Check if the pID_dict is empty
@@ -569,21 +592,25 @@ def _create_links_from_meta_data(
     pID_dict: Dict[str, Dict[str, List[str]]], identifier: str = None
 ) -> Dict[str, Dict[str, int]]:
     """
-    Creates a mapping of player IDs to numerical indices based on the metadata.
+    Creates a mapping of player IDs to numerical indices based on
+    the metadata.
 
     Parameters
     ----------
     pID_dict : Dict[str, Dict[str, List[str]]]
         Metadata dictionary containing player IDs by group.
     identifier : str, optional
-        The sensor identifier to use for mapping. Defaults to the available identifier if not provided.
+        The sensor identifier to use for mapping. Defaults to the
+        available identifier if not provided.
 
     Returns
     -------
     Dict[str, Dict[str, int]]
-        A dictionary mapping group IDs to player ID indices. Each group ID maps to a dictionary where player IDs
-        are associated with their respective numerical indices.
+        A dictionary mapping group IDs to player ID indices. Each
+        group ID maps to a dictionary where player IDs are associated
+        with their respective numerical indices.
     """
+
     if identifier is None:
         identifier = _get_available_sensor_identifier(pID_dict)
 
@@ -599,22 +626,27 @@ def read_position_data_from_dict_list(
     players_sensor_data_dict_list: List[Dict], coord_format: str = "xy"
 ) -> List[XY]:
     """
-    Reads position data from players_sensor_data_dict_list and returns a list of XY objects.
+    Reads position data from players_sensor_data_dict_list and
+    returns a list of XY objects.
 
     Parameters
     ----------
     players_sensor_data_dict_list : List[Dict]
-        A list of dictionaries, each containing sensor data for a player.
-        Each dictionary represents a player's sensor data and typically includes
-        metadata and a list of data entries, where each data entry is a dictionary
-        with various sensor measurements.
+        A list of dictionaries, each containing sensor data for a
+        player. Each dictionary represents a player's sensor data and
+        typically includes metadata and a list of data entries, where
+        each data entry is a dictionary with various sensor
+        measurements.
 
     coord_format : str, optional
-        The coordinate format to use for interpreting the position data. This determines how the coordinate values
-        are extracted from the data:
-        - "xy": Coordinates will be in the fields "x" and "y" of each entry.
-        - "latlong": Coordinates will be in the fields "lat" (latitude) and "long" (longitude) of each entry.
-        Defaults to "xy".
+        The coordinate format to use for interpreting the position
+        data. This determines how the coordinate values are extracted
+        from the data:
+        - "xy": Coordinates will be in the fields "x" and "y" of each
+          entry.
+        - "latlong": Coordinates will be in the fields "lat"
+          (latitude) and "long" (longitude) of each entry. Defaults to
+          "xy".
 
     Returns
     -------
@@ -672,7 +704,8 @@ def read_position_data_from_dict_list(
                 y_coordinate = entry["long"]
             else:
                 raise ValueError(
-                    f"Expected coordinate format to be ['xy', 'latlong'], but got {coord_format} instead."
+                    f"Expected coordinate format to be ['xy', 'latlong'], \
+                        but got {coord_format} instead."
                 )
 
             # Get the group ID and calculate the column indices for x and y coordinates
@@ -685,7 +718,8 @@ def read_position_data_from_dict_list(
             y_col = x_col + 1
 
             # Calculate the row index based on the timestamp
-            # Timestamps are in centiseconds. The magic value 100 is used to convert centiseconds to seconds.
+            # Timestamps are in centiseconds. The magic value 100
+            #   is used to convert centiseconds to seconds.
             row = int(
                 (int(entry["ts"]) * 100 + int(entry["cs"]) - t_null) / (100 / framerate)
             )
@@ -714,33 +748,41 @@ def read_position_data_from_activity(
     coord_format: str = "xy",
 ) -> List[XY]:
     """
-    Reads position data for a specific activity either from a saved response or by making an API request.
+    Reads position data for a specific activity either from a saved
+      response or by making an API request.
 
     Parameters
     ----------
     base_url : str
-        The base URL for the API requests.
-        Ensure you use the URL corresponding to the API for which you have credentials.
-        For example, to access the European API, use "https://connect-eu.catapultsports.com/api/v6/".
+        The base URL for the API requests. Ensure you use the URL
+        corresponding to the API for which you have credentials. For
+        example, to access the European API, use
+        "https://connect-eu.catapultsports.com/api/v6/".
     api_token : str
         The API token for authentication.
     activity_id : str
         The unique identifier for the activity.
     save : bool, optional
-        Whether to save the players_sensor_data_dict_list to a file. Defaults to False.
+        Whether to save the players_sensor_data_dict_list to a file.
+        Defaults to False.
     save_format : str, optional
-        The format to use when saving the response data. It can be either "json" or "pickle".
+        The format to use when saving the response data. It can be
+        either "json" or "pickle".
         - "json": Saves the data in JSON format.
-        - "pickle": Saves the data in pickle format.
-        Defaults to "pickle".
+        - "pickle": Saves the data in pickle format. Defaults to
+          "pickle".
     path_to_players_sensor_data_dict_list : str, optional
-        The path to the saved players_sensor_data_dict_list file. If provided, data will be read from this path instead of making an API request.
+        The path to the saved players_sensor_data_dict_list file. If
+        provided, data will be read from this path instead of making
+        an API request.
     coord_format : str, optional
-        The coordinate format to use for interpreting the position data. This determines how the coordinate values
-        are extracted from the data:
-        - "xy": Coordinates will be in the fields "x" and "y" of each entry.
-        - "latlong": Coordinates will be in the fields "lat" (latitude) and "long" (longitude) of each entry.
-        Defaults to "xy".
+        The coordinate format to use for interpreting the position
+        data. This determines how the coordinate values are extracted
+        from the data:
+        - "xy": Coordinates will be in the fields "x" and "y" of each
+          entry.
+        - "latlong": Coordinates will be in the fields "lat" (latitude)
+          and "long" (longitude) of each entry. Defaults to "xy".
 
     Returns
     -------
@@ -750,18 +792,23 @@ def read_position_data_from_activity(
     Conditional Behavior
     --------------------
     1. If `path_to_players_sensor_data_dict_list` is provided:
-       - The function reads the response data from the specified file path, skipping any API requests.
-
+       - The function reads the response data from the specified file path,
+            skipping any API requests.
     2. If `path_to_players_sensor_data_dict_list` is not provided:
        - The function makes an API request to fetch the data.
-       - If `save` is set to `True`, the fetched response is saved to files in both pickle and JSON formats.
+       - If `save` is set to `True`, the fetched response is saved to files in
+            both pickle and JSON formats.
        - If `save` is `False`, the response data is processed directly without saving.
 
     Notes
     -----
-    - Ensure that the `path_to_players_sensor_data_dict_list` points to a valid file path containing previously saved response data.
-    - The `coord_format` parameter allows flexibility in how position data is interpreted based on the available fields in the data.
-    - The function `read_position_data_from_dict_list` converts the raw data dictionaries into `XY` objects.
+    - Ensure that the `path_to_players_sensor_data_dict_list` points
+        to a valid file path containing previously saved response data.
+    - The `coord_format` parameter allows flexibility in
+        how position data is interpreted
+        based on the available fields in the data.
+    - The function `read_position_data_from_dict_list` converts
+       the raw data dictionaries into `XY` objects.
 
     Example
     -------
@@ -770,17 +817,22 @@ def read_position_data_from_activity(
     >>> base_url = "https://connect-eu.catapultsports.com/api/v6/"
     >>> api_token = "your_api_token_here"
     >>> activity_id = "your_activity_id_here"
-    >>> data = read_position_data_from_activity(base_url, api_token, activity_id, save=True, coord_format="xy")
+    >>> data = read_position_data_from_activity(base_url, api_token,
+    ...             activity_id, save=True,
+    ...             coord_format="xy")
 
     In this example:
     - Data is fetched from the API.
     - The response is saved in both pickle and JSON formats.
-    - Position data is processed into a list of `XY` objects using the "xy" coordinate format.
+    - Position data is processed into a list of `XY` objects
+        using the "xy" coordinate format.
 
     Alternatively, to read data from a file:
 
     >>> path_to_file = "path/to/saved/players_sensor_data_dict_list.json"
-    >>> data = read_position_data_from_activity(base_url, api_token, activity_id, path_to_players_sensor_data_dict_list=path_to_file, coord_format="latlong")
+    >>> data = read_position_data_from_activity(base_url, api_token, activity_id,
+    ...             path_to_players_sensor_data_dict_list=path_to_file,
+    ...             coord_format="latlong")
 
     In this case:
     - Data is read from the specified file path.

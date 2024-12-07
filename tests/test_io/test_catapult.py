@@ -328,6 +328,7 @@ def test_read_position_data_invalid_format(players_sensor_data_dict_list):
             players_sensor_data_dict_list, coord_format="invalid_format"
         )
     assert (
-        "Expected coordinate format to be ['xy', 'latlong'], but got invalid_format instead."
+        "Expected coordinate format to be ['xy', 'latlong'], \
+            but got invalid_format instead."
         in str(excinfo.value)
     )

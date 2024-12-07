@@ -314,6 +314,7 @@ equivalent_distance`
         ecr: np.array
             Energy cost of running
         """
+
         # Cost of negative gradient from Minetti (2018)
         def _cng(es: np.ndarray):
             return -8.34 * es + eccr * np.exp(13 * es)
@@ -478,7 +479,7 @@ equivalent_distance`
         """
         cum_metp = np.divide(
             np.nancumsum(self._metabolic_power_.property, axis=0),
-            self._metabolic_power_.framerate
+            self._metabolic_power_.framerate,
         )
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
@@ -537,7 +538,7 @@ equivalent_distance`
         """
         cum_metp = np.divide(
             np.nancumsum(self._metabolic_power_.property, axis=0),
-            self._metabolic_power_.framerate
+            self._metabolic_power_.framerate,
         )
         cum_eqdist = cum_metp / eccr
 
