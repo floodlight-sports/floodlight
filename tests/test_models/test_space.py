@@ -4,10 +4,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from floodlight.core.pitch import Pitch
-from floodlight.models.space import DiscreteVoronoiModel
+from floodlight.models.space import SpaceControlModel
 
 
-# tests for DiscreteVoronoiModel (dvm)
+# tests for SpaceControlModel (dvm)
 @pytest.mark.unit
 def test_dvm_constructor(example_pitch_dfl) -> None:
     # create sample pitch
@@ -15,14 +15,14 @@ def test_dvm_constructor(example_pitch_dfl) -> None:
 
     # trigger constructor checks
     with pytest.raises(ValueError):
-        model = DiscreteVoronoiModel(pitch, mesh="foo")
+        model = SpaceControlModel(pitch, mesh="foo")
     with pytest.raises(ValueError):
-        model = DiscreteVoronoiModel(pitch, xpoints=9)
+        model = SpaceControlModel(pitch, xpoints=9)
     with pytest.raises(ValueError):
-        model = DiscreteVoronoiModel(pitch, xpoints=1001)
+        model = SpaceControlModel(pitch, xpoints=1001)
 
     # check correct executing of post_init
-    model = DiscreteVoronoiModel(pitch, xpoints=10)
+    model = SpaceControlModel(pitch, xpoints=10)
     assert not model.is_fitted
     assert model._meshx_ is not None
     assert model._meshy_ is not None
@@ -44,7 +44,7 @@ def test_generate_mesh_square() -> None:
     )
 
     # Opta
-    model = DiscreteVoronoiModel(pitch_opta, mesh="square", xpoints=xpoints)
+    model = SpaceControlModel(pitch_opta, mesh="square", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [[5.0, 15.0, 25.0, 35.0, 45.0, 55.0, 65.0, 75.0, 85.0, 95.0]]
@@ -60,7 +60,7 @@ def test_generate_mesh_square() -> None:
         model._meshy_,
     )
     # StatsBomb
-    model = DiscreteVoronoiModel(pitch_statsbomb, mesh="square", xpoints=xpoints)
+    model = SpaceControlModel(pitch_statsbomb, mesh="square", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [[6.0, 18.0, 30.0, 42.0, 54.0, 66.0, 78.0, 90.0, 102.0, 114.0]]
@@ -86,7 +86,7 @@ def test_generate_mesh_square() -> None:
         model._meshy_,
     )
     # DFL
-    model = DiscreteVoronoiModel(pitch_dfl, mesh="square", xpoints=xpoints)
+    model = SpaceControlModel(pitch_dfl, mesh="square", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [[-49.05, -38.15, -27.25, -16.35, -5.45, 5.45, 16.35, 27.25, 38.15, 49.05]]
@@ -101,7 +101,7 @@ def test_generate_mesh_square() -> None:
         model._meshy_,
     )
     # Tracab
-    model = DiscreteVoronoiModel(pitch_tracab, mesh="square", xpoints=xpoints)
+    model = SpaceControlModel(pitch_tracab, mesh="square", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [
@@ -129,7 +129,7 @@ def test_generate_mesh_square() -> None:
         model._meshy_,
     )
     # Statsperform
-    model = DiscreteVoronoiModel(pitch_statsperform, mesh="square", xpoints=xpoints)
+    model = SpaceControlModel(pitch_statsperform, mesh="square", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [[5.45, 16.35, 27.25, 38.15, 49.05, 59.95, 70.85, 81.75, 92.65, 103.55]]
@@ -161,7 +161,7 @@ def test_generate_mesh_hex() -> None:
     )
 
     # Opta
-    model = DiscreteVoronoiModel(pitch_opta, mesh="hexagonal", xpoints=xpoints)
+    model = SpaceControlModel(pitch_opta, mesh="hexagonal", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [
@@ -217,7 +217,7 @@ def test_generate_mesh_hex() -> None:
         model._meshy_,
     )
     # StatsBomb
-    model = DiscreteVoronoiModel(pitch_statsbomb, mesh="hexagonal", xpoints=xpoints)
+    model = SpaceControlModel(pitch_statsbomb, mesh="hexagonal", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [
@@ -269,7 +269,7 @@ def test_generate_mesh_hex() -> None:
         model._meshy_,
     )
     # DFL
-    model = DiscreteVoronoiModel(pitch_dfl, mesh="hexagonal", xpoints=xpoints)
+    model = SpaceControlModel(pitch_dfl, mesh="hexagonal", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [
@@ -321,7 +321,7 @@ def test_generate_mesh_hex() -> None:
         model._meshy_,
     )
     # Tracab
-    model = DiscreteVoronoiModel(pitch_tracab, mesh="hexagonal", xpoints=xpoints)
+    model = SpaceControlModel(pitch_tracab, mesh="hexagonal", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [
@@ -373,7 +373,7 @@ def test_generate_mesh_hex() -> None:
         model._meshy_,
     )
     # Statsperform
-    model = DiscreteVoronoiModel(pitch_statsperform, mesh="hexagonal", xpoints=xpoints)
+    model = SpaceControlModel(pitch_statsperform, mesh="hexagonal", xpoints=xpoints)
     assert np.allclose(
         np.array(
             [
@@ -433,7 +433,7 @@ def test_calc_cell_controls_euclidean_square(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_square = DiscreteVoronoiModel(pitch, mesh="square", xpoints=10)
+    model_square = SpaceControlModel(pitch, mesh="square", xpoints=10)
     model_square.fit(xy1, xy2)
 
     assert np.array_equal(
@@ -468,7 +468,7 @@ def test_calc_cell_controls_euclidean_hex(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_hex = DiscreteVoronoiModel(pitch, mesh="hexagonal", xpoints=10)
+    model_hex = SpaceControlModel(pitch, mesh="hexagonal", xpoints=10)
     model_hex.fit(xy1, xy2)
 
     assert np.array_equal(
@@ -506,7 +506,7 @@ def test_player_controls_square(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_square = DiscreteVoronoiModel(pitch, mesh="square", xpoints=10)
+    model_square = SpaceControlModel(pitch, mesh="square", xpoints=10)
     model_square.fit(xy1, xy2)
 
     areas1, areas2 = model_square.player_controls()
@@ -530,7 +530,7 @@ def test_player_controls_hex(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_hex = DiscreteVoronoiModel(pitch, mesh="hexagonal", xpoints=10)
+    model_hex = SpaceControlModel(pitch, mesh="hexagonal", xpoints=10)
     model_hex.fit(xy1, xy2)
 
     areas1, areas2 = model_hex.player_controls()
@@ -555,7 +555,7 @@ def test_team_controls_square(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_square = DiscreteVoronoiModel(pitch, mesh="square", xpoints=10)
+    model_square = SpaceControlModel(pitch, mesh="square", xpoints=10)
     model_square.fit(xy1, xy2)
 
     areas1, areas2 = model_square.team_controls()
@@ -573,7 +573,7 @@ def test_team_controls_square(
 def test_team_controls_hex(example_xy_objects_space_control, example_pitch_dfl) -> None:
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_hex = DiscreteVoronoiModel(pitch, mesh="hexagonal", xpoints=10)
+    model_hex = SpaceControlModel(pitch, mesh="hexagonal", xpoints=10)
     model_hex.fit(xy1, xy2)
 
     areas1, areas2 = model_hex.team_controls()
@@ -593,7 +593,7 @@ def test_plot_square(example_xy_objects_space_control, example_pitch_dfl) -> Non
     # get data
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_square = DiscreteVoronoiModel(pitch, mesh="square", xpoints=10)
+    model_square = SpaceControlModel(pitch, mesh="square", xpoints=10)
     model_square.fit(xy1, xy2)
 
     # create plot
@@ -620,7 +620,7 @@ def test_plot_hex(example_xy_objects_space_control, example_pitch_dfl) -> None:
     # get data
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_hex = DiscreteVoronoiModel(pitch, mesh="hexagonal", xpoints=10)
+    model_hex = SpaceControlModel(pitch, mesh="hexagonal", xpoints=10)
     model_hex.fit(xy1, xy2)
 
     # create plot
@@ -647,7 +647,7 @@ def test_plot_mesh(example_xy_objects_space_control, example_pitch_dfl) -> None:
     # get data
     xy1, xy2 = example_xy_objects_space_control
     pitch = example_pitch_dfl
-    model_hex = DiscreteVoronoiModel(pitch, mesh="hexagonal", xpoints=10)
+    model_hex = SpaceControlModel(pitch, mesh="hexagonal", xpoints=10)
     model_hex.fit(xy1, xy2)
 
     # create plot

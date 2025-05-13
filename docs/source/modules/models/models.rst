@@ -25,7 +25,7 @@ Collection of data models grouped by category. Each submodule contains model cla
    kinematics.AccelerationModel
    geometry.CentroidModel
    kinetics.MetabolicPowerModel
-   space.DiscreteVoronoiModel
+   space.SpaceControlModel
 
 
 For quick reference, the following computations are available after calling the respective model's ``.fit(...)``-method
@@ -70,7 +70,7 @@ For quick reference, the following computations are available after calling the 
 .. autosummary::
    :nosignatures:
 
-   DiscreteVoronoiModel.player_controls
-   DiscreteVoronoiModel.team_controls
-   DiscreteVoronoiModel.plot
-   DiscreteVoronoiModel.plot_mesh
+   SpaceControlModel.player_controls
+   SpaceControlModel.team_controls
+   SpaceControlModel.plot
+   SpaceControlModel.plot_mesh

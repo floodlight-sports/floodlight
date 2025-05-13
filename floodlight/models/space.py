@@ -11,7 +11,7 @@ from floodlight.models.base import BaseModel, requires_fit
 from floodlight.models.kinematics import VelocityVectorModel
 
 
-class DiscreteVoronoiModel(BaseModel):
+class SpaceControlModel(BaseModel):
     """Calculates discretized versions of the Voronoi tessellation commonly used to
     assess space control.
 
@@ -77,13 +77,13 @@ class DiscreteVoronoiModel(BaseModel):
     --------
     >>> import numpy as np
     >>> from floodlight import XY, Pitch
-    >>> from floodlight.models.space import DiscreteVoronoiModel
+    >>> from floodlight.models.space import SpaceControlModel
 
     >>> # create data and fit model
     >>> xy1 = XY(np.array(((10, 10, 20, 80, 30, 40), (10, 10, np.nan, np.nan, 35, 35))))
     >>> xy2 = XY(np.array(((90, 90, 80, 20, 75, 80), (90, 90, 75, 25, 80, 70))))
     >>> pitch = Pitch.from_template("opta", length=105, width=68)
-    >>> dvm = DiscreteVoronoiModel(pitch)
+    >>> dvm = SpaceControlModel(pitch)
     >>> dvm.fit(xy1, xy2)
 
     >>> # print player controls [%] for first team
@@ -488,7 +488,7 @@ class DiscreteVoronoiModel(BaseModel):
 
         Examples
         --------
-        Given a DiscreteVoronoiModel that has already been fitted:
+        Given a SpaceControlModel that has already been fitted:
 
         >>> # fitted_dvm_model has square mesh
         >>> ax = pitch.plot(color_scheme="bw")
@@ -592,7 +592,7 @@ class DiscreteVoronoiModel(BaseModel):
 
         Examples
         --------
-        Given a DiscreteVoronoiModel that has already been fitted:
+        Given a SpaceControlModel that has already been fitted:
 
         >>> ax = pitch.plot(color_scheme="bw")
         >>> fitted_dvm_model.plot_mesh(ax=ax)
