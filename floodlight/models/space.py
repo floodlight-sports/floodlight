@@ -8,6 +8,7 @@ from scipy.spatial.distance import cdist
 
 from floodlight import XY, Pitch, TeamProperty, PlayerProperty
 from floodlight.models.base import BaseModel, requires_fit
+from floodlight.models.kinematics import VelocityVectorModel
 
 
 class DiscreteVoronoiModel(BaseModel):
@@ -98,12 +99,21 @@ class DiscreteVoronoiModel(BaseModel):
      [46.91]]
     """
 
-    def __init__(self, pitch: Pitch, mesh: str = "square", xpoints: int = 100):
+    def __init__(
+        self,
+        pitch: Pitch,
+        mesh: str = "square",
+        xpoints: int = 100,
+        max_acceleration: float = 4.0,
+        model: str = "euclidean",
+    ):
         super().__init__(pitch)
 
         # input parameter
         self._mesh_type = mesh
         self._xpoints = xpoints
+        self._max_acceleration = max_acceleration
+        self._model = model
 
         # model parameter
         self._meshx_ = None
@@ -115,6 +125,8 @@ class DiscreteVoronoiModel(BaseModel):
         self._N2_ = None
         self._framerate = None
         self._cell_controls_ = None
+        self._velocityvector1 = None
+        self._velocityvector2 = None
 
         # checks
         valid_mesh_types = ["square", "hexagonal"]
@@ -182,26 +194,55 @@ class DiscreteVoronoiModel(BaseModel):
             self._meshx_[1::2, :] += xpad
 
     def _calc_cell_controls(self, xy1: XY, xy2: XY):
-        """Calculates xID of closest player to each mesh point at each time point and
-        stores results in self._cell_controls"""
+        """
+        Calculates the xID of the controlling player for each mesh point at each
+        time point and stores the results in self._cell_controls.
+        """
         # bin
-        T = len(xy1)
+        n_frames = len(xy1)
         self._cell_controls_ = np.full(
             # shape is: time x (mesh shape)
-            (T, self._meshx_.shape[0], self._meshx_.shape[1]),
+            (n_frames, self._meshx_.shape[0], self._meshx_.shape[1]),
             np.nan,
         )
 
-        # loop
-        for t in range(T):
-            # stack and reshape player and mesh coordinates to (M x 2) arrays
-            player_points = np.hstack((xy1.frame(t), xy2.frame(t))).reshape(-1, 2)
-            mesh_points = np.stack((self._meshx_, self._meshy_), axis=2).reshape(-1, 2)
+        mesh_points = np.stack((self._meshx_, self._meshy_), axis=2).reshape(-1, 2)
 
-            # calculate pairwise distances and determine closest player
-            pairwise_distances = cdist(mesh_points, player_points)
-            closest_player_index = np.nanargmin(pairwise_distances, axis=1)
-            self._cell_controls_[t] = closest_player_index.reshape(self._meshx_.shape)
+        if self._model == "euclidean":
+            # loop
+            for t in range(n_frames):
+                # stack and reshape player and mesh coordinates to (M x 2) arrays
+                player_points = np.hstack((xy1.frame(t), xy2.frame(t))).reshape(-1, 2)
+
+                # calculate pairwise distances and determine closest player
+                pairwise_distances = cdist(mesh_points, player_points)
+                closest_player_index = np.nanargmin(pairwise_distances, axis=1)
+                self._cell_controls_[t] = closest_player_index.reshape(
+                    self._meshx_.shape
+                )
+
+        elif self._model == "taki_hasegawa":
+            # loop
+            for frame in range(n_frames):
+                # combine stacked positions and velocities into (P x 4) array
+                pos1 = xy1.xy[frame].reshape(-1, 2)
+                pos2 = xy2.xy[frame].reshape(-1, 2)
+                player_positions = np.vstack((pos1, pos2))
+                vel1 = self._velocityvector1[frame]
+                vel2 = self._velocityvector2[frame]
+                player_velocities = np.vstack((vel1, vel2))
+                player_positions_velocities = np.hstack(
+                    (player_positions, player_velocities)
+                )
+
+                # compute shortest arrival times and identify fastest player
+                pairwise_times = self._calculate_shortest_times(
+                    mesh_points, player_positions_velocities
+                )
+                fastest_player_index = np.nanargmin(pairwise_times, axis=1)
+                self._cell_controls_[frame] = fastest_player_index.reshape(
+                    self._meshx_.shape
+                )
 
     def fit(self, xy1: XY, xy2: XY):
         """Fit the model to the given data and calculate control values for mesh points.
@@ -218,8 +259,96 @@ class DiscreteVoronoiModel(BaseModel):
         self._N2_ = xy2.N
         self._T_ = len(xy1)
         self._framerate = xy1.framerate
+
+        # compute velocity vectors for both teams using VelocityVectorModel
+        vvm1 = VelocityVectorModel()
+        vvm2 = VelocityVectorModel()
+        vvm1.fit(xy1)
+        vvm2.fit(xy2)
+        self._velocityvector1 = vvm1.velocityvector().property
+        self._velocityvector2 = vvm2.velocityvector().property
+
         # invoke control calculation
         self._calc_cell_controls(xy1, xy2)
+
+    def _calculate_shortest_times(
+        self, mesh_points: np.ndarray, player_points: np.ndarray
+    ) -> np.ndarray:
+        """
+        Calculate the shortest time required for each player to reach each mesh point,
+        assuming optimal acceleration (i.e., directly toward the target point) with a
+        fixed magnitude (`self._max_acceleration`).
+
+        This implementation is based on the motion model described by Taki and Hasegawa,
+        where the time `t_s` to reach a point `x` from position `p` with velocity `v`
+        and constant acceleration `a` is obtained by solving the quadratic equation:
+
+            0.5 * a * t_s^2 + v_proj * t_s - ||x - p|| = 0
+
+        where `v_proj` is the projection of the velocity vector onto the direction of
+        the mesh point, and `||x - p||` is the distance to the target.
+
+        Parameters
+        ----------
+        mesh_points : np.ndarray of shape (M, 2)
+            Array of 2D coordinates representing the mesh points on the pitch.
+
+        player_points : np.ndarray of shape (P, 4)
+            Array containing position (x, y) and velocity (vx, vy) for each player.
+
+        Returns
+        -------
+        times : np.ndarray of shape (M, P)
+            Array containing the minimum time `t_s` each player `p` needs to reach
+            each mesh point `m`, assuming maximum acceleration toward the mesh point.
+            If no real, positive solution exists, the time is set to np.inf.
+            If the player is already at the mesh point, the time is 0.0.
+        """
+
+        # extract player positions and velocities from input array
+        pos = player_points[:, :2]
+        vel = player_points[:, 2:]
+
+        # compute vector from each player to each mesh point
+        d = mesh_points[:, np.newaxis, :] - pos[np.newaxis, :, :]
+
+        # compute Euclidean distances between players and mesh points
+        d_norm = np.linalg.norm(d, axis=2, keepdims=True)
+        d_norm_squeezed = np.squeeze(d_norm, axis=2)
+
+        # compute unit direction vectors from players to mesh points
+        d_hat = np.divide(d, d_norm, out=np.zeros_like(d), where=d_norm != 0)
+
+        # project player velocities onto direction vectors toward mesh points
+        v_proj = np.sum(d_hat * vel[np.newaxis, :, :], axis=2)
+
+        # set uniform acceleration magnitude for all players and directions
+        a_proj = self._max_acceleration
+
+        # compute discriminant and identify valid (real-valued) solutions
+        disc = v_proj**2 + 2 * a_proj * d_norm_squeezed
+        valid = disc >= 0
+
+        # compute square root of discriminant only for valid entries
+        sqrt_disc = np.zeros_like(disc)
+        sqrt_disc[valid] = np.sqrt(disc[valid])
+
+        # solve quadratic equation for time using the quadratic formula
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t1 = (-v_proj + sqrt_disc) / a_proj
+            t2 = (-v_proj - sqrt_disc) / a_proj
+
+        # discard invalid or negative time solutions
+        t1[~valid | (t1 < 0)] = np.inf
+        t2[~valid | (t2 < 0)] = np.inf
+
+        # choose the smaller valid time as the shortest arrival time
+        times = np.minimum(t1, t2)
+
+        # set time to 0.0 if player is already at the mesh point
+        times[d_norm_squeezed == 0] = 0.0
+
+        return times
 
     @requires_fit
     def player_controls(self) -> Tuple[PlayerProperty, PlayerProperty]:
