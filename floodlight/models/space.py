@@ -12,15 +12,21 @@ from floodlight.models.kinematics import VelocityVectorModel
 
 
 class SpaceControlModel(BaseModel):
-    """Calculates discretized versions of the Voronoi tessellation commonly used to
-    assess space control.
+    """
+    Computes space control on a discretized pitch using different underlying models.
+
+    The SpaceControlModel allows for different definitions of control:
+    - Euclidean Voronoi tessellation: Each mesh point is assigned to the nearest player.
+    - Taki-Hasegawa motion model: Each mesh point is assigned to the player who can
+      reach it fastest, considering initial velocity and maximum acceleration.
 
     Upon instantiation, this model creates a mesh grid that spans the entire pitch with
-    a fixed number of mesh points. When calling the
-    :func:`~DiscreteVoronoiModel.fit`-method, closest players to the respective mesh
-    points are evaluated and their control assigned to players. Thus, cumulative
-    controls and controlled areas are calculated on a discretization of the pitch. The
-    following calculations can subsequently be queried by calling the corresponding
+    a fixed number of mesh points. When calling the :func:`~SpaceControlModel.fit`
+    method, each mesh point is assigned to the controlling player according to the
+    selected model. Cumulative controls and controlled areas are then computed across
+    time.
+
+    The following calculations can subsequently be queried by calling the corresponding
     methods:
 
         - Player Space Control --> :func:`~DiscreteVoronoiModel.player_controls`
@@ -46,18 +52,29 @@ class SpaceControlModel(BaseModel):
         and defaults to 100. The number of messh grid points in y-direction will be
         inferred automatically to match the shape of the pitch and produce regular mesh
         cell shapes.
+    max_acceleration : float, optional
+        Maximum acceleration used in the Taki-Hasegawa model. Defaults to 4.0 m/s².
+    model : {'euclidean', 'taki_hasegawa'}, optional
+        String identifier for the control model to be used. Defaults to 'euclidean'.
 
     Notes
     -----
     The original work by Taki and Hasegawa proposed to use Voronoi tessellations for
     assessing player dominant regions [1]_. This approach has later been simplified by
     using the Euclidean distance when allocating space to players [2]_ , [3]_.
+
     Instead of computing algebraic Voronoi regions, this model discretizes the problem
     by sampling space control on a finite number of mesh points across the pitch. This
     runs much faster and can be easier to handle. If an appropriate number of mesh
     points is chosen, the resulting error is expected to be negligible given the common
     spatial inaccuracies of tracking data as well as variations in moving players'
     centers of masses.
+
+    In addition to the Euclidean model, this class supports a dynamic motion-based
+    model based on the formulation proposed by Taki and Hasegawa [1]_.
+    This approach assigns each mesh point to the player who can reach it fastest,
+    considering both current velocity and maximum acceleration. It is particularly
+    suitable for analyzing movement intentions and temporal dominance structures.
 
     References
     ----------
@@ -79,21 +96,21 @@ class SpaceControlModel(BaseModel):
     >>> from floodlight import XY, Pitch
     >>> from floodlight.models.space import SpaceControlModel
 
-    >>> # create data and fit model
+    >>> # create data and fit model using Euclidean control
     >>> xy1 = XY(np.array(((10, 10, 20, 80, 30, 40), (10, 10, np.nan, np.nan, 35, 35))))
     >>> xy2 = XY(np.array(((90, 90, 80, 20, 75, 80), (90, 90, 75, 25, 80, 70))))
     >>> pitch = Pitch.from_template("opta", length=105, width=68)
-    >>> dvm = SpaceControlModel(pitch)
-    >>> dvm.fit(xy1, xy2)
+    >>> scm = SpaceControlModel(pitch, model="euclidean")
+    >>> scm.fit(xy1, xy2)
 
-    >>> # print player controls [%] for first team
-    >>> player_control1, player_control2 = dvm.player_controls()
+    >>> # get player controls [%]
+    >>> player_control1, player_control2 = scm.player_controls()
     >>> print(player_control1.property)
     [[10.63 19.32 21.71]
      [10.35  0.   36.56]]
 
-    >>> # print team controls [%] for first team
-    >>> team_control1, team_control2 = dvm.team_controls()
+    >>> # get team controls [%]
+    >>> team_control1, team_control2 = scm.team_controls()
     >>> print(team_control1.property)
     [[51.66]
      [46.91]]
