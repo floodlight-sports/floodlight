@@ -99,13 +99,17 @@ class DiscreteVoronoiModel(BaseModel):
      [46.91]]
     """
 
+    # Supported space control model identifiers
+    EUCLIDEAN = "euclidean"
+    TAKI_HASEGAWA = "taki_hasegawa"
+
     def __init__(
         self,
         pitch: Pitch,
         mesh: str = "square",
         xpoints: int = 100,
         max_acceleration: float = 4.0,
-        model: str = "euclidean",
+        model: str = EUCLIDEAN,
     ):
         super().__init__(pitch)
 
@@ -114,6 +118,13 @@ class DiscreteVoronoiModel(BaseModel):
         self._xpoints = xpoints
         self._max_acceleration = max_acceleration
         self._model = model
+
+        valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA]
+        if self._model not in valid_models:
+            raise ValueError(
+                f"Invalid model type. Expected one of {valid_models}, "
+                f"got '{self._model}'"
+            )
 
         # model parameter
         self._meshx_ = None
@@ -208,7 +219,7 @@ class DiscreteVoronoiModel(BaseModel):
 
         mesh_points = np.stack((self._meshx_, self._meshy_), axis=2).reshape(-1, 2)
 
-        if self._model == "euclidean":
+        if self._model == self.EUCLIDEAN:
             # loop
             for t in range(n_frames):
                 # stack and reshape player and mesh coordinates to (M x 2) arrays
@@ -221,7 +232,7 @@ class DiscreteVoronoiModel(BaseModel):
                     self._meshx_.shape
                 )
 
-        elif self._model == "taki_hasegawa":
+        elif self._model == self.TAKI_HASEGAWA:
             # loop
             for frame in range(n_frames):
                 # combine stacked positions and velocities into (P x 4) array
@@ -260,16 +271,26 @@ class DiscreteVoronoiModel(BaseModel):
         self._T_ = len(xy1)
         self._framerate = xy1.framerate
 
-        # compute velocity vectors for both teams using VelocityVectorModel
+        if self._model == self.TAKI_HASEGAWA:
+            self.compute_velocities(xy1, xy2)
+
+        # invoke control calculation
+        self._calc_cell_controls(xy1, xy2)
+
+    def compute_velocities(self, xy1: XY, xy2: XY) -> None:
+        """
+        Compute and store player velocity vectors required by dynamic models.
+        If velocities have already been computed, this method does nothing.
+        """
+        if self._velocityvector1 is not None and self._velocityvector2 is not None:
+            return
+
         vvm1 = VelocityVectorModel()
         vvm2 = VelocityVectorModel()
         vvm1.fit(xy1)
         vvm2.fit(xy2)
         self._velocityvector1 = vvm1.velocityvector().property
         self._velocityvector2 = vvm2.velocityvector().property
-
-        # invoke control calculation
-        self._calc_cell_controls(xy1, xy2)
 
     def _calculate_shortest_times(
         self, mesh_points: np.ndarray, player_points: np.ndarray
