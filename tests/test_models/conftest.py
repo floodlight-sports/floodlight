@@ -90,3 +90,171 @@ def example_xy_objects_space_control() -> Tuple[XY, XY]:
     )
 
     return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_space_control_static_players() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-45, 0),
+                (-45, 0),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (45, 0),
+                (45, 0),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_space_control_player2_runs_at_player1() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-45, 0),
+                (-45, 0),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (45, 0),
+                (44.6, 0),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_space_control_players_run_towards_each_other() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-10, 0),
+                (-9.8, 0),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (10, 0),
+                (9.8, 0),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_space_control_players_run_same_direction() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-10, 0),
+                (-10.2, 0),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (10, 0),
+                (9.8, 0),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_space_control_identical_positions() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (0, 0),
+                (0, 0),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (0, 0),
+                (0, 0),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_nan_vertical() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (0, np.nan),
+                (0, np.nan),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (10, np.nan),
+                (10, np.nan),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_nan_horizontal() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (0, 0),
+                (np.nan, np.nan),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (10, 10),
+                (np.nan, np.nan),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2

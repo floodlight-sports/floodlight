@@ -263,11 +263,26 @@ class SpaceControlModel(BaseModel):
                     (player_positions, player_velocities)
                 )
 
+                print(f"\nplayer_positions_velocities – Frame {frame}:")
+                print(player_positions_velocities)
+
                 # compute shortest arrival times and identify fastest player
                 pairwise_times = self._calculate_shortest_times(
                     mesh_points, player_positions_velocities
                 )
-                fastest_player_index = np.nanargmin(pairwise_times, axis=1)
+
+                print(f"\nShortest times – Frame {frame}:")
+                print(pairwise_times)
+
+                # set times to np.inf for invalid player positions (e.g., NaN)
+                invalid_mask = np.all(~np.isfinite(pairwise_times), axis=1)
+
+                fastest_player_index = np.full(pairwise_times.shape[0], np.nan)
+                valid_idx = ~invalid_mask
+                fastest_player_index[valid_idx] = np.nanargmin(
+                    pairwise_times[valid_idx], axis=1
+                )
+
                 self._cell_controls_[frame] = fastest_player_index.reshape(
                     self._meshx_.shape
                 )
@@ -282,6 +297,11 @@ class SpaceControlModel(BaseModel):
         xy2: XY
             Player spatiotemporal data of the second team.
         """
+
+        # sanitize XY data to handle NaNs properly
+        xy1 = self.sanitize_nan_coordinates(xy1)
+        xy2 = self.sanitize_nan_coordinates(xy2)
+
         # derive parameters
         self._N1_ = xy1.N
         self._N2_ = xy2.N
@@ -293,6 +313,38 @@ class SpaceControlModel(BaseModel):
 
         # invoke control calculation
         self._calc_cell_controls(xy1, xy2)
+
+    @staticmethod
+    def sanitize_nan_coordinates(xy: XY) -> XY:
+        """
+        Replaces half-NaN coordinates (e.g., only x or only y is NaN)
+        with full NaN pairs for performance-safe computation.
+
+        Parameters
+        ----------
+        xy : XY
+            Original XY object
+
+        Returns
+        -------
+        XY
+            A new XY object with consistent NaN-pairs (x and y)
+        """
+        # Create a copy of the xy array and convert to float to avoid issues with NaN
+        sanitized_xy_array = xy.xy.copy().astype(float)
+
+        # Detect all x or y that are nan (shape: T, N*2)
+        x_nan = np.isnan(sanitized_xy_array[:, ::2])
+        y_nan = np.isnan(sanitized_xy_array[:, 1::2])
+
+        # Combine masks to get players with either x or y nan
+        any_nan = x_nan | y_nan
+
+        # Broadcast to both x and y components
+        sanitized_xy_array[:, ::2][any_nan] = np.nan
+        sanitized_xy_array[:, 1::2][any_nan] = np.nan
+
+        return XY(sanitized_xy_array, framerate=xy.framerate, direction=xy.direction)
 
     def compute_velocities(self, xy1: XY, xy2: XY) -> None:
         """
@@ -346,6 +398,9 @@ class SpaceControlModel(BaseModel):
         # extract player positions and velocities from input array
         pos = player_points[:, :2]
         vel = player_points[:, 2:]
+
+        # replace NaN velocities with zeros for stable projection computation
+        vel = np.nan_to_num(vel, nan=0.0)
 
         # compute vector from each player to each mesh point
         d = mesh_points[:, np.newaxis, :] - pos[np.newaxis, :, :]
@@ -551,6 +606,11 @@ class SpaceControlModel(BaseModel):
         yoffset = -(self._ypolysize_ * 0.5)
         # loop through mesh points and plot Rectangle patch
         for i, j in np.ndindex(self._meshx_.shape):
+            control_value = self._cell_controls_[t, i, j]
+            # skip NaN values
+            if np.isnan(control_value):
+                continue
+
             poly = plt.Rectangle(
                 (self._meshx_[i, j] + xoffset, self._meshy_[i, j] + yoffset),
                 width=self._xpolysize_,
@@ -580,6 +640,11 @@ class SpaceControlModel(BaseModel):
         n_vertices = 6
         # loop through mesh points and plot RegularPolygon patch
         for (i, j), x in np.ndenumerate(self._meshx_):
+            control_value = self._cell_controls_[t, i, j]
+            # skip NaN values
+            if np.isnan(control_value):
+                continue
+
             poly = RegularPolygon(
                 (x, self._meshy_[i, j]),
                 numVertices=n_vertices,
