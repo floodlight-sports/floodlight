@@ -135,6 +135,7 @@ class SpaceControlModel(BaseModel):
         self._xpoints = xpoints
         self._max_acceleration = max_acceleration
         self._model = model
+        self._pitch = pitch
 
         valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA]
         if self._model not in valid_models:
@@ -263,16 +264,10 @@ class SpaceControlModel(BaseModel):
                     (player_positions, player_velocities)
                 )
 
-                print(f"\nplayer_positions_velocities – Frame {frame}:")
-                print(player_positions_velocities)
-
                 # compute shortest arrival times and identify fastest player
                 pairwise_times = self._calculate_shortest_times(
                     mesh_points, player_positions_velocities
                 )
-
-                print(f"\nShortest times – Frame {frame}:")
-                print(pairwise_times)
 
                 # set times to np.inf for invalid player positions (e.g., NaN)
                 invalid_mask = np.all(~np.isfinite(pairwise_times), axis=1)
@@ -298,6 +293,23 @@ class SpaceControlModel(BaseModel):
             Player spatiotemporal data of the second team.
         """
 
+        # check if xy1 and xy2 are valid
+        if len(xy1) != len(xy2):
+            raise ValueError("XY objects must have the same number of frames.")
+
+        # check for out-of-bounds player positions
+        mask1 = self.check_positions_within_pitch(xy1, self._pitch)
+        mask2 = self.check_positions_within_pitch(xy2, self._pitch)
+
+        if not np.all(mask1):
+            raise ValueError(
+                "Some players in xy1 are positioned outside the pitch bounds."
+            )
+        if not np.all(mask2):
+            raise ValueError(
+                "Some players in xy2 are positioned outside the pitch bounds."
+            )
+
         # sanitize XY data to handle NaNs properly
         xy1 = self.sanitize_nan_coordinates(xy1)
         xy2 = self.sanitize_nan_coordinates(xy2)
@@ -313,6 +325,15 @@ class SpaceControlModel(BaseModel):
 
         # invoke control calculation
         self._calc_cell_controls(xy1, xy2)
+
+    @staticmethod
+    def check_positions_within_pitch(xy: XY, pitch: Pitch) -> np.ndarray:
+        """Return a mask of shape (T, N) where True = position within pitch bounds."""
+        x = xy.xy[:, ::2]
+        y = xy.xy[:, 1::2]
+        in_x_bounds = (x >= pitch.xlim[0]) & (x <= pitch.xlim[1]) | np.isnan(x)
+        in_y_bounds = (y >= pitch.ylim[0]) & (y <= pitch.ylim[1]) | np.isnan(y)
+        return in_x_bounds & in_y_bounds
 
     @staticmethod
     def sanitize_nan_coordinates(xy: XY) -> XY:

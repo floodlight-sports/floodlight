@@ -258,3 +258,76 @@ def example_xy_objects_nan_horizontal() -> Tuple[XY, XY]:
     )
 
     return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_playercount_mismatch() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-25, 10, -25, -10),
+                (-25, 10, -25, -10),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (25, 0),
+                (25, 0),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_framecount_mismatch() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-25, 10, -25, -10),
+                (-25, 10, -25, -10),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (25, 10, 25, -10),
+                (25, 10, 25, -10),
+                (25, 10, 25, -10),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_out_of_pitch_bounds() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (200, 0),
+                (200, 0),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (10, 10),
+                (10, 10),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2

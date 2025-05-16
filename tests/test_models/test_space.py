@@ -503,7 +503,7 @@ def test_calc_cell_controls_euclidean_hex(
     )
 
 
-# test calculation of controls with taki_hasegawa model
+# test calculation of controls with taki_hasegawa model with square mesh
 @pytest.mark.unit
 def test_static_players_taki_hasegawa_square(
     example_xy_objects_space_control_static_players, example_pitch_dfl
@@ -654,16 +654,17 @@ def test_players_same_direction_taki_hasegawa_square(
     )
 
 
+# test calculation of controls with taki_hasegawa model with hexagonal mesh
 @pytest.mark.unit
 def test_static_players_taki_hasegawa_hex(
     example_xy_objects_space_control_static_players, example_pitch_dfl
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control_static_players
     pitch = example_pitch_dfl
-    model_square = SpaceControlModel(
+    model_hex = SpaceControlModel(
         pitch, mesh="hexagonal", xpoints=10, model="taki_hasegawa"
     )
-    model_square.fit(xy1, xy2)
+    model_hex.fit(xy1, xy2)
 
     assert np.array_equal(
         np.array(
@@ -676,7 +677,7 @@ def test_static_players_taki_hasegawa_hex(
                 [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             ]
         ),
-        model_square._cell_controls_[0],
+        model_hex._cell_controls_[0],
     )
     assert np.array_equal(
         np.array(
@@ -689,7 +690,7 @@ def test_static_players_taki_hasegawa_hex(
                 [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             ]
         ),
-        model_square._cell_controls_[1],
+        model_hex._cell_controls_[1],
     )
 
 
@@ -699,10 +700,10 @@ def test_p2_runs_at_p1_taki_hasegawa_hex(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control_player2_runs_at_player1
     pitch = example_pitch_dfl
-    model_square = SpaceControlModel(
+    model_hex = SpaceControlModel(
         pitch, mesh="hexagonal", xpoints=10, model="taki_hasegawa"
     )
-    model_square.fit(xy1, xy2)
+    model_hex.fit(xy1, xy2)
 
     assert np.array_equal(
         np.array(
@@ -715,7 +716,7 @@ def test_p2_runs_at_p1_taki_hasegawa_hex(
                 [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             ]
         ),
-        model_square._cell_controls_[0],
+        model_hex._cell_controls_[0],
     )
     assert np.array_equal(
         np.array(
@@ -728,7 +729,7 @@ def test_p2_runs_at_p1_taki_hasegawa_hex(
                 [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             ]
         ),
-        model_square._cell_controls_[1],
+        model_hex._cell_controls_[1],
     )
 
 
@@ -739,10 +740,10 @@ def test_players_towards_each_other_taki_hasegawa_hex(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control_players_run_towards_each_other
     pitch = example_pitch_dfl
-    model_square = SpaceControlModel(
+    model_hex = SpaceControlModel(
         pitch, mesh="hexagonal", xpoints=10, model="taki_hasegawa"
     )
-    model_square.fit(xy1, xy2)
+    model_hex.fit(xy1, xy2)
 
     assert np.array_equal(
         np.array(
@@ -755,7 +756,7 @@ def test_players_towards_each_other_taki_hasegawa_hex(
                 [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             ]
         ),
-        model_square._cell_controls_[0],
+        model_hex._cell_controls_[0],
     )
     assert np.array_equal(
         np.array(
@@ -768,7 +769,7 @@ def test_players_towards_each_other_taki_hasegawa_hex(
                 [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             ]
         ),
-        model_square._cell_controls_[1],
+        model_hex._cell_controls_[1],
     )
 
 
@@ -779,10 +780,10 @@ def test_players_same_direction_taki_hasegawa_hex(
 ) -> None:
     xy1, xy2 = example_xy_objects_space_control_players_run_same_direction
     pitch = example_pitch_dfl
-    model_square = SpaceControlModel(
+    model_hex = SpaceControlModel(
         pitch, mesh="hexagonal", xpoints=10, model="taki_hasegawa"
     )
-    model_square.fit(xy1, xy2)
+    model_hex.fit(xy1, xy2)
 
     assert np.array_equal(
         np.array(
@@ -795,7 +796,7 @@ def test_players_same_direction_taki_hasegawa_hex(
                 [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             ]
         ),
-        model_square._cell_controls_[0],
+        model_hex._cell_controls_[0],
     )
     assert np.array_equal(
         np.array(
@@ -808,11 +809,11 @@ def test_players_same_direction_taki_hasegawa_hex(
                 [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             ]
         ),
-        model_square._cell_controls_[1],
+        model_hex._cell_controls_[1],
     )
 
 
-# data quality test calculation of controls with identical positions
+# data quality tests for taki_hasegawa model
 @pytest.mark.unit
 def test_identical_positions_taki_hasegawa(
     example_xy_objects_space_control_identical_positions, example_pitch_dfl
@@ -850,6 +851,65 @@ def test_nan_vertical_taki_hasegawa(
     model.fit(xy1, xy2)
 
     assert np.isnan(model._cell_controls_).all()
+
+
+@pytest.mark.unit
+def test_playercount_mismatch_taki_hasegawa(
+    example_xy_objects_playercount_mismatch, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_playercount_mismatch
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
+    model.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ]
+        ),
+        model._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ]
+        ),
+        model._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_framecount_mismatch_taki_hasegawa(
+    example_xy_objects_framecount_mismatch, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_framecount_mismatch
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
+
+    with pytest.raises(ValueError, match="must have the same number of frames"):
+        model.fit(xy1, xy2)
+
+
+@pytest.mark.unit
+def test_out_of_pitch_bounds_taki_hasegawa(
+    example_xy_objects_out_of_pitch_bounds, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_out_of_pitch_bounds
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
+
+    with pytest.raises(ValueError, match="outside the pitch bounds"):
+        model.fit(xy1, xy2)
 
 
 # test calculation of player areas
