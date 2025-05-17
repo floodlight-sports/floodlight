@@ -912,6 +912,18 @@ def test_out_of_pitch_bounds_taki_hasegawa(
         model.fit(xy1, xy2)
 
 
+@pytest.mark.unit
+def test_fit_with_missing_second_team(
+    example_xy_objects_missing_second_team, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_missing_second_team
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
+
+    with pytest.raises(TypeError, match="Both inputs must be valid XY objects."):
+        model.fit(xy1, xy2)
+
+
 # test calculation of player areas
 @pytest.mark.unit
 def test_player_controls_square(

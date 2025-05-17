@@ -293,6 +293,10 @@ class SpaceControlModel(BaseModel):
             Player spatiotemporal data of the second team.
         """
 
+        # Check if both inputs are valid XY objects
+        if not isinstance(xy1, XY) or not isinstance(xy2, XY):
+            raise TypeError("Both inputs must be valid XY objects.")
+
         # check if xy1 and xy2 are valid
         if len(xy1) != len(xy2):
             raise ValueError("XY objects must have the same number of frames.")
@@ -300,7 +304,6 @@ class SpaceControlModel(BaseModel):
         # check for out-of-bounds player positions
         mask1 = self.check_positions_within_pitch(xy1, self._pitch)
         mask2 = self.check_positions_within_pitch(xy2, self._pitch)
-
         if not np.all(mask1):
             raise ValueError(
                 "Some players in xy1 are positioned outside the pitch bounds."

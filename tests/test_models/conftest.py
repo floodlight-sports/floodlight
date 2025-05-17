@@ -331,3 +331,19 @@ def example_xy_objects_out_of_pitch_bounds() -> Tuple[XY, XY]:
     )
 
     return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_missing_second_team() -> Tuple[XY, None]:
+    xy1 = XY(
+        xy=np.array(
+            [
+                (0, 0),
+                (0, 0),
+            ]
+        ),
+        framerate=20,
+    )
+    xy2 = None
+
+    return xy1, xy2
