@@ -813,6 +813,146 @@ def test_players_same_direction_taki_hasegawa_hex(
     )
 
 
+# data quality tests for euclidean model
+@pytest.mark.unit
+def test_identical_positions_euclidean(
+    example_xy_objects_space_control_identical_positions, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_identical_positions
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+    model.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.zeros((5, 10)),
+        model._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.zeros((5, 10)),
+        model._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_nan_horizontal_euclidean(
+    example_xy_objects_nan_horizontal, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_nan_horizontal
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+    model.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+            ]
+        ),
+        model._cell_controls_[0],
+    )
+    assert np.allclose(
+        model._cell_controls_[1],
+        np.full((5, 10), np.nan),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_nan_vertical_euclidean(
+    example_xy_objects_nan_vertical, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_nan_vertical
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+    model.fit(xy1, xy2)
+
+    assert np.allclose(
+        model._cell_controls_[0],
+        np.full((5, 10), np.nan),
+        equal_nan=True,
+    )
+    assert np.allclose(
+        model._cell_controls_[1],
+        np.full((5, 10), np.nan),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_playercount_mismatch_euclidean(
+    example_xy_objects_playercount_mismatch, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_playercount_mismatch
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+    model.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ]
+        ),
+        model._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ]
+        ),
+        model._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_framecount_mismatch_euclidean(
+    example_xy_objects_framecount_mismatch, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_framecount_mismatch
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+
+    with pytest.raises(ValueError, match="must have the same number of frames"):
+        model.fit(xy1, xy2)
+
+
+@pytest.mark.unit
+def test_out_of_pitch_bounds_euclidean(
+    example_xy_objects_out_of_pitch_bounds, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_out_of_pitch_bounds
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+
+    with pytest.warns(UserWarning, match="outside the pitch boundaries"):
+        model.fit(xy1, xy2)
+
+
+@pytest.mark.unit
+def test_fit_with_missing_second_team_euclidean(
+    example_xy_objects_missing_second_team, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_missing_second_team
+    pitch = example_pitch_dfl
+    model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="euclidean")
+
+    with pytest.raises(TypeError, match="Both inputs must be valid XY objects."):
+        model.fit(xy1, xy2)
+
+
 # data quality tests for taki_hasegawa model
 @pytest.mark.unit
 def test_identical_positions_taki_hasegawa(
@@ -823,8 +963,14 @@ def test_identical_positions_taki_hasegawa(
     model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
     model.fit(xy1, xy2)
 
-    assert model._cell_controls_ is not None
-    assert not np.isnan(model._cell_controls_).all()
+    assert np.array_equal(
+        np.zeros((5, 10)),
+        model._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.zeros((5, 10)),
+        model._cell_controls_[1],
+    )
 
 
 @pytest.mark.unit
@@ -836,9 +982,23 @@ def test_nan_horizontal_taki_hasegawa(
     model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
     model.fit(xy1, xy2)
 
-    assert model._cell_controls_ is not None
-    assert not np.isnan(model._cell_controls_[0]).all()
-    assert np.isnan(model._cell_controls_[1]).all()
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+            ]
+        ),
+        model._cell_controls_[0],
+    )
+    assert np.allclose(
+        model._cell_controls_[1],
+        np.full((5, 10), np.nan),
+        equal_nan=True,
+    )
 
 
 @pytest.mark.unit
@@ -850,7 +1010,16 @@ def test_nan_vertical_taki_hasegawa(
     model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
     model.fit(xy1, xy2)
 
-    assert np.isnan(model._cell_controls_).all()
+    assert np.allclose(
+        model._cell_controls_[0],
+        np.full((5, 10), np.nan),
+        equal_nan=True,
+    )
+    assert np.allclose(
+        model._cell_controls_[1],
+        np.full((5, 10), np.nan),
+        equal_nan=True,
+    )
 
 
 @pytest.mark.unit
@@ -908,7 +1077,7 @@ def test_out_of_pitch_bounds_taki_hasegawa(
     pitch = example_pitch_dfl
     model = SpaceControlModel(pitch, mesh="square", xpoints=10, model="taki_hasegawa")
 
-    with pytest.raises(ValueError, match="outside the pitch bounds"):
+    with pytest.warns(UserWarning, match="outside the pitch boundaries"):
         model.fit(xy1, xy2)
 
 

@@ -1,5 +1,5 @@
 from typing import Tuple
-
+import warnings
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -245,7 +245,8 @@ class SpaceControlModel(BaseModel):
 
                 # calculate pairwise distances and determine closest player
                 pairwise_distances = cdist(mesh_points, player_points)
-                closest_player_index = np.nanargmin(pairwise_distances, axis=1)
+                closest_player_index = self._masked_nanargmin(pairwise_distances)
+
                 self._cell_controls_[t] = closest_player_index.reshape(
                     self._meshx_.shape
                 )
@@ -269,14 +270,7 @@ class SpaceControlModel(BaseModel):
                     mesh_points, player_positions_velocities
                 )
 
-                # set times to np.inf for invalid player positions (e.g., NaN)
-                invalid_mask = np.all(~np.isfinite(pairwise_times), axis=1)
-
-                fastest_player_index = np.full(pairwise_times.shape[0], np.nan)
-                valid_idx = ~invalid_mask
-                fastest_player_index[valid_idx] = np.nanargmin(
-                    pairwise_times[valid_idx], axis=1
-                )
+                fastest_player_index = self._masked_nanargmin(pairwise_times)
 
                 self._cell_controls_[frame] = fastest_player_index.reshape(
                     self._meshx_.shape
@@ -302,20 +296,24 @@ class SpaceControlModel(BaseModel):
             raise ValueError("XY objects must have the same number of frames.")
 
         # check for out-of-bounds player positions
-        mask1 = self.check_positions_within_pitch(xy1, self._pitch)
-        mask2 = self.check_positions_within_pitch(xy2, self._pitch)
+        mask1 = self._check_positions_within_pitch(xy1, self._pitch)
+        mask2 = self._check_positions_within_pitch(xy2, self._pitch)
         if not np.all(mask1):
-            raise ValueError(
-                "Some players in xy1 are positioned outside the pitch bounds."
+            warnings.warn(
+                "Some player positions in xy1 lie outside the pitch boundaries. "
+                f"Check the provided pitch dimensions (length={self._pitch.length}, "
+                f"width={self._pitch.width})."
             )
         if not np.all(mask2):
-            raise ValueError(
-                "Some players in xy2 are positioned outside the pitch bounds."
+            warnings.warn(
+                "Some player positions in xy2 lie outside the pitch boundaries. "
+                f"Check the provided pitch dimensions (length={self._pitch.length}, "
+                f"width={self._pitch.width})."
             )
 
         # sanitize XY data to handle NaNs properly
-        xy1 = self.sanitize_nan_coordinates(xy1)
-        xy2 = self.sanitize_nan_coordinates(xy2)
+        xy1 = self._sanitize_nan_coordinates(xy1)
+        xy2 = self._sanitize_nan_coordinates(xy2)
 
         # derive parameters
         self._N1_ = xy1.N
@@ -324,13 +322,13 @@ class SpaceControlModel(BaseModel):
         self._framerate = xy1.framerate
 
         if self._model == self.TAKI_HASEGAWA:
-            self.compute_velocities(xy1, xy2)
+            self._compute_velocities(xy1, xy2)
 
         # invoke control calculation
         self._calc_cell_controls(xy1, xy2)
 
     @staticmethod
-    def check_positions_within_pitch(xy: XY, pitch: Pitch) -> np.ndarray:
+    def _check_positions_within_pitch(xy: XY, pitch: Pitch) -> np.ndarray:
         """Return a mask of shape (T, N) where True = position within pitch bounds."""
         x = xy.xy[:, ::2]
         y = xy.xy[:, 1::2]
@@ -339,21 +337,8 @@ class SpaceControlModel(BaseModel):
         return in_x_bounds & in_y_bounds
 
     @staticmethod
-    def sanitize_nan_coordinates(xy: XY) -> XY:
-        """
-        Replaces half-NaN coordinates (e.g., only x or only y is NaN)
-        with full NaN pairs for performance-safe computation.
-
-        Parameters
-        ----------
-        xy : XY
-            Original XY object
-
-        Returns
-        -------
-        XY
-            A new XY object with consistent NaN-pairs (x and y)
-        """
+    def _sanitize_nan_coordinates(xy: XY) -> XY:
+        """Ensure NaN consistency by setting both x and y to NaN if either is NaN."""
         # Create a copy of the xy array and convert to float to avoid issues with NaN
         sanitized_xy_array = xy.xy.copy().astype(float)
 
@@ -370,7 +355,21 @@ class SpaceControlModel(BaseModel):
 
         return XY(sanitized_xy_array, framerate=xy.framerate, direction=xy.direction)
 
-    def compute_velocities(self, xy1: XY, xy2: XY) -> None:
+    @staticmethod
+    def _masked_nanargmin(array: np.ndarray) -> np.ndarray:
+        """
+        Return index of minimum value in each row, ignoring rows with only NaNs or infs.
+        Sets result to np.nan for rows without finite values.
+        """
+
+        # set times to np.inf for invalid player positions (e.g., NaN)
+        invalid_mask = np.all(~np.isfinite(array), axis=1)
+        result = np.full(array.shape[0], np.nan)
+        valid_rows = ~invalid_mask
+        result[valid_rows] = np.nanargmin(array[valid_rows], axis=1)
+        return result
+
+    def _compute_velocities(self, xy1: XY, xy2: XY) -> None:
         """
         Compute and store player velocity vectors required by dynamic models.
         If velocities have already been computed, this method does nothing.
@@ -388,36 +387,7 @@ class SpaceControlModel(BaseModel):
     def _calculate_shortest_times(
         self, mesh_points: np.ndarray, player_points: np.ndarray
     ) -> np.ndarray:
-        """
-        Calculate the shortest time required for each player to reach each mesh point,
-        assuming optimal acceleration (i.e., directly toward the target point) with a
-        fixed magnitude (`self._max_acceleration`).
-
-        This implementation is based on the motion model described by Taki and Hasegawa,
-        where the time `t_s` to reach a point `x` from position `p` with velocity `v`
-        and constant acceleration `a` is obtained by solving the quadratic equation:
-
-            0.5 * a * t_s^2 + v_proj * t_s - ||x - p|| = 0
-
-        where `v_proj` is the projection of the velocity vector onto the direction of
-        the mesh point, and `||x - p||` is the distance to the target.
-
-        Parameters
-        ----------
-        mesh_points : np.ndarray of shape (M, 2)
-            Array of 2D coordinates representing the mesh points on the pitch.
-
-        player_points : np.ndarray of shape (P, 4)
-            Array containing position (x, y) and velocity (vx, vy) for each player.
-
-        Returns
-        -------
-        times : np.ndarray of shape (M, P)
-            Array containing the minimum time `t_s` each player `p` needs to reach
-            each mesh point `m`, assuming maximum acceleration toward the mesh point.
-            If no real, positive solution exists, the time is set to np.inf.
-            If the player is already at the mesh point, the time is 0.0.
-        """
+        """Compute shortest arrival times from players to mesh points."""
 
         # extract player positions and velocities from input array
         pos = player_points[:, :2]

@@ -213,30 +213,6 @@ def example_xy_objects_space_control_identical_positions() -> Tuple[XY, XY]:
 
 
 @pytest.fixture()
-def example_xy_objects_nan_vertical() -> Tuple[XY, XY]:
-    xy1 = XY(
-        xy=np.array(
-            (
-                (0, np.nan),
-                (0, np.nan),
-            )
-        ),
-        framerate=20,
-    )
-    xy2 = XY(
-        xy=np.array(
-            (
-                (10, np.nan),
-                (10, np.nan),
-            )
-        ),
-        framerate=20,
-    )
-
-    return xy1, xy2
-
-
-@pytest.fixture()
 def example_xy_objects_nan_horizontal() -> Tuple[XY, XY]:
     xy1 = XY(
         xy=np.array(
@@ -252,6 +228,30 @@ def example_xy_objects_nan_horizontal() -> Tuple[XY, XY]:
             (
                 (10, 10),
                 (np.nan, np.nan),
+            )
+        ),
+        framerate=20,
+    )
+
+    return xy1, xy2
+
+
+@pytest.fixture()
+def example_xy_objects_nan_vertical() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (0, np.nan),
+                (0, np.nan),
+            )
+        ),
+        framerate=20,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (10, np.nan),
+                (10, np.nan),
             )
         ),
         framerate=20,
