@@ -16,9 +16,14 @@ class SpaceControlModel(BaseModel):
     Computes space control on a discretized pitch using different underlying models.
 
     The SpaceControlModel allows for different definitions of control:
-    - Euclidean Voronoi tessellation: Each mesh point is assigned to the nearest player.
-    - Taki-Hasegawa motion model: Each mesh point is assigned to the player who can
-      reach it fastest, considering initial velocity and maximum acceleration.
+
+    - **Euclidean Voronoi tessellation**: Each mesh point is assigned to the
+      nearest player.
+
+    - **Taki-Hasegawa motion model**: Each mesh point is assigned to the player
+      who can reach it fastest, considering initial velocity and maximum
+      acceleration.
+
 
     Upon instantiation, this model creates a mesh grid that spans the entire pitch with
     a fixed number of mesh points. When calling the :func:`~SpaceControlModel.fit`
@@ -78,17 +83,15 @@ class SpaceControlModel(BaseModel):
 
     References
     ----------
-        .. [1] `Taki, T., & Hasegawa, J. (2000). Visualization of dominant region in
-            team games and its application to teamwork analysis. Proceedings Computer
-            Graphics International 2000, 227–235.
-            <https://ieeexplore.ieee.org/document/852338>`_
-        .. [2] `Fonseca, S., Milho, J., Travassos, B., & Araújo, D. (2012). Spatial
-            dynamics of team sports exposed by Voronoi diagrams. Human Movement
-            Science, 31(6), 1652–1659. <https://doi.org/10.1016/j.humov.2012.04.006>`_
-        .. [3] `Rein, R., Raabe, D., & Memmert, D. (2017). “Which pass is better?”
-            Novel approaches to assess passing effectiveness in elite soccer. Human
-            Movement Science, 55, 172–181.
-            <https://doi.org/10.1016/j.humov.2017.07.010>`_
+    .. [1] Taki, T., & Hasegawa, J. (2000). Visualization of dominant region in team
+           games and its application to teamwork analysis. Proc. Computer Graphics
+           International, 227–235. https://ieeexplore.ieee.org/document/852338
+    .. [2] Fonseca, S., Milho, J., Travassos, B., & Araújo, D. (2012). Spatial dynamics
+           of team sports exposed by Voronoi diagrams. Human Movement Science, 31(6),
+           1652–1659. https://doi.org/10.1016/j.humov.2012.04.006
+    .. [3] Rein, R., Raabe, D., & Memmert, D. (2017). “Which pass is better?” Novel
+           approaches to assess passing effectiveness in elite soccer. Human Movement
+           Science, 55, 172–181. https://doi.org/10.1016/j.humov.2017.07.010
 
     Examples
     --------
