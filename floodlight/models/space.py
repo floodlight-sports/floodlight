@@ -122,6 +122,7 @@ class SpaceControlModel(BaseModel):
     # Supported space control model identifiers
     EUCLIDEAN = "euclidean"
     TAKI_HASEGAWA = "taki_hasegawa"
+    FUJIMURA_SUGIHARA = "fujimura_sugihara"
 
     def __init__(
         self,
@@ -130,6 +131,8 @@ class SpaceControlModel(BaseModel):
         xpoints: int = 100,
         max_acceleration: float = 4.0,
         model: str = EUCLIDEAN,
+        alpha: float = 1.3,
+        v_max: float = 7.8,
     ):
         super().__init__(pitch)
 
@@ -139,8 +142,10 @@ class SpaceControlModel(BaseModel):
         self._max_acceleration = max_acceleration
         self._model = model
         self._pitch = pitch
+        self._alpha = alpha
+        self._vmax = v_max
 
-        valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA]
+        valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA, self.FUJIMURA_SUGIHARA]
         if self._model not in valid_models:
             raise ValueError(
                 f"Invalid model type. Expected one of {valid_models}, "
@@ -258,30 +263,51 @@ class SpaceControlModel(BaseModel):
             # loop
             for frame in range(n_frames):
                 # combine stacked positions and velocities into (P x 4) array
-                pos1 = xy1.xy[frame].reshape(-1, 2)
-                pos2 = xy2.xy[frame].reshape(-1, 2)
-                player_positions = np.vstack((pos1, pos2))
-                vel1 = self._velocityvector1[frame]
-                vel2 = self._velocityvector2[frame]
-                player_velocities = np.vstack((vel1, vel2))
-                player_positions_velocities = np.hstack(
-                    (player_positions, player_velocities)
-                )
+                ppv = self._stack_pos_vel(frame, xy1, xy2)
 
                 # compute shortest arrival times and identify fastest player
-                pairwise_times = self._calculate_shortest_times(
-                    mesh_points, player_positions_velocities
+                pairwise_times = self._calculate_shortest_times_taki_hasegawa(
+                    mesh_points, ppv
                 )
-
                 fastest_player_index = self._masked_nanargmin(pairwise_times)
 
                 self._cell_controls_[frame] = fastest_player_index.reshape(
                     self._meshx_.shape
                 )
 
+        elif self._model == self.FUJIMURA_SUGIHARA:
+            # loop
+            for frame in range(n_frames):
+                # combine stacked positions and velocities into (P x 4) array
+                ppv = self._stack_pos_vel(frame, xy1, xy2)
+
+                # compute shortest arrival times and identify fastest player
+                pairwise_times = self._calculate_shortest_times_fujimura_sugihara(
+                    mesh_points, ppv
+                )
+                fastest_player_index = self._masked_nanargmin(pairwise_times)
+
+                self._cell_controls_[frame] = fastest_player_index.reshape(
+                    self._meshx_.shape
+                )
+
+    def _stack_pos_vel(self, frame: int, xy1: XY, xy2: XY) -> np.ndarray:
+        """
+        Combine positions and velocities into a (P x 4) array.
+        Returns: [x0, y0, vx0, vy0] per player
+        """
+        pos1 = xy1.xy[frame].reshape(-1, 2)
+        pos2 = xy2.xy[frame].reshape(-1, 2)
+        positions = np.vstack((pos1, pos2))
+
+        vel1 = self._velocityvector1[frame]
+        vel2 = self._velocityvector2[frame]
+        velocities = np.vstack((vel1, vel2))
+
+        return np.hstack((positions, velocities))
+
     def fit(self, xy1: XY, xy2: XY):
         """Fit the model to the given data and calculate control values for mesh points.
-
         Parameters
         ----------
         xy1: XY
@@ -324,7 +350,7 @@ class SpaceControlModel(BaseModel):
         self._T_ = len(xy1)
         self._framerate = xy1.framerate
 
-        if self._model == self.TAKI_HASEGAWA:
+        if self._model in (self.TAKI_HASEGAWA, self.FUJIMURA_SUGIHARA):
             self._compute_velocities(xy1, xy2)
 
         # invoke control calculation
@@ -387,14 +413,14 @@ class SpaceControlModel(BaseModel):
         self._velocityvector1 = vvm1.velocityvector().property
         self._velocityvector2 = vvm2.velocityvector().property
 
-    def _calculate_shortest_times(
-        self, mesh_points: np.ndarray, player_points: np.ndarray
+    def _calculate_shortest_times_taki_hasegawa(
+        self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
     ) -> np.ndarray:
         """Compute shortest arrival times from players to mesh points."""
 
         # extract player positions and velocities from input array
-        pos = player_points[:, :2]
-        vel = player_points[:, 2:]
+        pos = player_positions_velocities[:, :2]
+        vel = player_positions_velocities[:, 2:]
 
         # replace NaN velocities with zeros for stable projection computation
         vel = np.nan_to_num(vel, nan=0.0)
@@ -440,11 +466,99 @@ class SpaceControlModel(BaseModel):
 
         return times
 
+    def _calculate_shortest_times_fujimura_sugihara(
+        self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
+    ) -> np.ndarray:
+        """
+        Berechnet für jeden Mesh-Punkt und jeden Spieler die minimale
+        Ankunftszeit nach Fujimura & Sugihara, indem numerisch die Gleichung
+            || p - c(t) || == r(t)
+        gelöst wird, mit
+            c(t) = x0 + ((1 - exp(-α t)) / α) * v0
+            r(t) = vmax * (t - (1 - exp(-α t)) / α)
+        Eingabe:
+          mesh_points:   (M, 2)-Array aller Gitterpunkte p
+          player_positions_velocities: (P, 4)-Array [x0, y0, vx0, vy0] aller Spieler
+        Rückgabe:
+          times: (M, P)-Array mit minimalen Ankunftszeiten (oder inf)
+        """
+        # 1) Parameter extrahieren
+        alpha = self._alpha  # Widerstands-Parameter
+        vmax = self._vmax  # Max-Geschwindigkeit
+
+        # 2) Spielerpositionen und -geschwindigkeiten trennen
+        pos = player_positions_velocities[:, :2]  # (P,2)
+        vel = player_positions_velocities[:, 2:]  # (P,2)
+
+        # 3) Vektor d = p - x0 aufspannen für alle Paare
+        #    d[i,j] = mesh_points[i] - pos[j]
+        #    Form: (M, P, 2)
+        d = mesh_points[:, None, :] - pos[None, :, :]
+
+        # 4) Euklid-Abstand d_norm = ||d||
+        d_norm = np.linalg.norm(d, axis=2)  # (M, P)
+        #    Um Division durch 0 später zu vermeiden, setzen wir dort d_norm->eps
+
+        # 5) Wir müssen t finden, sodass f(t)=0 mit
+        #       f(t) = ||d - ((1-e^{-αt})/α) v0|| - vmax*(t - (1-e^{-αt})/α)
+        #
+        #    Wir verwenden für jede (i,j) einen kurzen Newton-Iter:
+
+        # Initialisierung: t0 = d_norm / vmax  (ungebremste Gleichverteilung)
+        t = d_norm / vmax  # (M,P)
+
+        # 6) Newton-Iteration (z.B. 5 Schritte)
+        for _ in range(5):
+            # 6.1) φ = (1 - exp(-α t)) / α
+            phi = (1 - np.exp(-alpha * t)) / alpha  # (M,P)
+
+            # 6.2) c_offset = φ * vel[j] projiziert auf d-Richtung:
+            #      wir brauchen || d - φ v0 ||
+            #    → die Verschiebung der Position
+            #    aber wir können direkt die Norm berechnen:
+            term = d - phi[:, :, None] * vel[None, :, :]  # (M,P,2)
+            norm_term = np.linalg.norm(term, axis=2)  # (M,P)
+
+            # 6.3) r(t) = vmax * (t - φ)
+            r = vmax * (t - phi)  # (M,P)
+
+            # 6.4) f = norm_term - r
+            f = norm_term - r  # (M,P)
+
+            # 6.5) Ableitung f′(t) berechnen
+            #     dφ/dt = exp(-αt)
+            dphi = np.exp(-alpha * t) / 1.0  # (M,P)
+
+            #     ∂norm_term/∂t =
+            #      [ (d - φv0) · ( - dφ * v0 ) ] / ||d - φv0||
+            #      = -dφ * ( (d - φv0)·v0 ) / norm_term
+            #    Achtung: norm_term könnte null sein → behandeln
+            dot = np.sum(term * vel[None, :, :], axis=2)  # (M,P)
+            dn_dt = -dphi * dot / (norm_term + 1e-6)  # (M,P)
+
+            #     ∂r/∂t = vmax * (1 - dφ/dt)
+            dr_dt = vmax * (1 - dphi)  # (M,P)
+
+            #     f′ = dn_dt - dr_dt
+            fp = dn_dt - dr_dt  # (M,P)
+
+            # 6.6) Newton-Schritt: t <- t - f/f′
+            #      guard: f′ nahe null → überspringen
+            delta = f / (fp + 1e-6)
+            t = t - delta
+
+            # 6.7) Negativwerte unplausibel → ∞
+            t = np.where(t > 0, t, np.inf)
+
+        # 7) Abfangen von Mesh-Punkten, auf denen der Spieler steht:
+        t = np.where(d_norm < 1e-3, 0.0, t)
+
+        return t
+
     @requires_fit
     def player_controls(self) -> Tuple[PlayerProperty, PlayerProperty]:
         """Returns the percentage of mesh points controlled by each player of the first
         and second team.
-
         Returns
         -------
         player_controls: Tuple[PlayerProperty, PlayerProperty]
