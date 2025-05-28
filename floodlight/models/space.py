@@ -133,6 +133,7 @@ class SpaceControlModel(BaseModel):
         model: str = EUCLIDEAN,
         alpha: float = 1.3,
         v_max: float = 7.8,
+        accuracy: int = 5,
     ):
         super().__init__(pitch)
 
@@ -144,6 +145,7 @@ class SpaceControlModel(BaseModel):
         self._pitch = pitch
         self._alpha = alpha
         self._vmax = v_max
+        self._accuracy = accuracy
 
         valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA, self.FUJIMURA_SUGIHARA]
         if self._model not in valid_models:
@@ -467,90 +469,71 @@ class SpaceControlModel(BaseModel):
         return times
 
     def _calculate_shortest_times_fujimura_sugihara(
-        self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
+        self, mesh: np.ndarray, x0_v0: np.ndarray
     ) -> np.ndarray:
         """
-        Berechnet für jeden Mesh-Punkt und jeden Spieler die minimale
-        Ankunftszeit nach Fujimura & Sugihara, indem numerisch die Gleichung
-            || p - c(t) || == r(t)
-        gelöst wird, mit
-            c(t) = x0 + ((1 - exp(-α t)) / α) * v0
-            r(t) = vmax * (t - (1 - exp(-α t)) / α)
-        Eingabe:
-          mesh_points:   (M, 2)-Array aller Gitterpunkte p
-          player_positions_velocities: (P, 4)-Array [x0, y0, vx0, vy0] aller Spieler
-        Rückgabe:
-          times: (M, P)-Array mit minimalen Ankunftszeiten (oder inf)
+        Compute time t such that ||x(t) - x|| == r(t) using Fujimura & Sugihara model.
+        mesh: (M, 2) mesh points
+        x0_v0: (P, 4) players [x0, y0, vx0, vy0]
+        Returns:
+            t_min: (M, P) shortest arrival times
         """
-        # 1) Parameter extrahieren
-        alpha = self._alpha  # Widerstands-Parameter
-        vmax = self._vmax  # Max-Geschwindigkeit
+        # --- parameters ---
+        alpha = self._alpha
+        vmax = self._vmax
+        accuracy = self._accuracy
 
-        # 2) Spielerpositionen und -geschwindigkeiten trennen
-        pos = player_positions_velocities[:, :2]  # (P,2)
-        vel = player_positions_velocities[:, 2:]  # (P,2)
+        # --- initial data ---
+        x0 = x0_v0[:, :2]  # (P,2)
+        v0 = x0_v0[:, 2:]  # (P,2)
+        d = mesh[:, None, :] - x0[None, :, :]  # (M,P,2)
+        d_norm = np.linalg.norm(d, axis=2)  # (M,P)
 
-        # 3) Vektor d = p - x0 aufspannen für alle Paare
-        #    d[i,j] = mesh_points[i] - pos[j]
-        #    Form: (M, P, 2)
-        d = mesh_points[:, None, :] - pos[None, :, :]
+        # --- precompute projected speed for hybrid init ---
+        v0_norm = np.linalg.norm(v0, axis=1)  # (P,)
+        v_proj = np.maximum(v0_norm, vmax)  # (P,)
+        t_lo = d_norm / vmax
+        t_hi = d_norm / v_proj[None, :] + 1.0
 
-        # 4) Euklid-Abstand d_norm = ||d||
-        d_norm = np.linalg.norm(d, axis=2)  # (M, P)
-        #    Um Division durch 0 später zu vermeiden, setzen wir dort d_norm->eps
+        # --- 3x bisection to get robust initial guess ---
+        for _ in range(3):
+            t_mid = 0.5 * (t_lo + t_hi)
+            exp_term = np.exp(-alpha * t_mid)
+            phi = (1 - exp_term) / alpha
+            c = phi[:, :, None] * v0[None, :, :]
+            norm_term = np.linalg.norm(d - c, axis=2)
+            r = vmax * (t_mid - phi)
+            f = norm_term - r
+            inside = f < 0
+            t_hi[inside] = t_mid[inside]
+            t_lo[~inside] = t_mid[~inside]
 
-        # 5) Wir müssen t finden, sodass f(t)=0 mit
-        #       f(t) = ||d - ((1-e^{-αt})/α) v0|| - vmax*(t - (1-e^{-αt})/α)
-        #
-        #    Wir verwenden für jede (i,j) einen kurzen Newton-Iter:
+        # --- Newton iterations ---
+        t = 0.5 * (t_lo + t_hi)
+        for _ in range(accuracy):
+            exp_term = np.exp(-alpha * t)
+            phi = (1 - exp_term) / alpha
+            c = phi[:, :, None] * v0[None, :, :]
+            delta_x = d - c
+            norm_term = np.linalg.norm(delta_x, axis=2)
+            r = vmax * (t - phi)
+            f = norm_term - r
 
-        # Initialisierung: t0 = d_norm / vmax  (ungebremste Gleichverteilung)
-        t = d_norm / vmax  # (M,P)
+            # df/dt
+            dphi_dt = exp_term
+            dot = np.sum(delta_x * v0[None, :, :], axis=2)
+            df_dt_norm = -dphi_dt * dot / (norm_term + 1e-6)
+            dr_dt = vmax * (1 - dphi_dt)
+            df_dt = df_dt_norm - dr_dt
 
-        # 6) Newton-Iteration (z.B. 5 Schritte)
-        for _ in range(5):
-            # 6.1) φ = (1 - exp(-α t)) / α
-            phi = (1 - np.exp(-alpha * t)) / alpha  # (M,P)
-
-            # 6.2) c_offset = φ * vel[j] projiziert auf d-Richtung:
-            #      wir brauchen || d - φ v0 ||
-            #    → die Verschiebung der Position
-            #    aber wir können direkt die Norm berechnen:
-            term = d - phi[:, :, None] * vel[None, :, :]  # (M,P,2)
-            norm_term = np.linalg.norm(term, axis=2)  # (M,P)
-
-            # 6.3) r(t) = vmax * (t - φ)
-            r = vmax * (t - phi)  # (M,P)
-
-            # 6.4) f = norm_term - r
-            f = norm_term - r  # (M,P)
-
-            # 6.5) Ableitung f′(t) berechnen
-            #     dφ/dt = exp(-αt)
-            dphi = np.exp(-alpha * t) / 1.0  # (M,P)
-
-            #     ∂norm_term/∂t =
-            #      [ (d - φv0) · ( - dφ * v0 ) ] / ||d - φv0||
-            #      = -dφ * ( (d - φv0)·v0 ) / norm_term
-            #    Achtung: norm_term könnte null sein → behandeln
-            dot = np.sum(term * vel[None, :, :], axis=2)  # (M,P)
-            dn_dt = -dphi * dot / (norm_term + 1e-6)  # (M,P)
-
-            #     ∂r/∂t = vmax * (1 - dφ/dt)
-            dr_dt = vmax * (1 - dphi)  # (M,P)
-
-            #     f′ = dn_dt - dr_dt
-            fp = dn_dt - dr_dt  # (M,P)
-
-            # 6.6) Newton-Schritt: t <- t - f/f′
-            #      guard: f′ nahe null → überspringen
-            delta = f / (fp + 1e-6)
-            t = t - delta
-
-            # 6.7) Negativwerte unplausibel → ∞
+            # update t
+            valid = np.isfinite(f) & np.isfinite(df_dt) & (np.abs(df_dt) > 1e-8)
+            delta_t = np.where(valid, f / df_dt, 0.0)
+            delta_t = np.minimum(delta_t, 0.9 * t)
+            t = np.where(valid, t - delta_t, t)
             t = np.where(t > 0, t, np.inf)
 
-        # 7) Abfangen von Mesh-Punkten, auf denen der Spieler steht:
+        # --- zero-distance override ---
         t = np.where(d_norm < 1e-3, 0.0, t)
 
         return t
