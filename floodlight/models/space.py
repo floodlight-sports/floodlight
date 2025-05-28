@@ -486,6 +486,7 @@ class SpaceControlModel(BaseModel):
         # --- initial data ---
         x0 = x0_v0[:, :2]  # (P,2)
         v0 = x0_v0[:, 2:]  # (P,2)
+        v0 = np.nan_to_num(v0, nan=0.0)
         d = mesh[:, None, :] - x0[None, :, :]  # (M,P,2)
         d_norm = np.linalg.norm(d, axis=2)  # (M,P)
 
