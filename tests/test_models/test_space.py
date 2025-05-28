@@ -813,6 +813,316 @@ def test_players_same_direction_taki_hasegawa_hex(
     )
 
 
+# test calculation of controls with fujimura_sugihara model with square mesh
+@pytest.mark.unit
+def test_static_players_fujimura_sugihara_square(
+    example_xy_objects_space_control_static_players, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_static_players
+    pitch = example_pitch_dfl
+    model_square = SpaceControlModel(
+        pitch, mesh="square", xpoints=10, model="fujimura_sugihara"
+    )
+    model_square.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_p2_runs_at_p1_fujimura_sugihara_square(
+    example_xy_objects_space_control_player2_runs_at_player1, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_player2_runs_at_player1
+    pitch = example_pitch_dfl
+    model_square = SpaceControlModel(
+        pitch, mesh="square", xpoints=10, model="fujimura_sugihara"
+    )
+    model_square.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_players_towards_each_other_fujimura_sugihara_square(
+    example_xy_objects_space_control_players_run_towards_each_other,
+    example_pitch_dfl,
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_players_run_towards_each_other
+    pitch = example_pitch_dfl
+    model_square = SpaceControlModel(
+        pitch, mesh="square", xpoints=10, model="fujimura_sugihara"
+    )
+    model_square.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_players_same_direction_fujimura_sugihara_square(
+    example_xy_objects_space_control_players_run_same_direction,
+    example_pitch_dfl,
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_players_run_same_direction
+    pitch = example_pitch_dfl
+    model_square = SpaceControlModel(
+        pitch, mesh="square", xpoints=10, model="fujimura_sugihara"
+    )
+    model_square.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_square._cell_controls_[1],
+    )
+
+
+# test calculation of controls with fujimura_sugihara model with hexagonal mesh
+@pytest.mark.unit
+def test_static_players_fujimura_sugihara_hex(
+    example_xy_objects_space_control_static_players, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_static_players
+    pitch = example_pitch_dfl
+    model_hex = SpaceControlModel(
+        pitch, mesh="hexagonal", xpoints=10, model="fujimura_sugihara"
+    )
+    model_hex.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_p2_runs_at_p1_fujimura_sugihara_hex(
+    example_xy_objects_space_control_player2_runs_at_player1, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_player2_runs_at_player1
+    pitch = example_pitch_dfl
+    model_hex = SpaceControlModel(
+        pitch, mesh="hexagonal", xpoints=10, model="fujimura_sugihara"
+    )
+    model_hex.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_players_towards_each_other_fujimura_sugihara_hex(
+    example_xy_objects_space_control_players_run_towards_each_other,
+    example_pitch_dfl,
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_players_run_towards_each_other
+    pitch = example_pitch_dfl
+    model_hex = SpaceControlModel(
+        pitch, mesh="hexagonal", xpoints=10, model="fujimura_sugihara"
+    )
+    model_hex.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_players_same_direction_fujimura_sugihara_hex(
+    example_xy_objects_space_control_players_run_same_direction,
+    example_pitch_dfl,
+) -> None:
+    xy1, xy2 = example_xy_objects_space_control_players_run_same_direction
+    pitch = example_pitch_dfl
+    model_hex = SpaceControlModel(
+        pitch, mesh="hexagonal", xpoints=10, model="fujimura_sugihara"
+    )
+    model_hex.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
+        ),
+        model_hex._cell_controls_[1],
+    )
+
+
 # data quality tests for euclidean model
 @pytest.mark.unit
 def test_identical_positions_euclidean(
