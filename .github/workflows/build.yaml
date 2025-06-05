@@ -36,7 +36,7 @@ jobs:
         poetry-version: ${{ matrix.poetry-version }}
 
     - name: Cache poetry virtualenv
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.virtualenvs
         key: poetry-${{ hashFiles('**/poetry.lock') }}
