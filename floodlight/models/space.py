@@ -133,7 +133,7 @@ class SpaceControlModel(BaseModel):
         model: str = EUCLIDEAN,
         alpha: float = 1.3,
         v_max: float = 7.8,
-        accuracy: int = 5,
+        accuracy: int = 2,
     ):
         super().__init__(pitch)
 
@@ -486,15 +486,19 @@ class SpaceControlModel(BaseModel):
         # --- initial data ---
         x0 = x0_v0[:, :2]  # (P,2)
         v0 = x0_v0[:, 2:]  # (P,2)
-        v0 = np.nan_to_num(v0, nan=0.0)
+        v0 = np.nan_to_num(v0, nan=0.0)  # missing speeds → 0
         d = mesh[:, None, :] - x0[None, :, :]  # (M,P,2)
         d_norm = np.linalg.norm(d, axis=2)  # (M,P)
 
-        # --- precompute projected speed for hybrid init ---
-        v0_norm = np.linalg.norm(v0, axis=1)  # (P,)
-        v_proj = np.maximum(v0_norm, vmax)  # (P,)
-        t_lo = d_norm / vmax
-        t_hi = d_norm / v_proj[None, :] + 1.0
+        # --- bracket speeds: clamp in [eps, vmax] ---
+        v0_norm = np.linalg.norm(v0, axis=1)  # (P,) raw speed per player
+        # if raw speed==0, set to vmax; else clamp at vmax
+        v0_bracket = np.where(
+            v0_norm > 0, np.minimum(v0_norm, vmax), vmax
+        )  # (P,) now in (0, vmax]
+
+        t_lo = d_norm / vmax  # (M,P)
+        t_hi = d_norm / v0_bracket[None, :] + 1.0  # (M,P)
 
         # --- 3x bisection to get robust initial guess ---
         for _ in range(3):
