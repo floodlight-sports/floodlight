@@ -24,6 +24,10 @@ class SpaceControlModel(BaseModel):
       who can reach it fastest, considering initial velocity and maximum
       acceleration.
 
+    - **Fujimura-Sugihara motion model**: Each mesh point is assigned to the player
+      who can reach it fastest, based on exponential velocity decay and a
+      physics-based arrival time equation.
+
 
     Upon instantiation, this model creates a mesh grid that spans the entire pitch with
     a fixed number of mesh points. When calling the :func:`~SpaceControlModel.fit`
@@ -34,13 +38,13 @@ class SpaceControlModel(BaseModel):
     The following calculations can subsequently be queried by calling the corresponding
     methods:
 
-        - Player Space Control --> :func:`~DiscreteVoronoiModel.player_controls`
-        - Team Space Control --> :func:`~DiscreteVoronoiModel.team_controls`
+        - Player Space Control --> :func:`~SpaceControlModel.player_controls`
+        - Team Space Control --> :func:`~SpaceControlModel.team_controls`
 
     Furthermore, the following plotting methods are available to visualize the model:
 
-        - Plot controlled areas --> :func:`~DiscreteVoronoiModel.plot`
-        - Plot mesh grid --> :func:`~DiscreteVoronoiModel.plot_mesh`
+        - Plot controlled areas --> :func:`~SpaceControlModel.plot`
+        - Plot mesh grid --> :func:`~SpaceControlModel.plot_mesh`
 
     Parameters
     ----------
@@ -59,7 +63,11 @@ class SpaceControlModel(BaseModel):
         cell shapes.
     max_acceleration : float, optional
         Maximum acceleration used in the Taki-Hasegawa model. Defaults to 4.0 m/s².
-    model : {'euclidean', 'taki_hasegawa'}, optional
+    alpha : float, optional
+        Time-decay constant used in the Fujimura-Sugihara model. Defaults to 1.3.
+    v_max : float, optional
+        Maximum player speed used in the Fujimura-Sugihara model. Defaults to 7.8 m/s.
+    model : {'euclidean', 'taki_hasegawa', 'fujimura_sugihara'}, optional
         String identifier for the control model to be used. Defaults to 'euclidean'.
 
     Notes
@@ -75,11 +83,20 @@ class SpaceControlModel(BaseModel):
     spatial inaccuracies of tracking data as well as variations in moving players'
     centers of masses.
 
-    In addition to the Euclidean model, this class supports a dynamic motion-based
-    model based on the formulation proposed by Taki and Hasegawa [1]_.
-    This approach assigns each mesh point to the player who can reach it fastest,
-    considering both current velocity and maximum acceleration. It is particularly
-    suitable for analyzing movement intentions and temporal dominance structures.
+    In addition to the Euclidean model, this class includes two dynamic motion-based
+    approaches that account for physical movement constraints and better reflect
+    realistic player behavior.
+
+    The first is based on the formulation proposed by Taki and Hasegawa [1]_. It assigns
+    each mesh point to the player who can reach it fastest, considering both current
+    velocity and maximum acceleration. This method is particularly useful for analyzing
+    movement intentions and temporal dominance structures.
+
+    An alternative formulation by Fujimura and Sugihara [4]_ introduces exponential
+    velocity decay governed by a time constant. Arrival times are estimated using a
+    physics-based motion equation that captures deceleration behavior. This model is
+    especially suited for evaluating spatial control under naturalistic movement
+    conditions.
 
     References
     ----------
@@ -92,6 +109,9 @@ class SpaceControlModel(BaseModel):
     .. [3] Rein, R., Raabe, D., & Memmert, D. (2017). “Which pass is better?” Novel
            approaches to assess passing effectiveness in elite soccer. Human Movement
            Science, 55, 172–181. https://doi.org/10.1016/j.humov.2017.07.010
+    .. [4] Fujimura, A., & Sugihara, K. (2005). Geometric analysis and quantitative
+       evaluation of sport teamwork. Systems and Computers in Japan, 36(6), 49–58.
+       https://doi.org/10.1002/scj.20254
 
     Examples
     --------
@@ -133,7 +153,6 @@ class SpaceControlModel(BaseModel):
         model: str = EUCLIDEAN,
         alpha: float = 1.3,
         v_max: float = 7.8,
-        accuracy: int = 2,
     ):
         super().__init__(pitch)
 
@@ -145,7 +164,6 @@ class SpaceControlModel(BaseModel):
         self._pitch = pitch
         self._alpha = alpha
         self._vmax = v_max
-        self._accuracy = accuracy
 
         valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA, self.FUJIMURA_SUGIHARA]
         if self._model not in valid_models:
@@ -418,7 +436,8 @@ class SpaceControlModel(BaseModel):
     def _calculate_shortest_times_taki_hasegawa(
         self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
     ) -> np.ndarray:
-        """Compute shortest arrival times from players to mesh points."""
+        """Compute shortest arrival times from players to mesh points using
+        the Taki & Hasegawa motion model."""
 
         # extract player positions and velocities from input array
         pos = player_positions_velocities[:, :2]
@@ -469,79 +488,101 @@ class SpaceControlModel(BaseModel):
         return times
 
     def _calculate_shortest_times_fujimura_sugihara(
-        self, mesh: np.ndarray, x0_v0: np.ndarray
+        self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
     ) -> np.ndarray:
-        """
-        Compute time t such that ||x(t) - x|| == r(t) using Fujimura & Sugihara model.
-        mesh: (M, 2) mesh points
-        x0_v0: (P, 4) players [x0, y0, vx0, vy0]
-        Returns:
-            t_min: (M, P) shortest arrival times
-        """
-        # --- parameters ---
+        """Compute shortest arrival times from players to mesh points using
+        the Fujimura & Sugihara motion model."""
+
+        # --- constants ---
+        EPSILON = 1e-6  # avoid division by zero
+        TIME_BUFFER = 1.0  # conservative time padding
+        MAX_NEWTON_STEP_RATIO = 0.9  # limit Newton step size
+        DISTANCE_THRESHOLD = 1e-3  # zero-time threshold distance
+
+        # --- extract model parameters ---
         alpha = self._alpha
         vmax = self._vmax
-        accuracy = self._accuracy
 
-        # --- initial data ---
-        x0 = x0_v0[:, :2]  # (P,2)
-        v0 = x0_v0[:, 2:]  # (P,2)
-        v0 = np.nan_to_num(v0, nan=0.0)  # missing speeds → 0
-        d = mesh[:, None, :] - x0[None, :, :]  # (M,P,2)
-        d_norm = np.linalg.norm(d, axis=2)  # (M,P)
+        # --- extract player positions and velocities ---
+        player_positions = player_positions_velocities[:, :2]  # (P, 2)
+        player_velocities = player_positions_velocities[:, 2:]  # (P, 2)
 
-        # --- bracket speeds: clamp in [eps, vmax] ---
-        v0_norm = np.linalg.norm(v0, axis=1)  # (P,) raw speed per player
-        # if raw speed==0, set to vmax; else clamp at vmax
-        v0_bracket = np.where(
-            v0_norm > 0, np.minimum(v0_norm, vmax), vmax
-        )  # (P,) now in (0, vmax]
+        # --- replace missing velocity values with zeros for stability ---
+        player_velocities = np.nan_to_num(player_velocities, nan=0.0)
 
-        t_lo = d_norm / vmax  # (M,P)
-        t_hi = d_norm / v0_bracket[None, :] + 1.0  # (M,P)
+        # --- compute vector from each player to each mesh point ---
+        displacement_vectors = (
+            mesh_points[:, None, :] - player_positions[None, :, :]
+        )  # (M, P, 2)
 
-        # --- 3x bisection to get robust initial guess ---
+        # --- compute Euclidean distances between players and mesh points ---
+        displacement_distances = np.linalg.norm(displacement_vectors, axis=2)  # (M, P)
+
+        # --- prepare bracketed player speeds (no zero, max at vmax) ---
+        speed_magnitudes = np.linalg.norm(player_velocities, axis=1)  # (P,)
+        bracketed_speeds = np.where(
+            speed_magnitudes > 0, np.minimum(speed_magnitudes, vmax), vmax
+        )  # (P,)
+
+        # --- compute initial time bounds: optimistic and conservative estimates ---
+        t_lower = displacement_distances / vmax
+        t_upper = displacement_distances / bracketed_speeds[None, :] + TIME_BUFFER
+
+        # --- perform 3x bisection to refine initial time interval ---
         for _ in range(3):
-            t_mid = 0.5 * (t_lo + t_hi)
+            t_mid = 0.5 * (t_lower + t_upper)
+
             exp_term = np.exp(-alpha * t_mid)
             phi = (1 - exp_term) / alpha
-            c = phi[:, :, None] * v0[None, :, :]
-            norm_term = np.linalg.norm(d - c, axis=2)
-            r = vmax * (t_mid - phi)
-            f = norm_term - r
-            inside = f < 0
-            t_hi[inside] = t_mid[inside]
-            t_lo[~inside] = t_mid[~inside]
 
-        # --- Newton iterations ---
-        t = 0.5 * (t_lo + t_hi)
-        for _ in range(accuracy):
-            exp_term = np.exp(-alpha * t)
+            motion_contribution = (
+                phi[:, :, None] * player_velocities[None, :, :]
+            )  # (M, P, 2)
+            estimated_position = displacement_vectors - motion_contribution
+            remaining_distance = np.linalg.norm(estimated_position, axis=2)
+
+            reachable_radius = vmax * (t_mid - phi)
+            difference = remaining_distance - reachable_radius
+
+            mask_inside = difference < 0
+            t_upper[mask_inside] = t_mid[mask_inside]
+            t_lower[~mask_inside] = t_mid[~mask_inside]
+
+        # --- perform 3x Newton iteration to refine arrival time ---
+        times = 0.5 * (t_lower + t_upper)
+        for _ in range(3):
+            exp_term = np.exp(-alpha * times)
             phi = (1 - exp_term) / alpha
-            c = phi[:, :, None] * v0[None, :, :]
-            delta_x = d - c
-            norm_term = np.linalg.norm(delta_x, axis=2)
-            r = vmax * (t - phi)
-            f = norm_term - r
 
-            # df/dt
+            motion_contribution = phi[:, :, None] * player_velocities[None, :, :]
+            estimated_position = displacement_vectors - motion_contribution
+            remaining_distance = np.linalg.norm(estimated_position, axis=2)
+
+            reachable_radius = vmax * (times - phi)
+            f = remaining_distance - reachable_radius
+
+            # compute derivative df/dt
             dphi_dt = exp_term
-            dot = np.sum(delta_x * v0[None, :, :], axis=2)
-            df_dt_norm = -dphi_dt * dot / (norm_term + 1e-6)
-            dr_dt = vmax * (1 - dphi_dt)
-            df_dt = df_dt_norm - dr_dt
+            dot_product = np.sum(
+                estimated_position * player_velocities[None, :, :], axis=2
+            )
+            d_distance_dt = -dphi_dt * dot_product / (remaining_distance + EPSILON)
+            d_radius_dt = vmax * (1 - dphi_dt)
+            f_prime = d_distance_dt - d_radius_dt
 
-            # update t
-            valid = np.isfinite(f) & np.isfinite(df_dt) & (np.abs(df_dt) > 1e-8)
-            delta_t = np.where(valid, f / df_dt, 0.0)
-            delta_t = np.minimum(delta_t, 0.9 * t)
-            t = np.where(valid, t - delta_t, t)
-            t = np.where(t > 0, t, np.inf)
+            # update times using Newton step
+            valid = np.isfinite(f) & np.isfinite(f_prime) & (np.abs(f_prime) > EPSILON)
+            delta_t = np.where(valid, f / f_prime, 0.0)
+            delta_t = np.minimum(delta_t, MAX_NEWTON_STEP_RATIO * times)
+            times = np.where(valid, times - delta_t, times)
 
-        # --- zero-distance override ---
-        t = np.where(d_norm < 1e-3, 0.0, t)
+            # ensure non-negative arrival times
+            times = np.where(times > 0, times, np.inf)
 
-        return t
+        # --- override with zero time if already at the mesh point ---
+        times = np.where(displacement_distances < DISTANCE_THRESHOLD, 0.0, times)
+
+        return times
 
     @requires_fit
     def player_controls(self) -> Tuple[PlayerProperty, PlayerProperty]:
