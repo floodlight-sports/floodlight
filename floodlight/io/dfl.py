@@ -507,6 +507,12 @@ def read_event_data_xml(
         event["minute"] = np.floor(event["gameclock"] / 60)
         event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
 
+        # event location
+        event["at_x"] = np.float64(elem.get("X-Source-Position"))
+        event["at_y"] = np.float64(elem.get("Y-Source-Position"))
+        event["to_x"] = np.float64(elem.get("X-Position"))
+        event["to_y"] = np.float64(elem.get("Y-Position"))
+
         # description, outcome, team, and player
         child = next(iter(elem))
         eID, attrib = _get_event_description(child)
@@ -557,6 +563,10 @@ def read_event_data_xml(
                     "tID",
                     "pID",
                     "outcome",
+                    "at_x",
+                    "at_y",
+                    "to_x",
+                    "to_y",
                     "timestamp",
                     "minute",
                     "second",
