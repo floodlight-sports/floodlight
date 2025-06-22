@@ -494,10 +494,9 @@ class SpaceControlModel(BaseModel):
         the Fujimura & Sugihara motion model."""
 
         # --- constants ---
-        EPSILON = 1e-6  # avoid division by zero
-        TIME_BUFFER = 1.0  # conservative time padding
-        MAX_NEWTON_STEP_RATIO = 0.9  # limit Newton step size
-        DISTANCE_THRESHOLD = 1e-3  # zero-time threshold distance
+        EPSILON = 1e-6
+        TIME_BUFFER = 1.0
+        MAX_NEWTON_STEP_RATIO = 0.9
 
         # --- extract model parameters ---
         alpha = self._alpha
@@ -510,25 +509,29 @@ class SpaceControlModel(BaseModel):
         # --- replace missing velocity values with zeros for stability ---
         player_velocities = np.nan_to_num(player_velocities, nan=0.0)
 
-        # --- compute vector from each player to each mesh point ---
+        # --- limit player velocities to vmax ---
+        speed_magnitudes = np.linalg.norm(
+            player_velocities, axis=1, keepdims=True
+        )  # (P, 1)
+        speed_factors = np.minimum(1.0, vmax / (speed_magnitudes + EPSILON))  # (P, 1)
+        player_velocities = player_velocities * speed_factors  # (P, 2)
+
+        # --- initial estimate: reachability center at t0 = 1.0 ---
+        t0 = 1.0
+        phi0 = (1 - np.exp(-alpha * t0)) / alpha
+        center_estimate = player_positions + phi0 * player_velocities
+
+        # --- compute displacement between reachability centers and mesh points ---
         displacement_vectors = (
-            mesh_points[:, None, :] - player_positions[None, :, :]
+            mesh_points[:, None, :] - center_estimate[None, :, :]
         )  # (M, P, 2)
-
-        # --- compute Euclidean distances between players and mesh points ---
         displacement_distances = np.linalg.norm(displacement_vectors, axis=2)  # (M, P)
-
-        # --- prepare bracketed player speeds (no zero, max at vmax) ---
-        speed_magnitudes = np.linalg.norm(player_velocities, axis=1)  # (P,)
-        bracketed_speeds = np.where(
-            speed_magnitudes > 0, np.minimum(speed_magnitudes, vmax), vmax
-        )  # (P,)
 
         # --- compute initial time bounds: optimistic and conservative estimates ---
         t_lower = displacement_distances / vmax
-        t_upper = displacement_distances / bracketed_speeds[None, :] + TIME_BUFFER
+        t_upper = t_lower + TIME_BUFFER
 
-        # --- perform 3x bisection to refine initial time interval ---
+        # --- perform 3x bisection to refine time interval ---
         for _ in range(3):
             t_mid = 0.5 * (t_lower + t_upper)
 
@@ -538,7 +541,9 @@ class SpaceControlModel(BaseModel):
             motion_contribution = (
                 phi[:, :, None] * player_velocities[None, :, :]
             )  # (M, P, 2)
-            estimated_position = displacement_vectors - motion_contribution
+            estimated_position = mesh_points[:, None, :] - (
+                player_positions[None, :, :] + motion_contribution
+            )
             remaining_distance = np.linalg.norm(estimated_position, axis=2)
 
             reachable_radius = vmax * (t_mid - phi)
@@ -548,14 +553,16 @@ class SpaceControlModel(BaseModel):
             t_upper[mask_inside] = t_mid[mask_inside]
             t_lower[~mask_inside] = t_mid[~mask_inside]
 
-        # --- perform 3x Newton iteration to refine arrival time ---
+        # --- perform 3x Newton iteration to refine arrival times ---
         times = 0.5 * (t_lower + t_upper)
         for _ in range(3):
             exp_term = np.exp(-alpha * times)
             phi = (1 - exp_term) / alpha
 
             motion_contribution = phi[:, :, None] * player_velocities[None, :, :]
-            estimated_position = displacement_vectors - motion_contribution
+            estimated_position = mesh_points[:, None, :] - (
+                player_positions[None, :, :] + motion_contribution
+            )
             remaining_distance = np.linalg.norm(estimated_position, axis=2)
 
             reachable_radius = vmax * (times - phi)
@@ -575,12 +582,7 @@ class SpaceControlModel(BaseModel):
             delta_t = np.where(valid, f / f_prime, 0.0)
             delta_t = np.minimum(delta_t, MAX_NEWTON_STEP_RATIO * times)
             times = np.where(valid, times - delta_t, times)
-
-            # ensure non-negative arrival times
             times = np.where(times > 0, times, np.inf)
-
-        # --- override with zero time if already at the mesh point ---
-        times = np.where(displacement_distances < DISTANCE_THRESHOLD, 0.0, times)
 
         return times
 
