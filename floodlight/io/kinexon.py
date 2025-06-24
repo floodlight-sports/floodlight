@@ -227,17 +227,22 @@ def get_meta_data(
             group_id = _get_group_id(recorded_group_identifier, column_links, line)
             # create group dict in pID_dict
             if group_id not in pID_dict:
-                pID_dict.update({group_id: {}})
+                pID_dict.update({group_id: {k: [] for k in sensor_links}})
+
+            # extract id values from full row
+            row_values = {
+                identifier: line[column_links[identifier]]
+                for identifier in sensor_links
+            }
+
+            # check if this exact row already exists
+            row_tuple = tuple(row_values[k] for k in sensor_links)
+            existing_rows = zip(*[pID_dict[group_id][k] for k in sensor_links])
+
             # create links
-            for identifier in sensor_links:
-                # extract identifier
-                if identifier not in pID_dict[group_id]:
-                    pID_dict[group_id].update({identifier: []})
-                # extract ids
-                if line[column_links[identifier]] not in pID_dict[group_id][identifier]:
-                    pID_dict[group_id][identifier].append(
-                        line[column_links[identifier]]
-                    )
+            if row_tuple not in existing_rows:
+                for k in sensor_links:
+                    pID_dict[group_id][k].append(row_values[k])
 
     # sort dict
     pID_dict = dict(sorted(pID_dict.items()))
@@ -441,7 +446,7 @@ def read_position_data_csv(
     delimiter: str = ",",
     teamsheets: Union[Dict[str, Teamsheet], None] = None,
     player_id: str = None,
-    as_dict: bool = True,
+    as_dict: bool = False,
 ) -> Tuple[Dict[str, XY], Dict[str, Teamsheet]]:
     """Parses a Kinexon .csv file and extracts position data.
 
@@ -459,6 +464,7 @@ def read_position_data_csv(
         "player" column. Must match one of the available identifiers in the Kinexon data
         (e.g., "name", "mapped_id", "sensor_id", "number"). If None (default),
         the best available identifier is chosen automatically.
+        player_id must be a unique identifier.
     as_dict: bool, optional
         If True, returns teamsheets as a dictionary keyed by group.
         If False (default), returns teamsheets as a list sorted by group.
@@ -487,10 +493,16 @@ def read_position_data_csv(
             pID_dict, as_dict=True, player_id=player_id
         )
 
-    # Build jID-to-xID links from teamsheets
-    links = {
-        group: teamsheets[group].get_links("player", "xID") for group in teamsheets
-    }
+    # Build links from teamsheets
+    try:
+        links = {
+            group: teamsheets[group].get_links("player", "xID") for group in teamsheets
+        }
+    except ValueError as e:
+        raise ValueError(
+            f"The player_id {player_id} has duplicate assignments. Provide a player_id "
+            f"with unique identifiers."
+        ) from e
 
     # Get column mappings and group identifiers
     column_links = _get_column_links(filepath_data, delimiter)
