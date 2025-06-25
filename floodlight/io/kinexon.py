@@ -494,9 +494,16 @@ def read_position_data_csv(
         )
 
     # Build links from teamsheets
+    if player_id is None:
+        for group in teamsheets:
+            for column in teamsheets[group]:
+                if teamsheets[group][column].is_unique:
+                    player_id = column
+                    break
+
     try:
         links = {
-            group: teamsheets[group].get_links("player", "xID") for group in teamsheets
+            group: teamsheets[group].get_links(player_id, "xID") for group in teamsheets
         }
     except ValueError as e:
         raise ValueError(
