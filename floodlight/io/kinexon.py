@@ -34,7 +34,7 @@ def get_column_names_from_csv(
                 f"Expected delimiter '{delimiter}' not found in the CSV's line:"
                 f"{line!r}. Please verify the correct delimiter for your CSV file."
             )
-        columns = f.readline().split(delimiter)
+        columns = line.split(delimiter)
 
     return columns
 
@@ -447,11 +447,38 @@ def read_teamsheets_from_csv(
     )
 
 
+def _choose_unique_identifier(teamsheet: Teamsheet) -> str:
+    """
+    Picks the first column in a Teamsheet that contains unique player identifiers.
+
+    Parameters
+    ----------
+    teamsheets: Teamsheet
+        Teamsheet to check for unique player identifiers.
+
+    Returns
+    -------
+    player_id: str
+        The first column in teamsheet.custom that contains unique player identifiers.
+
+    """
+    candidate_columns = teamsheet.custom
+
+    for col in candidate_columns:
+        if teamsheet.teamsheet[col].is_unique:
+            return col
+
+    raise ValueError(
+        f"No column with globally or groupwise unique identifiers found in "
+        f"{candidate_columns}. Ensure that at least one column (e.g., 'name', "
+        f"'sensor_id', 'mapped_id') contains non-duplicate entries per player."
+    )
+
+
 def read_position_data_csv(
     filepath_data: Union[str, Path],
     delimiter: str = ",",
     teamsheets: Union[Dict[str, Teamsheet], None] = None,
-    player_id: str = None,
     as_dict: bool = False,
 ) -> Tuple[Dict[str, XY], Dict[str, Teamsheet]]:
     """Parses a Kinexon .csv file and extracts position data.
@@ -465,12 +492,6 @@ def read_position_data_csv(
     teamsheets: dict of Teamsheet, optional
         Pre-defined Teamsheet objects keyed by group ID. If None (default),
         teamsheets will be created automatically from metadata.
-    player_id: str, optional
-        Column name to use as the primary player identifier in the Teamsheet's
-        "player" column. Must match one of the available identifiers in the Kinexon data
-        (e.g., "name", "mapped_id", "sensor_id", "number"). If None (default),
-        the best available identifier is chosen automatically.
-        player_id must be a unique identifier.
     as_dict: bool, optional
         If True, returns teamsheets as a dictionary keyed by group.
         If False (default), returns teamsheets as a list sorted by group.
@@ -495,36 +516,21 @@ def read_position_data_csv(
 
     # Create teamsheets if not provided
     if teamsheets is None:
-        teamsheets = _create_teamsheets_from_pID_dict(
-            pID_dict, as_dict=True, player_id=player_id
-        )
+        teamsheets = _create_teamsheets_from_pID_dict(pID_dict, as_dict=True)
 
     # Build links from teamsheets
-    if player_id is None:
-        for group in teamsheets:
-            for column in teamsheets[group]:
-                if teamsheets[group][column].is_unique:
-                    player_id = column
-                    break
-
-    try:
-        links = {
-            group: teamsheets[group].get_links(player_id, "xID") for group in teamsheets
-        }
-    except ValueError as e:
-        raise ValueError(
-            f"The player_id {player_id} has duplicate assignments. Provide a player_id "
-            f"with unique identifiers."
-        ) from e
+    player_ids = {
+        group: _choose_unique_identifier(teamsheets[group]) for group in teamsheets
+    }
+    links = {
+        group: teamsheets[group].get_links(player_ids[group], "xID")
+        for group in teamsheets
+    }
 
     # Get column mappings and group identifiers
     column_links = _get_column_links(filepath_data, delimiter)
     group_identifier_set = {"group_id", "group_name"}
     recorded_group_identifier = list(set(column_links) & group_identifier_set)
-
-    # Infer player ID column if needed
-    if player_id is None:
-        player_id = _get_available_sensor_identifier(pID_dict)
 
     # Preallocate arrays
     xydata = {
@@ -542,7 +548,7 @@ def read_position_data_csv(
             line = line_string.split(delimiter)
             timestamp = int(line[column_links["time"]])
             group_id = _get_group_id(recorded_group_identifier, column_links, line)
-            player = line[column_links[player_id]]
+            player = line[column_links[player_ids[group_id]]]
             row = int((timestamp - t_null) / (1000 / framerate))
 
             if player not in links[group_id]:
