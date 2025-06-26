@@ -28,6 +28,12 @@ def get_column_names_from_csv(
     """
 
     with open(str(filepath_data), encoding="utf-8") as f:
+        line = f.readline()
+        if delimiter not in line:
+            raise ValueError(
+                f"Expected delimiter '{delimiter}' not found in the CSV's line:"
+                f"{line!r}. Please verify the correct delimiter for your CSV file."
+            )
         columns = f.readline().split(delimiter)
 
     return columns
