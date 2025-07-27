@@ -37,8 +37,10 @@
 designed with a clear focus on scientific computing and built upon popular libraries
 such as *numpy* or *pandas*.
 
-Load, integrate, and process tracking and event data, codes and other match-related
-information from major data providers. This package provides a set of  standardized
+Load, process, and model tracking and event data, codes and other match-related
+information from over ten major data providers or public datasets. This package provides
+a range of popular analyses and methods such as space control models, metabolic power, approximate
+entropy out of the box. Under the hood, the package comes with a set of standardized
 data objects to structure and handle sports data, together with a suite of common
 processing operations such as transforms or data manipulation methods.
 
@@ -146,24 +148,6 @@ pip install floodlight
 ```
 
 
-### Documentation
-
-You can find all documentation [here][docs-url].
-
-
-
-### Contributing
-
-[![Contributions][contrib-image]][contrib-url]
-[![Code style: black][black-image]][black-url]
-
-
-Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
-know to get started. We also provide an extended, beginner-friendly guide on how to
-start contributing in our documentation.
-
-
-
 ### Citing
 
 If you've used *floodlight* in your scientific work, please cite the [corresponding paper][joss-url].
@@ -185,6 +169,23 @@ If you've used *floodlight* in your scientific work, please cite the [correspond
 ```
 
 
+### Documentation
+
+You can find all documentation [here][docs-url].
+
+
+
+### Contributing
+
+[![Contributions][contrib-image]][contrib-url]
+[![Code style: black][black-image]][black-url]
+
+
+Check out [Contributing.md][contrib-url] for a quick rundown of what you need to
+know to get started. We also provide an extended, beginner-friendly guide on how to
+start contributing in our documentation.
+
+
 
 ### Why
 
@@ -203,16 +204,16 @@ plotting routines that are required in *almost every* project - over and over ag
 structures we're dealing with at that time.
 
 
-### About
+### Acknowledgements
 
-This project has been kindly supported by the [Institute of Exercise Training and Sport
+This project has received funding by the BMBF (Bundesministerium für Bildung und Forschung,
+[01IS20021A](https://www.softwaresysteme.dlr-pt.de/media/content/01IS20021_Projektblatt_MM4SPA.pdf)) and the DFG (Deutsche
+Forschungsgemeinschaft, [ME 2678/43-1](https://gepris.dfg.de/gepris/projekt/522904388)) and has been kindly supported by the
+[Institute of Exercise Training and Sport
 Informatics](https://www.dshs-koeln.de/en/institut-fuer-trainingswissenschaft-und-sportinformatik/) at the German Sport
-University Cologne under supervision of Prof. Daniel Memmert.
+University Cologne.
 
 
+### See also
 
-### Related Projects
-
-- [matplotsoccer](https://github.com/TomDecroos/matplotsoccer)
 - [kloppy](https://github.com/PySport/kloppy)
-- [codeball](https://github.com/metrica-sports/codeball)
