@@ -90,3 +90,83 @@ def example_xy_objects_space_control() -> Tuple[XY, XY]:
     )
 
     return xy1, xy2
+
+
+# Sample XY object with no nan
+@pytest.fixture
+def xy_data():
+    data = np.array(
+        [
+            [
+                10,
+                42,
+                59,
+                43,
+                61,
+                21,
+                63,
+                57,
+                36,
+                57,
+                18,
+                27,
+                15,
+                24,
+                18,
+                11,
+                51,
+                49,
+                39,
+                1,
+                57,
+                58,
+            ],
+            [
+                22,
+                29,
+                32,
+                107,
+                54,
+                25,
+                50,
+                8,
+                40,
+                69,
+                21,
+                25,
+                98,
+                64,
+                101,
+                102,
+                88,
+                36,
+                93,
+                55,
+                57,
+                43,
+            ],
+        ]
+    )
+    return XY(data)
+
+
+# Sample XY object with all nan
+@pytest.fixture
+def xy_all_nan():
+    data = np.empty((2, 22))  # Assuming 2 frames
+    data[:] = np.nan
+    return XY(data)
+
+
+# Sample XY object with all zero
+@pytest.fixture
+def xy_all_zeros():
+    data = np.zeros((2, 22))  # 2 frames
+    return XY(data)
+
+
+# Sample XY object with all ones
+@pytest.fixture
+def xy_all_ones():
+    data = np.ones((2, 22))  # 2 frames
+    return XY(data)
