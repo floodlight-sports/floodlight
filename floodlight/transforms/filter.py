@@ -402,3 +402,164 @@ def savgol_lowpass(
     xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
 
     return xy_filtered
+
+
+class KalmanFilter2D:
+    """
+    Implements a 2D Kalman Filter for smoothing position and
+    optionally velocity measurements.
+
+    Parameters
+    ----------
+    dt : float, optional
+        Time step duration, by default 0.1.
+    process_noise : float, optional
+        Process noise variance, by default 1e-3.
+    measurement_noise : float, optional
+        Measurement noise variance, by default 0.1.
+
+    Attributes
+    ----------
+    dt : float
+        Time step duration.
+    process_noise : float
+        Process noise variance.
+    measurement_noise : float
+        Measurement noise variance.
+    kalman_filters : dict
+        Stores state and covariance matrices for each player.
+
+    Example:
+
+    from floodlight.transforms.filter import KalmanFilter2D
+    from floodlight.io.datasets import EIGDDataset
+
+    # Load example dataset
+    dataset = EIGDDataset()
+    home, _, _ = dataset.get()  # Load the home team data
+
+    # Initialize Kalman filter parameters
+    dt = 1 / home.framerate  # Time step based on frame rate
+    process_noise = 0.1      # Process noise variance
+    measurement_noise = 0.1  # Measurement noise variance
+
+    # Initialize KalmanFilter2D processor
+    kf_processor = KalmanFilter2D(dt, process_noise, measurement_noise)
+
+    # Apply Kalman filter to the dataset
+    smoothed_data, smoothed_vx, smoothed_vy = kf_processor.apply_kalman_filter(
+        home, smooth_velocity=True
+    )
+
+    # Output results
+    print("Smoothed data using the Kalman filter:")
+    print("Smoothed positions (x, y):")
+    print(smoothed_data.xy)
+    print("Smoothed velocities (vx):")
+    print(smoothed_vx)
+    print("Smoothed velocities (vy):")
+    print(smoothed_vy)git
+
+    """
+
+    def __init__(self, dt=0.1, process_noise=1e-3, measurement_noise=0.1):
+        self.dt = dt
+        self.process_noise = process_noise
+        self.measurement_noise = measurement_noise
+        self.kalman_filters = {}
+
+    def _initialize_kalman_filter(self, num_players):
+        # Initialize Kalman filters for each player
+        self.kalman_filters = {
+            i: {
+                "x": np.array([0.0, 0.0, 0.0, 0.0]),  # State vector: [x, y, v_x, v_y]
+                "P": np.eye(4),  # Covariance matrix
+            }
+            for i in range(num_players)
+        }
+
+    def _predict(self, i):
+        # State transition matrix
+        A = np.array(
+            [[1, 0, self.dt, 0], [0, 1, 0, self.dt], [0, 0, 1, 0], [0, 0, 0, 1]]
+        )
+        # Predict state and covariance
+        self.kalman_filters[i]["x"] = A @ self.kalman_filters[i]["x"]
+        self.kalman_filters[i]["P"] = A @ self.kalman_filters[i][
+            "P"
+        ] @ A.T + self.process_noise * np.eye(4)
+
+    def _update(self, i, measurement):
+        # Measurement matrix (observing x, y, v_x, v_y)
+        H = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+        # Measurement residual
+        y = measurement - H @ self.kalman_filters[i]["x"]
+        # Innovation covariance
+        S = H @ self.kalman_filters[i]["P"] @ H.T + self.measurement_noise * np.eye(4)
+        # Kalman gain
+        K = self.kalman_filters[i]["P"] @ H.T @ np.linalg.inv(S)
+        # Update state and covariance
+        self.kalman_filters[i]["x"] = self.kalman_filters[i]["x"] + K @ y
+        self.kalman_filters[i]["P"] = (np.eye(4) - K @ H) @ self.kalman_filters[i]["P"]
+
+    def apply_kalman_filter(self, xy_data, smooth_velocity=False):
+        num_players = xy_data.N
+        self._initialize_kalman_filter(num_players)
+
+        num_frames = xy_data.x.shape[0]
+        smoothed_x = np.full_like(xy_data.x, np.nan)
+        smoothed_y = np.full_like(xy_data.y, np.nan)
+        smoothed_vx = np.full_like(xy_data.x, np.nan) if smooth_velocity else None
+        smoothed_vy = np.full_like(xy_data.y, np.nan) if smooth_velocity else None
+
+        for t in range(num_frames):
+            frame_x = xy_data.x[t]
+            frame_y = xy_data.y[t]
+
+            for i in range(num_players):
+                x, y = frame_x[i], frame_y[i]
+                if t > 0 and not np.isnan(x) and not np.isnan(y):
+                    # Calculate velocity
+                    vx = (x - xy_data.x[t - 1, i]) / self.dt
+                    vy = (y - xy_data.y[t - 1, i]) / self.dt
+                else:
+                    vx, vy = 0.0, 0.0
+
+                if np.isnan(x) or np.isnan(y):
+                    self._predict(i)  # Predict only
+                else:
+                    self._predict(i)
+                    measurement = (
+                        [x, y, vx, vy] if smooth_velocity else [x, y, 0.0, 0.0]
+                    )
+                    self._update(i, np.array(measurement))
+                    smoothed_state = self.kalman_filters[i]["x"]
+                    # Store smoothed position
+                    smoothed_x[t, i] = smoothed_state[0]
+                    smoothed_y[t, i] = smoothed_state[1]
+
+                    # Store smoothed velocity if enabled
+                    if smooth_velocity:
+                        smoothed_vx[t, i] = smoothed_state[2]
+                        smoothed_vy[t, i] = smoothed_state[3]
+
+        smoothed_XY = np.empty((smoothed_x.shape[0], smoothed_x.shape[1] * 2))
+        for i in range(smoothed_x.shape[0]):
+            smoothed_XY[i] = np.empty(smoothed_x.shape[1] * 2)
+            smoothed_XY[i, ::2] = smoothed_x[i]  # Place x data in even indices
+            smoothed_XY[i, 1::2] = smoothed_y[i]  # Place y data in odd indices
+        if smooth_velocity:
+
+            return (
+                XY(
+                    xy=smoothed_XY,
+                    framerate=xy_data.framerate,
+                    direction=xy_data.direction,
+                ),
+                smoothed_vx,
+                smoothed_vy,
+            )
+
+        return XY(
+            xy=smoothed_XY, framerate=xy_data.framerate, direction=xy_data.direction
+        )
