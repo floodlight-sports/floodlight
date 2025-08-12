@@ -512,9 +512,7 @@ def read_position_data_dat(
                     xydata[team][segment][frame_rel, y_col] = positions[team][jID][1]
 
             # get ball data
-            xydata["Ball"][segment][
-                frame_rel,
-            ] = ball["position"]
+            xydata["Ball"][segment][frame_rel,] = ball["position"]
             codes["possession"][segment].append(ball.get("possession", np.nan))
             codes["ballstatus"][segment].append(ball.get("ballstatus", np.nan))
 

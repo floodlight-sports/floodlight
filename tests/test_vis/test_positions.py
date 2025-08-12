@@ -1,9 +1,10 @@
 import pytest
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt     # noqa: 402
 
-from floodlight.vis.positions import plot_positions, plot_trajectories      # noqa: 402
+matplotlib.use("agg")
+import matplotlib.pyplot as plt  # noqa: 402
+
+from floodlight.vis.positions import plot_positions, plot_trajectories  # noqa: 402
 
 
 # Test plot_positions( xy, frame: int, ball: bool, ax: matplotlib.axes, **kwargs)
