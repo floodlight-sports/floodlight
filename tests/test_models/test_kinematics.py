@@ -1,7 +1,12 @@
 import pytest
 import numpy as np
 
-from floodlight.models.kinematics import DistanceModel, VelocityModel, AccelerationModel
+from floodlight.models.kinematics import (
+    DistanceModel,
+    VelocityModel,
+    VelocityVectorModel,
+    AccelerationModel,
+)
 
 
 # Differences in the kinematic models can be calculated via central or backward
@@ -133,6 +138,82 @@ def test_velocity(example_xy_object_kinematics) -> None:
     assert np.array_equal(
         np.round(velocity, 3),
         np.array(((20, np.nan), (22.361, 28.284), (28.284, np.nan))),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_velocityvector_model_fit_difference_central(
+    example_xy_object_kinematics,
+) -> None:
+    # Arrange
+    xy = example_xy_object_kinematics
+
+    # Act
+    velvec_model = VelocityVectorModel()
+    velvec_model.fit(xy)
+    velocityvector = velvec_model._velocityvector_
+
+    # Assert
+    assert np.array_equal(
+        np.round(velocityvector, 3),
+        np.array(
+            (
+                ((0, 20), (np.NaN, np.NaN)),
+                ((10, 20), (20, -20)),
+                ((20, 20), (np.NaN, np.NaN)),
+            )
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_velocityvector_model_fit_difference_backward(
+    example_xy_object_kinematics,
+) -> None:
+    # Arrange
+    xy = example_xy_object_kinematics
+
+    # Act
+    velvec_model = VelocityVectorModel()
+    velvec_model.fit(xy, difference="backward")
+    velocityvector = velvec_model._velocityvector_
+
+    # Assert
+    assert np.array_equal(
+        np.round(velocityvector, 3),
+        np.array(
+            (
+                ((0, 0), (0, 0)),
+                ((0, 20), (np.NaN, np.NaN)),
+                ((20, 20), (np.NaN, np.NaN)),
+            )
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_velocityvector(example_xy_object_kinematics) -> None:
+    # Arrange
+    xy = example_xy_object_kinematics
+
+    # Act
+    velvec_model = VelocityVectorModel()
+    velvec_model.fit(xy)
+    velocityvector = velvec_model.velocityvector()
+
+    # Assert
+    assert np.array_equal(
+        np.round(velocityvector, 3),
+        np.array(
+            (
+                ((0, 20), (np.NaN, np.NaN)),
+                ((10, 20), (20, -20)),
+                ((20, 20), (np.NaN, np.NaN)),
+            )
+        ),
         equal_nan=True,
     )
 
