@@ -808,7 +808,7 @@ class StatsBombOpenDataset:
 
 class IDSSEDataset:
     """This dataset loads the accompanying data set from the *An integrated dataset of
-    synchronized spatiotemporal and event data in elite soccer* paper. [2]_
+    spatiotemporal and event data in elite soccer* paper. [2]_
 
     Upon instantiation, the class checks if the specified data already exists in the
     repository's root ``.data``-folder, and will download the files to this folder if
@@ -859,59 +859,55 @@ class IDSSEDataset:
     References
     ----------
         .. [2] `Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
-            dataset of synchronized spatiotemporal and event data in elite soccer. In
-            Submission.`
+            dataset of spatiotemporal and event data in elite soccer. Scientific Data,
+            12(195). <https://doi.org/10.1038/s41597-025-04505-y>`_
     """
 
     def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
         self._IDSSE_SCHEMA = "https"
         self._IDSSE_BASE_URL = "figshare.com/ndownloader/files"
         self._IDSSE_FILE_IDS_INFO = {
-            "J03WMX": "48392485",
-            "J03WN1": "48392491",
-            "J03WPY": "48392497",
-            "J03WOH": "48392515",
-            "J03WQQ": "48392488",
-            "J03WOY": "48392503",
-            "J03WR9": "48392494",
+            "J03WMX": "51643475",
+            "J03WN1": "51643472",
+            "J03WPY": "51643487",
+            "J03WOH": "51643478",
+            "J03WQQ": "51643484",
+            "J03WOY": "51643481",
+            "J03WR9": "51643490",
         }
         self._IDSSE_FILE_IDS_EVENT = {
-            "J03WMX": "48392524",
-            "J03WN1": "48392527",
-            "J03WPY": "48392542",
-            "J03WOH": "48392500",
-            "J03WQQ": "48392521",
-            "J03WOY": "48392518",
-            "J03WR9": "48392530",
+            "J03WMX": "51643493",
+            "J03WN1": "51643496",
+            "J03WPY": "51643505",
+            "J03WOH": "51643499",
+            "J03WQQ": "51643508",
+            "J03WOY": "51643502",
+            "J03WR9": "51643511",
         }
         self._IDSSE_FILE_IDS_POSITION = {
-            "J03WMX": "48392539",
-            "J03WN1": "48392512",
-            "J03WPY": "48392572",
-            "J03WOH": "48392578",
-            "J03WQQ": "48392545",
-            "J03WOY": "48392551",
-            "J03WR9": "48392563",
+            "J03WMX": "51643514",
+            "J03WN1": "51643517",
+            "J03WPY": "51643526",
+            "J03WOH": "51643520",
+            "J03WQQ": "51643529",
+            "J03WOY": "51643523",
+            "J03WR9": "51643532",
         }
-        self._IDSSE_PRIVATE_LINK = "1f806cb3e755c6b54e05"
         if match_id in self._IDSSE_FILE_IDS_INFO.keys():
             self._IDSSE_HOST_URL_INFO = (
                 f"{self._IDSSE_SCHEMA}://"
                 f"{self._IDSSE_BASE_URL}/"
                 f"{self._IDSSE_FILE_IDS_INFO[match_id]}"
-                f"?private_link={self._IDSSE_PRIVATE_LINK}"
             )
             self._IDSSE_HOST_URL_EVENT = (
                 f"{self._IDSSE_SCHEMA}://"
                 f"{self._IDSSE_BASE_URL}/"
                 f"{self._IDSSE_FILE_IDS_EVENT[match_id]}"
-                f"?private_link={self._IDSSE_PRIVATE_LINK}"
             )
             self._IDSSE_HOST_URL_POSITION = (
                 f"{self._IDSSE_SCHEMA}://"
                 f"{self._IDSSE_BASE_URL}/"
                 f"{self._IDSSE_FILE_IDS_POSITION[match_id]}"
-                f"?private_link={self._IDSSE_PRIVATE_LINK}"
             )
         elif match_id == "all":
             pass
@@ -972,19 +968,16 @@ class IDSSEDataset:
                     f"{self._IDSSE_SCHEMA}://"
                     f"{self._IDSSE_BASE_URL}/"
                     f"{self._IDSSE_FILE_IDS_INFO[file_id]}"
-                    f"?private_link={self._IDSSE_PRIVATE_LINK}"
                 )
                 self._IDSSE_HOST_URL_EVENT = (
                     f"{self._IDSSE_SCHEMA}://"
                     f"{self._IDSSE_BASE_URL}/"
                     f"{self._IDSSE_FILE_IDS_EVENT[file_id]}"
-                    f"?private_link={self._IDSSE_PRIVATE_LINK}"
                 )
                 self._IDSSE_HOST_URL_POSITION = (
                     f"{self._IDSSE_SCHEMA}://"
                     f"{self._IDSSE_BASE_URL}/"
                     f"{self._IDSSE_FILE_IDS_POSITION[file_id]}"
-                    f"?private_link={self._IDSSE_PRIVATE_LINK}"
                 )
 
                 self._IDSSE_FILE_NAME_INFO = (
