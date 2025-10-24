@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0 (2025-07-27)
+
+#### Fixes
+
+* readthedocs configuration updates part2
+* readthedocs configuration updates
+#### Docs
+
+* update readme
+#### Others
+
+* release 0.5.0
+* update github actions cache
+
+Full set of changes: [`0.5.0...1.0.0`](https://github.com/floodlight-sports/floodlight/compare/0.5.0...1.0.0)
+
 ## 0.5.0 (2024-09-10)
 
 #### New Features
@@ -7,6 +23,24 @@
 * parser skillcorner open dataset ([#143](https://github.com/floodlight-sports/floodlight/issues/143))
 * add IDSSE dataset ([#147](https://github.com/floodlight-sports/floodlight/issues/147))
 * add delimiter option ([#149](https://github.com/floodlight-sports/floodlight/issues/149))
+#### Docs
+
+* update changelog
+* update readme
+* update and fix docs
+* fix poetry install command ([#133](https://github.com/floodlight-sports/floodlight/issues/133))
+#### Others
+
+* release 0.5.0
+* bump version
+* refresh package build ([#148](https://github.com/floodlight-sports/floodlight/issues/148))
+
+Full set of changes: [`0.4.0...0.5.0`](https://github.com/floodlight-sports/floodlight/compare/0.4.0...0.5.0)
+
+## 0.4.0 (2023-02-03)
+
+#### New Features
+
 * add discretized voronoi model ([#124](https://github.com/floodlight-sports/floodlight/issues/124))
 * add parser for metadata and teamsheets in json format ([#113](https://github.com/floodlight-sports/floodlight/issues/113))
 * integrate teamsheet logic to tracab parser ([#112](https://github.com/floodlight-sports/floodlight/issues/112))
@@ -24,47 +58,68 @@
 * replace pandas iterrows ([#96](https://github.com/floodlight-sports/floodlight/issues/96))
 * missing https in hyperlink leading to an unknown page when clicking on it in github ([#98](https://github.com/floodlight-sports/floodlight/issues/98))
 * MetabolicPower framerate bug ([#93](https://github.com/floodlight-sports/floodlight/issues/93))
-* UTF-8 encoding Kinexon parser
-* UFT-8 encoding Kinexon parser
-* minimum signal length ([#81](https://github.com/floodlight-sports/floodlight/issues/81))
-* statsperform pitch templates ([#75](https://github.com/floodlight-sports/floodlight/issues/75))
-* adapt dfl parser to different format versions and fix statsperform gameclock unit ([#76](https://github.com/floodlight-sports/floodlight/issues/76))
-* pass difference argument to axis-specific differentiation and fix prepend ([#77](https://github.com/floodlight-sports/floodlight/issues/77))
 #### Refactorings
 
 * flexible dictionary returns for parser ([#116](https://github.com/floodlight-sports/floodlight/issues/116))
 * streamline IO function names ([#115](https://github.com/floodlight-sports/floodlight/issues/115))
 #### Docs
 
-* update readme
-* update and fix docs
-* fix poetry install command ([#133](https://github.com/floodlight-sports/floodlight/issues/133))
 * update changelog
 * update docs build
 * fix butterworth cutoff freq doc ([#94](https://github.com/floodlight-sports/floodlight/issues/94))
 * update tutorial matchsheets ([#95](https://github.com/floodlight-sports/floodlight/issues/95))
+#### Others
+
+* release 0.4.0
+* bump version
+* update location of flake8 which was moved from gitlab to github ([#99](https://github.com/floodlight-sports/floodlight/issues/99))
+* update README
+* update columns in tests
+
+Full set of changes: [`0.3.3...0.4.0`](https://github.com/floodlight-sports/floodlight/compare/0.3.3...0.4.0)
+
+## 0.3.3 (2022-08-23)
+
+#### Fixes
+
+* UTF-8 encoding Kinexon parser
+* UFT-8 encoding Kinexon parser
+* minimum signal length ([#81](https://github.com/floodlight-sports/floodlight/issues/81))
+#### Docs
+
 * update changelog
 * add information on setup.py
 * update datasets description
 * update readme
+#### Others
+
+* release 0.3.3
+* bump version
+* add dependency pytest-cov
+* add dependency coverage
+* add coverage reports generation and codecov upload
+* update readme
+
+Full set of changes: [`0.3.2...0.3.3`](https://github.com/floodlight-sports/floodlight/compare/0.3.2...0.3.3)
+
+## 0.3.2 (2022-06-08)
+
+#### Fixes
+
+* statsperform pitch templates ([#75](https://github.com/floodlight-sports/floodlight/issues/75))
+* adapt dfl parser to different format versions and fix statsperform gameclock unit ([#76](https://github.com/floodlight-sports/floodlight/issues/76))
+* pass difference argument to axis-specific differentiation and fix prepend ([#77](https://github.com/floodlight-sports/floodlight/issues/77))
+#### Docs
+
 * update changelog
 * add paper reference
 #### Others
 
-* refresh package build ([#148](https://github.com/floodlight-sports/floodlight/issues/148))
+* release 0.3.2
 * bump version
-* bump version
-* add dependency pytest-cov
-* add dependency coverage
-* bump version
-* update location of flake8 which was moved from gitlab to github ([#99](https://github.com/floodlight-sports/floodlight/issues/99))
-* add coverage reports generation and codecov upload
-* update README
-* update readme
 * update module init
-* update columns in tests
 
-Full set of changes: [`0.3.1...0.5.0`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.5.0)
+Full set of changes: [`0.3.1...0.3.2`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.3.2)
 
 ## 0.3.1 (2022-06-06)
 
