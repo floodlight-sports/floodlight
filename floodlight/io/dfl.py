@@ -152,22 +152,20 @@ def _get_event_outcome(eID, attrib) -> int:
 
     # well-defined outcome
     if "TacklingGame" in eID:
-        if attrib["WinnerRole"] == "withoutBallControl":
+        if attrib.get("WinnerRole") == "withoutBallControl":
             outcome = 1
-        elif attrib["WinnerRole"] == "withBallControl":
+        elif attrib.get("WinnerRole") == "withBallControl":
             outcome = 0
     elif "BallClaiming" in eID:
-        if "Type" in attrib:
-            if attrib["Type"] in ["BallClaimed"]:
-                outcome = 1
-            elif attrib["Type"] in ["BallHeld"]:
-                outcome = 0
+        if attrib.get("Type") in ["BallClaimed"]:
+            outcome = 1
+        elif attrib.get("Type") in ["BallHeld"]:
+            outcome = 0
     elif "Play" in eID:
-        if "Successful" in attrib:
-            if attrib["Successful"] == "true":
-                outcome = 1
-            elif attrib["Successful"] == "false":
-                outcome = 0
+        if attrib.get("Successful") == "true":
+            outcome = 1
+        elif attrib.get("Successful") == "false":
+            outcome = 0
     elif "ShotAtGoal" in eID:
         if "SuccessfulShot" in eID:
             outcome = 1
