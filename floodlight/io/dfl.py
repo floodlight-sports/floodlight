@@ -152,22 +152,20 @@ def _get_event_outcome(eID, attrib) -> int:
 
     # well-defined outcome
     if "TacklingGame" in eID:
-        if attrib["WinnerRole"] == "withoutBallControl":
+        if attrib.get("WinnerRole") == "withoutBallControl":
             outcome = 1
-        elif attrib["WinnerRole"] == "withBallControl":
+        elif attrib.get("WinnerRole") == "withBallControl":
             outcome = 0
     elif "BallClaiming" in eID:
-        if "Type" in attrib:
-            if attrib["Type"] in ["BallClaimed"]:
-                outcome = 1
-            elif attrib["Type"] in ["BallHeld"]:
-                outcome = 0
+        if attrib.get("Type") in ["BallClaimed"]:
+            outcome = 1
+        elif attrib.get("Type") in ["BallHeld"]:
+            outcome = 0
     elif "Play" in eID:
-        if "Successful" in attrib:
-            if attrib["Successful"] == "true":
-                outcome = 1
-            elif attrib["Successful"] == "false":
-                outcome = 0
+        if attrib.get("Successful") == "true":
+            outcome = 1
+        elif attrib.get("Successful") == "false":
+            outcome = 0
     elif "ShotAtGoal" in eID:
         if "SuccessfulShot" in eID:
             outcome = 1
@@ -507,6 +505,12 @@ def read_event_data_xml(
         event["minute"] = np.floor(event["gameclock"] / 60)
         event["second"] = np.floor(event["gameclock"] - event["minute"] * 60)
 
+        # event location
+        event["at_x"] = np.float64(elem.get("X-Source-Position"))
+        event["at_y"] = np.float64(elem.get("Y-Source-Position"))
+        event["to_x"] = np.float64(elem.get("X-Position"))
+        event["to_y"] = np.float64(elem.get("Y-Position"))
+
         # description, outcome, team, and player
         child = next(iter(elem))
         eID, attrib = _get_event_description(child)
@@ -557,6 +561,10 @@ def read_event_data_xml(
                     "tID",
                     "pID",
                     "outcome",
+                    "at_x",
+                    "at_y",
+                    "to_x",
+                    "to_y",
                     "timestamp",
                     "minute",
                     "second",
