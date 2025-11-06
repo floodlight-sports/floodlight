@@ -453,7 +453,7 @@ def _choose_unique_identifier(teamsheet: Teamsheet) -> str:
 
     Parameters
     ----------
-    teamsheets: Teamsheet
+    teamsheet: Teamsheet
         Teamsheet to check for unique player identifiers.
 
     Returns
