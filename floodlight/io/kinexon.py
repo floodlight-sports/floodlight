@@ -480,7 +480,7 @@ def read_position_data_csv(
     delimiter: str = ",",
     teamsheets: Union[Dict[str, Teamsheet], None] = None,
     as_dict: bool = False,
-) -> Tuple[Dict[str, XY], Dict[str, Teamsheet]]:
+) -> Union[List[XY], Dict[str, XY]]:
     """Parses a Kinexon .csv file and extracts position data.
 
     Parameters
