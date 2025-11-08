@@ -18,7 +18,7 @@ __all__ = [
     "XY",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __doc__ = """
 A high-level, data-driven sports analytics framework
