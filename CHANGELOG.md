@@ -1,16 +1,47 @@
 # Changelog
 
-## 1.0.0 (2025-07-27)
+## 1.1.0 (2025-11-08)
 
+#### New Features
+
+* kinexon teamsheets
+* add dfl eventdata coordinates
+* add coordinates to events parser
 #### Fixes
 
+* typo
+* dfl get function
+* use get function to circumvent errors when format changes
+* missed version bump
+#### Refactorings
+
+* remove redundant existence check and explicit None return
+* update idsse download link and reference
+* update idsse download link and reference
+
+Full set of changes: [`1.0.0...1.1.0`](https://github.com/floodlight-sports/floodlight/compare/1.0.0...1.1.0)
+
+## 1.0.0 (2025-07-27)
+
+#### New Features
+
+* auto chose unique player identifier
+* add error message to wrong delimiter
+* auto build links from unique identifier
+* teamsheet logic in kinexon parser init commit
+#### Fixes
+
+* correct Type annotation
+* duplicate player identifier
 * readthedocs configuration updates part2
 * readthedocs configuration updates
 #### Docs
 
+* update changelog
 * update readme
 #### Others
 
+* release 1.0.0
 * release 0.5.0
 * update github actions cache
 
