@@ -156,11 +156,11 @@ covered`
 class VelocityModel(BaseModel):
     """Computations for velocities of all players.
 
-    Upon calling the :func:`~VelocityModel.fit`-method, this model calculates the
-    frame-wise velocity for each player. The calculation can subsequently be queried by
-    calling the corresponding method:
+    Upon calling the :func:`~SpeedModel.fit`-method, this model calculates the
+    frame-wise magnitude of the velocity vector for each player. The
+    calculation can subsequently be queried by calling the corresponding method:
 
-        - Frame-wise velocity --> :func:`~VelocityModel.velocity`
+        - Frame-wise velocity --> :func:`~VelocityModel.speed`
 
     Notes
     -----
@@ -193,10 +193,10 @@ class VelocityModel(BaseModel):
 
     >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))), framerate=20)
 
-    >>> vm = VelocityModel()
-    >>> vm.fit(xy)
+    >>> sm = VelocityModel()
+    >>> sm.fit(xy)
 
-    >>> vm.velocity()
+    >>> sm.velocity()
     PlayerProperty(property=array([[20.        ],
        [14.14213562],
        [22.36067977],
@@ -213,7 +213,7 @@ class VelocityModel(BaseModel):
         difference: str = "central",
         axis: str = None,
     ):
-        """Fits a model calculating velocities of each player to an XY object.
+        """Fits a model calculating velocity of each player to an XY object.
 
         Parameters
         ----------
@@ -247,16 +247,16 @@ class VelocityModel(BaseModel):
 
         Returns
         -------
-        velocity: PlayerProperty
+        speed: PlayerProperty
             A PlayerProperty object of shape (T, N), where T is the total number of
             frames and N is the number of players. The columns contain the frame-wise
-            velocity.
+            speed.
         """
         return self._velocity_
 
 
 class AccelerationModel(BaseModel):
-    """Computations for velocities of all players.
+    """Computations for accelerations of all players.
 
     Upon calling the :func:`~AccelerationModel.fit`-method, this model calculates the
     frame-wise acceleration for each player. The calculation can subsequently be queried
@@ -367,3 +367,98 @@ class AccelerationModel(BaseModel):
             acceleration.
         """
         return self._acceleration_
+
+
+class VelocityVectorModel(BaseModel):
+    """Computations for velocities of all players as a vector.
+
+    Upon calling the :func:`~VelocityVectorModel.fit`-method, this model calculates the
+    frame-wise velocity-vector for each player relative to their position. The
+    calculation can subsequently be queried by calling the corresponding method:
+
+        - Frame-wise velocity vector --> :func:`~VelocityVectorModel.velocityvector`
+
+    Notes
+    -----
+    For input data in metrical units, the output equals the input unit.
+    Differences between frames can be calculated with two different methods:
+
+        *Central difference method* (recommended) allows for differenciation without
+        temporal shift:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{1}-y_{-1}}{t_{1} - t_{-1}}
+
+        The first and last frame are padded with linear extrapolation.\n
+        *Backward difference method* calculates the difference between each consecutive
+        frame:
+
+                .. math::
+
+                    y^{\\prime}(t_{0}) = \\frac{y_{0}-y_{-1}}{t_{0} - t_{-1}}
+
+        The first frame is padded prepending a '0' at the beginning of the array along
+        axis=1.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from floodlight import XY
+    >>> from floodlight.models.kinematics import VelocityVectorModel
+
+    >>> xy = XY(np.array(((0, 0), (0, 1), (1, 1), (2, 2))), framerate=20)
+
+    >>> vm = VelocityVectorModel()
+    >>> vm.fit(xy)
+
+    >>> vm.velocityvector()
+    PlayerProperty(property=array([[[ 0., 20.]],
+       [[10., 10.]],
+       [[20., 10.]],
+       [[20., 20.]]]), name='velocityvector', framerate=20)
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._velocityvector_ = None
+
+    def fit(self, xy: XY, difference: str = "central"):
+        """Fits a model calculating velocitie vectors of each player to an XY object.
+
+        Parameters
+        ----------
+        xy: XY
+            Floodlight XY Data object.
+        difference: {'central', 'backward'}, optional
+            The method of differentiation. 'central' will differentiate using the
+            central difference method, 'backward' will differentiate using the backward
+            difference method as described in the Notes.
+        """
+
+        distance_model = DistanceModel()
+        distance_model.fit(xy, difference=difference, axis="x")
+        x_distance = distance_model.distance_covered()
+        distance_model.fit(xy, difference=difference, axis="y")
+        y_distance = distance_model.distance_covered()
+
+        distance_vector = np.stack((x_distance, y_distance), axis=2)
+
+        velocityvector = np.multiply(distance_vector, xy.framerate)
+
+        self._velocityvector_ = PlayerProperty(
+            property=velocityvector, name="velocity", framerate=xy.framerate
+        )
+
+    @requires_fit
+    def velocityvector(self) -> PlayerProperty:
+        """Returns the frame-wise velocity vector as computed by the fit method.
+
+        Returns
+        -------
+        velocityvector: PlayerProperty
+            A PlayerProperty object of shape (T, N), where T is the total number of
+            frames and N is the number of players. The columns contain the frame-wise
+            velocity.
+        """
+        return self._velocityvector_
