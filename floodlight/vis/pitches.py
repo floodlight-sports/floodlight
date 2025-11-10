@@ -674,21 +674,13 @@ def plot_football_pitch(
     norm_factor_x = (
         1
         if unit == "m"
-        else 100
-        if unit == "cm"
-        else 100 / length
-        if length
-        else 100 / 105
+        else 100 if unit == "cm" else 100 / length if length else 100 / 105
     )
     # norm_factor for all elements on the pitch that are scaled in the y direction
     norm_factor_y = (
         1
         if unit == "m"
-        else 100
-        if unit == "cm"
-        else 100 / width
-        if width
-        else 100 / 68
+        else 100 if unit == "cm" else 100 / width if width else 100 / 68
     )
 
     # All the positions and ranges of certain elements on the pitch
