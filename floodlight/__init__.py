@@ -18,7 +18,7 @@ __all__ = [
     "XY",
 ]
 
-__version__ = "0.5.0"
+__version__ = "1.1.0"
 
 __doc__ = """
 A high-level, data-driven sports analytics framework
@@ -28,10 +28,12 @@ A high-level, data-driven sports analytics framework
 designed with a clear focus on scientific computing and built upon popular libraries
 such as *numpy* or *pandas*.
 
-Load, integrate, and process tracking and event data, codes and other match-related
-information from major data providers. This package provides a set of  standardized
-data objects to structure and handle sports data, together with a suite of common
-processing operations such as transforms or data manipulation methods.
+Load, process, and model tracking and event data, codes and other match-related
+information from over ten major data providers or public datasets. This package provides
+a range of popular analyses and methods such as space control models, metabolic power,
+approximate entropy out of the box. Under the hood, the package comes with a set of
+standardized data objects to structure and handle sports data, together with a suite of
+common processing operations such as transforms or data manipulation methods.
 
 All implementations run completely provider- and sports-independent, while maintaining
 a maximum of flexibility to incorporate as many data flavours as possible. A high-level
