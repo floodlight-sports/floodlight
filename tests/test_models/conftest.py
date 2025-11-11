@@ -90,3 +90,87 @@ def example_xy_objects_space_control() -> Tuple[XY, XY]:
     )
 
     return xy1, xy2
+
+
+###
+
+
+# Fixture for valid XY data
+@pytest.fixture
+def xy_data_valid1():
+    return XY(np.array([[0, 2, 4, 0, 2, 4], [1, 3, 5, 1, 3, 5], [2, 4, 6, 2, 4, 6]]))
+
+
+# Second fixture for valid XY data
+@pytest.fixture
+def xy_data_valid2():
+    return XY(
+        np.array(
+            [
+                [10, 12, 14, 10, 12, 14],
+                [11, 13, 15, 11, 13, 15],
+                [12, 14, 16, 12, 14, 16],
+            ]
+        )
+    )
+
+
+# Fixture for invalid XY data
+@pytest.fixture
+def xy_data_insufficient_points():
+    return XY(
+        np.array(
+            [
+                [1, 2, np.nan, 1, 2, np.nan],
+                [2, 3, np.nan, 2, 3, np.nan],
+                [3, 4, np.nan, 3, 4, np.nan],
+            ]
+        )
+    )
+
+
+# Fixture for invalid XY data
+@pytest.fixture
+def xy_data_insufficient_players():
+    return XY(
+        np.array(
+            [
+                [0, 2, 4, 0, np.nan, np.nan],
+                [1, 3, 5, 1, np.nan, np.nan],
+                [2, 4, 6, 2, np.nan, np.nan],
+            ]
+        )
+    )
+
+
+# Fixture all nan
+@pytest.fixture
+def xy_data_all_nan():
+    return XY(np.full((3, 6), np.nan))
+
+
+# Fixture all zeros
+@pytest.fixture
+def xy_data_all_zeros():
+    return XY(np.zeros((3, 6)))
+
+
+# Fixture all ones
+@pytest.fixture
+def xy_data_all_ones():
+    return XY(np.ones((3, 6)))
+
+
+# Fixture one frame nan
+@pytest.fixture
+def xy_data_one_nan_frame():
+    return XY(
+        np.array(
+            [
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [0, 2, 4, 0, 2, 4],
+                [1, 3, 5, 1, 3, 5],
+                [2, 4, 6, 2, 4, 6],
+            ]
+        )
+    )
