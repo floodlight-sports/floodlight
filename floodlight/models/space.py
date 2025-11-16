@@ -1,5 +1,5 @@
 from typing import Tuple
-
+import warnings
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -8,27 +8,43 @@ from scipy.spatial.distance import cdist
 
 from floodlight import XY, Pitch, TeamProperty, PlayerProperty
 from floodlight.models.base import BaseModel, requires_fit
+from floodlight.models.kinematics import VelocityVectorModel
 
 
-class DiscreteVoronoiModel(BaseModel):
-    """Calculates discretized versions of the Voronoi tessellation commonly used to
-    assess space control.
+class SpaceControlModel(BaseModel):
+    """
+    Computes space control on a discretized pitch using different underlying models.
+
+    The SpaceControlModel allows for different definitions of control:
+
+    - **Euclidean Voronoi tessellation**: Each mesh point is assigned to the
+      nearest player.
+
+    - **Taki-Hasegawa motion model**: Each mesh point is assigned to the player
+      who can reach it fastest, considering initial velocity and maximum
+      acceleration.
+
+    - **Fujimura-Sugihara motion model**: Each mesh point is assigned to the player
+      who can reach it fastest, based on exponential velocity decay and a
+      physics-based arrival time equation.
+
 
     Upon instantiation, this model creates a mesh grid that spans the entire pitch with
-    a fixed number of mesh points. When calling the
-    :func:`~DiscreteVoronoiModel.fit`-method, closest players to the respective mesh
-    points are evaluated and their control assigned to players. Thus, cumulative
-    controls and controlled areas are calculated on a discretization of the pitch. The
-    following calculations can subsequently be queried by calling the corresponding
+    a fixed number of mesh points. When calling the :func:`~SpaceControlModel.fit`
+    method, each mesh point is assigned to the controlling player according to the
+    selected model. Cumulative controls and controlled areas are then computed across
+    time.
+
+    The following calculations can subsequently be queried by calling the corresponding
     methods:
 
-        - Player Space Control --> :func:`~DiscreteVoronoiModel.player_controls`
-        - Team Space Control --> :func:`~DiscreteVoronoiModel.team_controls`
+        - Player Space Control --> :func:`~SpaceControlModel.player_controls`
+        - Team Space Control --> :func:`~SpaceControlModel.team_controls`
 
     Furthermore, the following plotting methods are available to visualize the model:
 
-        - Plot controlled areas --> :func:`~DiscreteVoronoiModel.plot`
-        - Plot mesh grid --> :func:`~DiscreteVoronoiModel.plot_mesh`
+        - Plot controlled areas --> :func:`~SpaceControlModel.plot`
+        - Plot mesh grid --> :func:`~SpaceControlModel.plot_mesh`
 
     Parameters
     ----------
@@ -45,12 +61,21 @@ class DiscreteVoronoiModel(BaseModel):
         and defaults to 100. The number of messh grid points in y-direction will be
         inferred automatically to match the shape of the pitch and produce regular mesh
         cell shapes.
+    max_acceleration : float, optional
+        Maximum acceleration used in the Taki-Hasegawa model. Defaults to 4.0 m/s².
+    alpha : float, optional
+        Time-decay constant used in the Fujimura-Sugihara model. Defaults to 1.3.
+    v_max : float, optional
+        Maximum player speed used in the Fujimura-Sugihara model. Defaults to 7.8 m/s.
+    model : {'euclidean', 'taki_hasegawa', 'fujimura_sugihara'}, optional
+        String identifier for the control model to be used. Defaults to 'euclidean'.
 
     Notes
     -----
     The original work by Taki and Hasegawa proposed to use Voronoi tessellations for
     assessing player dominant regions [1]_. This approach has later been simplified by
     using the Euclidean distance when allocating space to players [2]_ , [3]_.
+
     Instead of computing algebraic Voronoi regions, this model discretizes the problem
     by sampling space control on a finite number of mesh points across the pitch. This
     runs much faster and can be easier to handle. If an appropriate number of mesh
@@ -58,52 +83,94 @@ class DiscreteVoronoiModel(BaseModel):
     spatial inaccuracies of tracking data as well as variations in moving players'
     centers of masses.
 
+    In addition to the Euclidean model, this class includes two dynamic motion-based
+    approaches that account for physical movement constraints and better reflect
+    realistic player behavior.
+
+    The first is based on the formulation proposed by Taki and Hasegawa [1]_. It assigns
+    each mesh point to the player who can reach it fastest, considering both current
+    velocity and maximum acceleration. This method is particularly useful for analyzing
+    movement intentions and temporal dominance structures.
+
+    An alternative formulation by Fujimura and Sugihara [4]_ introduces exponential
+    velocity decay governed by a time constant. Arrival times are estimated using a
+    physics-based motion equation that captures deceleration behavior. This model is
+    especially suited for evaluating spatial control under naturalistic movement
+    conditions.
+
     References
     ----------
-        .. [1] `Taki, T., & Hasegawa, J. (2000). Visualization of dominant region in
-            team games and its application to teamwork analysis. Proceedings Computer
-            Graphics International 2000, 227–235.
-            <https://ieeexplore.ieee.org/document/852338>`_
-        .. [2] `Fonseca, S., Milho, J., Travassos, B., & Araújo, D. (2012). Spatial
-            dynamics of team sports exposed by Voronoi diagrams. Human Movement
-            Science, 31(6), 1652–1659. <https://doi.org/10.1016/j.humov.2012.04.006>`_
-        .. [3] `Rein, R., Raabe, D., & Memmert, D. (2017). “Which pass is better?”
-            Novel approaches to assess passing effectiveness in elite soccer. Human
-            Movement Science, 55, 172–181.
-            <https://doi.org/10.1016/j.humov.2017.07.010>`_
+    .. [1] Taki, T., & Hasegawa, J. (2000). Visualization of dominant region in team
+           games and its application to teamwork analysis. Proc. Computer Graphics
+           International, 227–235. https://ieeexplore.ieee.org/document/852338
+    .. [2] Fonseca, S., Milho, J., Travassos, B., & Araújo, D. (2012). Spatial dynamics
+           of team sports exposed by Voronoi diagrams. Human Movement Science, 31(6),
+           1652–1659. https://doi.org/10.1016/j.humov.2012.04.006
+    .. [3] Rein, R., Raabe, D., & Memmert, D. (2017). “Which pass is better?” Novel
+           approaches to assess passing effectiveness in elite soccer. Human Movement
+           Science, 55, 172–181. https://doi.org/10.1016/j.humov.2017.07.010
+    .. [4] Fujimura, A., & Sugihara, K. (2005). Geometric analysis and quantitative
+       evaluation of sport teamwork. Systems and Computers in Japan, 36(6), 49–58.
+       https://doi.org/10.1002/scj.20254
 
     Examples
     --------
     >>> import numpy as np
     >>> from floodlight import XY, Pitch
-    >>> from floodlight.models.space import DiscreteVoronoiModel
+    >>> from floodlight.models.space import SpaceControlModel
 
-    >>> # create data and fit model
+    >>> # create data and fit model using Euclidean control
     >>> xy1 = XY(np.array(((10, 10, 20, 80, 30, 40), (10, 10, np.nan, np.nan, 35, 35))))
     >>> xy2 = XY(np.array(((90, 90, 80, 20, 75, 80), (90, 90, 75, 25, 80, 70))))
     >>> pitch = Pitch.from_template("opta", length=105, width=68)
-    >>> dvm = DiscreteVoronoiModel(pitch)
-    >>> dvm.fit(xy1, xy2)
+    >>> scm = SpaceControlModel(pitch, model="euclidean")
+    >>> scm.fit(xy1, xy2)
 
-    >>> # print player controls [%] for first team
-    >>> player_control1, player_control2 = dvm.player_controls()
+    >>> # get player controls [%]
+    >>> player_control1, player_control2 = scm.player_controls()
     >>> print(player_control1.property)
     [[10.63 19.32 21.71]
      [10.35  0.   36.56]]
 
-    >>> # print team controls [%] for first team
-    >>> team_control1, team_control2 = dvm.team_controls()
+    >>> # get team controls [%]
+    >>> team_control1, team_control2 = scm.team_controls()
     >>> print(team_control1.property)
     [[51.66]
      [46.91]]
     """
 
-    def __init__(self, pitch: Pitch, mesh: str = "square", xpoints: int = 100):
+    # Supported space control model identifiers
+    EUCLIDEAN = "euclidean"
+    TAKI_HASEGAWA = "taki_hasegawa"
+    FUJIMURA_SUGIHARA = "fujimura_sugihara"
+
+    def __init__(
+        self,
+        pitch: Pitch,
+        mesh: str = "square",
+        xpoints: int = 100,
+        max_acceleration: float = 4.0,
+        model: str = EUCLIDEAN,
+        alpha: float = 1.3,
+        v_max: float = 7.8,
+    ):
         super().__init__(pitch)
 
         # input parameter
         self._mesh_type = mesh
         self._xpoints = xpoints
+        self._max_acceleration = max_acceleration
+        self._model = model
+        self._pitch = pitch
+        self._alpha = alpha
+        self._vmax = v_max
+
+        valid_models = [self.EUCLIDEAN, self.TAKI_HASEGAWA, self.FUJIMURA_SUGIHARA]
+        if self._model not in valid_models:
+            raise ValueError(
+                f"Invalid model type. Expected one of {valid_models}, "
+                f"got '{self._model}'"
+            )
 
         # model parameter
         self._meshx_ = None
@@ -115,6 +182,8 @@ class DiscreteVoronoiModel(BaseModel):
         self._N2_ = None
         self._framerate = None
         self._cell_controls_ = None
+        self._velocityvector1 = None
+        self._velocityvector2 = None
 
         # checks
         valid_mesh_types = ["square", "hexagonal"]
@@ -182,30 +251,83 @@ class DiscreteVoronoiModel(BaseModel):
             self._meshx_[1::2, :] += xpad
 
     def _calc_cell_controls(self, xy1: XY, xy2: XY):
-        """Calculates xID of closest player to each mesh point at each time point and
-        stores results in self._cell_controls"""
+        """
+        Calculates the xID of the controlling player for each mesh point at each
+        time point and stores the results in self._cell_controls.
+        """
         # bin
-        T = len(xy1)
+        n_frames = len(xy1)
         self._cell_controls_ = np.full(
             # shape is: time x (mesh shape)
-            (T, self._meshx_.shape[0], self._meshx_.shape[1]),
+            (n_frames, self._meshx_.shape[0], self._meshx_.shape[1]),
             np.nan,
         )
 
-        # loop
-        for t in range(T):
-            # stack and reshape player and mesh coordinates to (M x 2) arrays
-            player_points = np.hstack((xy1.frame(t), xy2.frame(t))).reshape(-1, 2)
-            mesh_points = np.stack((self._meshx_, self._meshy_), axis=2).reshape(-1, 2)
+        mesh_points = np.stack((self._meshx_, self._meshy_), axis=2).reshape(-1, 2)
 
-            # calculate pairwise distances and determine closest player
-            pairwise_distances = cdist(mesh_points, player_points)
-            closest_player_index = np.nanargmin(pairwise_distances, axis=1)
-            self._cell_controls_[t] = closest_player_index.reshape(self._meshx_.shape)
+        if self._model == self.EUCLIDEAN:
+            # loop
+            for t in range(n_frames):
+                # stack and reshape player and mesh coordinates to (M x 2) arrays
+                player_points = np.hstack((xy1.frame(t), xy2.frame(t))).reshape(-1, 2)
+
+                # calculate pairwise distances and determine closest player
+                pairwise_distances = cdist(mesh_points, player_points)
+                closest_player_index = self._masked_nanargmin(pairwise_distances)
+
+                self._cell_controls_[t] = closest_player_index.reshape(
+                    self._meshx_.shape
+                )
+
+        elif self._model == self.TAKI_HASEGAWA:
+            # loop
+            for frame in range(n_frames):
+                # combine stacked positions and velocities into (P x 4) array
+                ppv = self._stack_pos_vel(frame, xy1, xy2)
+
+                # compute shortest arrival times and identify fastest player
+                pairwise_times = self._calculate_shortest_times_taki_hasegawa(
+                    mesh_points, ppv
+                )
+                fastest_player_index = self._masked_nanargmin(pairwise_times)
+
+                self._cell_controls_[frame] = fastest_player_index.reshape(
+                    self._meshx_.shape
+                )
+
+        elif self._model == self.FUJIMURA_SUGIHARA:
+            # loop
+            for frame in range(n_frames):
+                # combine stacked positions and velocities into (P x 4) array
+                ppv = self._stack_pos_vel(frame, xy1, xy2)
+
+                # compute shortest arrival times and identify fastest player
+                pairwise_times = self._calculate_shortest_times_fujimura_sugihara(
+                    mesh_points, ppv
+                )
+                fastest_player_index = self._masked_nanargmin(pairwise_times)
+
+                self._cell_controls_[frame] = fastest_player_index.reshape(
+                    self._meshx_.shape
+                )
+
+    def _stack_pos_vel(self, frame: int, xy1: XY, xy2: XY) -> np.ndarray:
+        """
+        Combine positions and velocities into a (P x 4) array.
+        Returns: [x0, y0, vx0, vy0] per player
+        """
+        pos1 = xy1.xy[frame].reshape(-1, 2)
+        pos2 = xy2.xy[frame].reshape(-1, 2)
+        positions = np.vstack((pos1, pos2))
+
+        vel1 = self._velocityvector1[frame]
+        vel2 = self._velocityvector2[frame]
+        velocities = np.vstack((vel1, vel2))
+
+        return np.hstack((positions, velocities))
 
     def fit(self, xy1: XY, xy2: XY):
         """Fit the model to the given data and calculate control values for mesh points.
-
         Parameters
         ----------
         xy1: XY
@@ -213,19 +335,261 @@ class DiscreteVoronoiModel(BaseModel):
         xy2: XY
             Player spatiotemporal data of the second team.
         """
+
+        # Check if both inputs are valid XY objects
+        if not isinstance(xy1, XY) or not isinstance(xy2, XY):
+            raise TypeError("Both inputs must be valid XY objects.")
+
+        # check if xy1 and xy2 are valid
+        if len(xy1) != len(xy2):
+            raise ValueError("XY objects must have the same number of frames.")
+
+        # check for out-of-bounds player positions
+        mask1 = self._check_positions_within_pitch(xy1, self._pitch)
+        mask2 = self._check_positions_within_pitch(xy2, self._pitch)
+        if not np.all(mask1):
+            warnings.warn(
+                "Some player positions in xy1 lie outside the pitch boundaries. "
+                f"Check the provided pitch dimensions (length={self._pitch.length}, "
+                f"width={self._pitch.width})."
+            )
+        if not np.all(mask2):
+            warnings.warn(
+                "Some player positions in xy2 lie outside the pitch boundaries. "
+                f"Check the provided pitch dimensions (length={self._pitch.length}, "
+                f"width={self._pitch.width})."
+            )
+
+        # sanitize XY data to handle NaNs properly
+        xy1 = self._sanitize_nan_coordinates(xy1)
+        xy2 = self._sanitize_nan_coordinates(xy2)
+
         # derive parameters
         self._N1_ = xy1.N
         self._N2_ = xy2.N
         self._T_ = len(xy1)
         self._framerate = xy1.framerate
+
+        if self._model in (self.TAKI_HASEGAWA, self.FUJIMURA_SUGIHARA):
+            self._compute_velocities(xy1, xy2)
+
         # invoke control calculation
         self._calc_cell_controls(xy1, xy2)
+
+    @staticmethod
+    def _check_positions_within_pitch(xy: XY, pitch: Pitch) -> np.ndarray:
+        """Return a mask of shape (T, N) where True = position within pitch bounds."""
+        x = xy.xy[:, ::2]
+        y = xy.xy[:, 1::2]
+        in_x_bounds = (x >= pitch.xlim[0]) & (x <= pitch.xlim[1]) | np.isnan(x)
+        in_y_bounds = (y >= pitch.ylim[0]) & (y <= pitch.ylim[1]) | np.isnan(y)
+        return in_x_bounds & in_y_bounds
+
+    @staticmethod
+    def _sanitize_nan_coordinates(xy: XY) -> XY:
+        """Ensure NaN consistency by setting both x and y to NaN if either is NaN."""
+        # Create a copy of the xy array and convert to float to avoid issues with NaN
+        sanitized_xy_array = xy.xy.copy().astype(float)
+
+        # Detect all x or y that are nan (shape: T, N*2)
+        x_nan = np.isnan(sanitized_xy_array[:, ::2])
+        y_nan = np.isnan(sanitized_xy_array[:, 1::2])
+
+        # Combine masks to get players with either x or y nan
+        any_nan = x_nan | y_nan
+
+        # Broadcast to both x and y components
+        sanitized_xy_array[:, ::2][any_nan] = np.nan
+        sanitized_xy_array[:, 1::2][any_nan] = np.nan
+
+        return XY(sanitized_xy_array, framerate=xy.framerate, direction=xy.direction)
+
+    @staticmethod
+    def _masked_nanargmin(array: np.ndarray) -> np.ndarray:
+        """
+        Return index of minimum value in each row, ignoring rows with only NaNs or infs.
+        Sets result to np.nan for rows without finite values.
+        """
+
+        # set times to np.inf for invalid player positions (e.g., NaN)
+        invalid_mask = np.all(~np.isfinite(array), axis=1)
+        result = np.full(array.shape[0], np.nan)
+        valid_rows = ~invalid_mask
+        result[valid_rows] = np.nanargmin(array[valid_rows], axis=1)
+        return result
+
+    def _compute_velocities(self, xy1: XY, xy2: XY) -> None:
+        """
+        Compute and store player velocity vectors required by dynamic models.
+        If velocities have already been computed, this method does nothing.
+        """
+        if self._velocityvector1 is not None and self._velocityvector2 is not None:
+            return
+
+        vvm1 = VelocityVectorModel()
+        vvm2 = VelocityVectorModel()
+        vvm1.fit(xy1)
+        vvm2.fit(xy2)
+        self._velocityvector1 = vvm1.velocityvector().property
+        self._velocityvector2 = vvm2.velocityvector().property
+
+    def _calculate_shortest_times_taki_hasegawa(
+        self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
+    ) -> np.ndarray:
+        """Compute shortest arrival times from players to mesh points using
+        the Taki & Hasegawa motion model."""
+
+        # extract player positions and velocities from input array
+        pos = player_positions_velocities[:, :2]
+        vel = player_positions_velocities[:, 2:]
+
+        # replace NaN velocities with zeros for stable projection computation
+        vel = np.nan_to_num(vel, nan=0.0)
+
+        # compute vector from each player to each mesh point
+        d = mesh_points[:, np.newaxis, :] - pos[np.newaxis, :, :]
+
+        # compute Euclidean distances between players and mesh points
+        d_norm = np.linalg.norm(d, axis=2, keepdims=True)
+        d_norm_squeezed = np.squeeze(d_norm, axis=2)
+
+        # compute unit direction vectors from players to mesh points
+        d_hat = np.divide(d, d_norm, out=np.zeros_like(d), where=d_norm != 0)
+
+        # project player velocities onto direction vectors toward mesh points
+        v_proj = np.sum(d_hat * vel[np.newaxis, :, :], axis=2)
+
+        # set uniform acceleration magnitude for all players and directions
+        a_proj = self._max_acceleration
+
+        # compute discriminant and identify valid (real-valued) solutions
+        disc = v_proj**2 + 2 * a_proj * d_norm_squeezed
+        valid = disc >= 0
+
+        # compute square root of discriminant only for valid entries
+        sqrt_disc = np.zeros_like(disc)
+        sqrt_disc[valid] = np.sqrt(disc[valid])
+
+        # solve quadratic equation for time using the quadratic formula
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t1 = (-v_proj + sqrt_disc) / a_proj
+            t2 = (-v_proj - sqrt_disc) / a_proj
+
+        # discard invalid or negative time solutions
+        t1[~valid | (t1 < 0)] = np.inf
+        t2[~valid | (t2 < 0)] = np.inf
+
+        # choose the smaller valid time as the shortest arrival time
+        times = np.minimum(t1, t2)
+
+        # set time to 0.0 if player is already at the mesh point
+        times[d_norm_squeezed == 0] = 0.0
+
+        return times
+
+    def _calculate_shortest_times_fujimura_sugihara(
+        self, mesh_points: np.ndarray, player_positions_velocities: np.ndarray
+    ) -> np.ndarray:
+        """Compute shortest arrival times from players to mesh points using
+        the Fujimura & Sugihara motion model."""
+
+        # --- constants ---
+        EPSILON = 1e-6
+        TIME_BUFFER = 1.0
+        MAX_NEWTON_STEP_RATIO = 0.9
+
+        # --- extract model parameters ---
+        alpha = self._alpha
+        vmax = self._vmax
+
+        # --- extract player positions and velocities ---
+        player_positions = player_positions_velocities[:, :2]  # (P, 2)
+        player_velocities = player_positions_velocities[:, 2:]  # (P, 2)
+
+        # --- replace missing velocity values with zeros for stability ---
+        player_velocities = np.nan_to_num(player_velocities, nan=0.0)
+
+        # --- limit player velocities to vmax ---
+        speed_magnitudes = np.linalg.norm(
+            player_velocities, axis=1, keepdims=True
+        )  # (P, 1)
+        speed_factors = np.minimum(1.0, vmax / (speed_magnitudes + EPSILON))  # (P, 1)
+        player_velocities = player_velocities * speed_factors  # (P, 2)
+
+        # --- initial estimate: reachability center at t0 = 1.0 ---
+        t0 = 1.0
+        phi0 = (1 - np.exp(-alpha * t0)) / alpha
+        center_estimate = player_positions + phi0 * player_velocities
+
+        # --- compute displacement between reachability centers and mesh points ---
+        displacement_vectors = (
+            mesh_points[:, None, :] - center_estimate[None, :, :]
+        )  # (M, P, 2)
+        displacement_distances = np.linalg.norm(displacement_vectors, axis=2)  # (M, P)
+
+        # --- compute initial time bounds: optimistic and conservative estimates ---
+        t_lower = displacement_distances / vmax
+        t_upper = t_lower + TIME_BUFFER
+
+        # --- perform 3x bisection to refine time interval ---
+        for _ in range(3):
+            t_mid = 0.5 * (t_lower + t_upper)
+
+            exp_term = np.exp(-alpha * t_mid)
+            phi = (1 - exp_term) / alpha
+
+            motion_contribution = (
+                phi[:, :, None] * player_velocities[None, :, :]
+            )  # (M, P, 2)
+            estimated_position = mesh_points[:, None, :] - (
+                player_positions[None, :, :] + motion_contribution
+            )
+            remaining_distance = np.linalg.norm(estimated_position, axis=2)
+
+            reachable_radius = vmax * (t_mid - phi)
+            difference = remaining_distance - reachable_radius
+
+            mask_inside = difference < 0
+            t_upper[mask_inside] = t_mid[mask_inside]
+            t_lower[~mask_inside] = t_mid[~mask_inside]
+
+        # --- perform 3x Newton iteration to refine arrival times ---
+        times = 0.5 * (t_lower + t_upper)
+        for _ in range(3):
+            exp_term = np.exp(-alpha * times)
+            phi = (1 - exp_term) / alpha
+
+            motion_contribution = phi[:, :, None] * player_velocities[None, :, :]
+            estimated_position = mesh_points[:, None, :] - (
+                player_positions[None, :, :] + motion_contribution
+            )
+            remaining_distance = np.linalg.norm(estimated_position, axis=2)
+
+            reachable_radius = vmax * (times - phi)
+            f = remaining_distance - reachable_radius
+
+            # compute derivative df/dt
+            dphi_dt = exp_term
+            dot_product = np.sum(
+                estimated_position * player_velocities[None, :, :], axis=2
+            )
+            d_distance_dt = -dphi_dt * dot_product / (remaining_distance + EPSILON)
+            d_radius_dt = vmax * (1 - dphi_dt)
+            f_prime = d_distance_dt - d_radius_dt
+
+            # update times using Newton step
+            valid = np.isfinite(f) & np.isfinite(f_prime) & (np.abs(f_prime) > EPSILON)
+            delta_t = np.where(valid, f / f_prime, 0.0)
+            delta_t = np.minimum(delta_t, MAX_NEWTON_STEP_RATIO * times)
+            times = np.where(valid, times - delta_t, times)
+            times = np.where(times > 0, times, np.inf)
+
+        return times
 
     @requires_fit
     def player_controls(self) -> Tuple[PlayerProperty, PlayerProperty]:
         """Returns the percentage of mesh points controlled by each player of the first
         and second team.
-
         Returns
         -------
         player_controls: Tuple[PlayerProperty, PlayerProperty]
@@ -338,7 +702,7 @@ class DiscreteVoronoiModel(BaseModel):
 
         Examples
         --------
-        Given a DiscreteVoronoiModel that has already been fitted:
+        Given a SpaceControlModel that has already been fitted:
 
         >>> # fitted_dvm_model has square mesh
         >>> ax = pitch.plot(color_scheme="bw")
@@ -384,6 +748,11 @@ class DiscreteVoronoiModel(BaseModel):
         yoffset = -(self._ypolysize_ * 0.5)
         # loop through mesh points and plot Rectangle patch
         for i, j in np.ndindex(self._meshx_.shape):
+            control_value = self._cell_controls_[t, i, j]
+            # skip NaN values
+            if np.isnan(control_value):
+                continue
+
             poly = plt.Rectangle(
                 (self._meshx_[i, j] + xoffset, self._meshy_[i, j] + yoffset),
                 width=self._xpolysize_,
@@ -413,6 +782,11 @@ class DiscreteVoronoiModel(BaseModel):
         n_vertices = 6
         # loop through mesh points and plot RegularPolygon patch
         for (i, j), x in np.ndenumerate(self._meshx_):
+            control_value = self._cell_controls_[t, i, j]
+            # skip NaN values
+            if np.isnan(control_value):
+                continue
+
             poly = RegularPolygon(
                 (x, self._meshy_[i, j]),
                 numVertices=n_vertices,
@@ -442,7 +816,7 @@ class DiscreteVoronoiModel(BaseModel):
 
         Examples
         --------
-        Given a DiscreteVoronoiModel that has already been fitted:
+        Given a SpaceControlModel that has already been fitted:
 
         >>> ax = pitch.plot(color_scheme="bw")
         >>> fitted_dvm_model.plot_mesh(ax=ax)
