@@ -1,8 +1,11 @@
 import pytest
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
 from floodlight.models.geometry import (
     CentroidModel,
+    ConvexHullModel,
     NearestMateModel,
     NearestOpponentModel,
 )
@@ -315,3 +318,170 @@ def test_nearest_opponent_model_single_players(example_xy_objects_single_players
     expected_dtno2 = np.array(((100.0,), (100.0,), (100.0,)))
     assert np.array_equal(dtno1.property, expected_dtno1)
     assert np.array_equal(dtno2.property, expected_dtno2)
+
+
+# Test ConvexHullModel fit and area calculation with known geometry
+@pytest.mark.unit
+def test_convex_hull_model_fit_and_area(example_xy_object_known_geometry):
+    # Arrange
+    xy = example_xy_object_known_geometry
+
+    # Act
+    model = ConvexHullModel()
+    model.fit(xy)
+    area = model.convex_hull_area()
+
+    # Assert
+    assert model._convex_hulls_ is not None
+    assert len(model._convex_hulls_) == 1
+    assert area.property.shape == (1,)
+    assert np.allclose(
+        area.property,
+        np.array(
+            [
+                100.0,
+            ]
+        ),
+    )
+    assert area.name == "convex_hull_area"
+
+
+# Test ConvexHullModel with multiple XY objects and framerate propagation
+@pytest.mark.unit
+def test_convex_hull_model_multiple_xy_and_framerate(example_xy_objects_space_control):
+    # Arrange
+    xy1, xy2 = example_xy_objects_space_control
+
+    # Act
+    model = ConvexHullModel()
+    model.fit([xy1, xy2])
+    area = model.convex_hull_area()
+
+    # Assert
+    assert area.framerate == 20
+    assert np.array_equal(area.property, np.array((600.0, 682.0)))
+
+
+# Test ConvexHullModel player exclusion functionality
+@pytest.mark.unit
+def test_convex_hull_model_exclusion(example_xy_object_geometry_horizontal_nan):
+    # Arrange
+    xy = example_xy_object_geometry_horizontal_nan
+
+    # Act
+    model1 = ConvexHullModel()
+    model1.fit(xy)
+    area1 = model1.convex_hull_area()
+
+    model2 = ConvexHullModel()
+    model2.fit(xy, exclude_xIDs=[[0]])
+    area2 = model2.convex_hull_area()
+
+    # Assert
+    assert np.allclose(area1.property, np.array((4.0, np.nan, 0.5)), equal_nan=True)
+    assert np.array_equal(
+        area2.property, np.array((np.nan, np.nan, np.nan)), equal_nan=True
+    )
+    assert area1.property.shape == area2.property.shape
+
+
+# Test ConvexHullModel NaN handling (partial NaNs, horizontal NaN, all NaN)
+@pytest.mark.unit
+def test_convex_hull_model_nan_handling(
+    example_xy_object_geometry,
+    example_xy_object_geometry_horizontal_nan,
+    example_xy_object_all_nan,
+):
+    # Arrange & Act
+    # Test 1: Partial NaNs (example_xy_object_geometry has NaN values)
+    model1 = ConvexHullModel()
+    model1.fit(example_xy_object_geometry)
+    area1 = model1.convex_hull_area()
+
+    # Test 2: Horizontal NaN slice (frame 1 is all NaN)
+    model2 = ConvexHullModel()
+    model2.fit(example_xy_object_geometry_horizontal_nan)
+    area2 = model2.convex_hull_area()
+
+    # Test 3: All NaN
+    model3 = ConvexHullModel()
+    model3.fit(example_xy_object_all_nan)
+    area3 = model3.convex_hull_area()
+
+    # Assert
+    assert np.isnan(area1.property[1])
+    assert np.isnan(area2.property[1])
+
+    assert not np.isnan(area2.property[0])
+    assert not np.isnan(area2.property[2])
+
+    assert np.all(np.isnan(area3.property))
+
+
+# Test ConvexHullModel with insufficient points (single, two, collinear)
+@pytest.mark.unit
+def test_convex_hull_model_insufficient_points(
+    example_xy_object_single_player, example_xy_object_collinear
+):
+    # Arrange & Act
+    # Single player (< 3 points)
+    model1 = ConvexHullModel()
+    model1.fit(example_xy_object_single_player)
+    area1 = model1.convex_hull_area()
+
+    # Collinear points (scipy raises QhullError)
+    model2 = ConvexHullModel()
+    model2.fit(example_xy_object_collinear)
+    area2 = model2.convex_hull_area()
+
+    # Assert
+    assert np.all(np.isnan(area1.property))
+    assert np.isnan(area2.property[0])
+
+
+# Test ConvexHullModel validation errors
+@pytest.mark.unit
+def test_convex_hull_model_validation_errors():
+    # Arrange
+    from floodlight import XY
+
+    xy1 = XY(np.array(((0, 0, 10, 10),)))
+    xy2 = XY(np.array(((0, 0, 10, 10), (5, 5, 15, 15))))
+
+    # Act & Assert
+    # Mismatched lengths
+    model = ConvexHullModel()
+    with pytest.raises(ValueError, match="All XY objects must have same"):
+        model.fit([xy1, xy2])
+
+    # Invalid xID
+    model = ConvexHullModel()
+    with pytest.raises(ValueError, match="out of range"):
+        model.fit(xy1, exclude_xIDs=[[5]])
+
+
+# Test ConvexHullModel plot method
+@pytest.mark.plot
+def test_convex_hull_model_plot(example_xy_object_known_geometry):
+    # Arrange
+    xy = example_xy_object_known_geometry
+    model = ConvexHullModel()
+    model.fit(xy)
+
+    # Act
+    fig, ax = plt.subplots()
+    model.plot(t=0, ax=ax)
+
+    # Assert
+    assert isinstance(ax, matplotlib.axes.Axes)
+    assert len(ax.lines) > 0  # Should have plotted the hull boundary
+    assert len(ax.patches) > 0  # Should have filled area
+    plt.close()
+
+    # Test plot without fill
+    fig2, ax2 = plt.subplots()
+    model.plot(t=0, ax=ax2, fill=False)
+    assert isinstance(ax2, matplotlib.axes.Axes)
+    assert len(ax2.lines) > 0  # Should have boundary
+    # No filled polygon when fill=False
+    plt.close()

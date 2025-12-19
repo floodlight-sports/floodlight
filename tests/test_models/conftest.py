@@ -147,3 +147,31 @@ def example_xy_objects_single_players() -> Tuple[XY, XY]:
     xy1 = XY(np.array(((0, 0), (5, 5), (10, 10))), framerate=20)
     xy2 = XY(np.array(((100, 0), (105, 5), (110, 10))), framerate=20)
     return xy1, xy2
+
+
+# sample data with known geometry (square with area = 100)
+@pytest.fixture()
+def example_xy_object_known_geometry():
+    xy = XY(np.array(((0, 0, 10, 0, 10, 10, 0, 10),)))
+    return xy
+
+
+# sample data with collinear points
+@pytest.fixture()
+def example_xy_object_collinear():
+    xy = XY(np.array(((0, 0, 5, 5, 10, 10),)))
+    return xy
+
+
+# sample data with all NaN values
+@pytest.fixture()
+def example_xy_object_all_nan():
+    xy = XY(
+        np.array(
+            (
+                (np.nan, np.nan, np.nan, np.nan),
+                (np.nan, np.nan, np.nan, np.nan),
+            )
+        )
+    )
+    return xy
