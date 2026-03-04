@@ -107,6 +107,32 @@ def example_xy_objects_space_control() -> Tuple[XY, XY]:
     return xy1, xy2
 
 
+# sample data for testing motion-based space control models (lower framerate for
+# realistic velocities: 1m displacement at 5fps = 5 m/s)
+@pytest.fixture()
+def example_xy_objects_motion_space_control() -> Tuple[XY, XY]:
+    xy1 = XY(
+        xy=np.array(
+            (
+                (-30, 0, 0, 0, 0, 10),
+                (-31, 0, 0, 0, 1, 11),
+            )
+        ),
+        framerate=5,
+    )
+    xy2 = XY(
+        xy=np.array(
+            (
+                (30, 0, 0, 0, 4, -10),
+                (31, 0, np.nan, np.nan, 5, -11),
+            )
+        ),
+        framerate=5,
+    )
+
+    return xy1, xy2
+
+
 # sample data with one frame having all nan (horizontal nan slice) for two teams
 @pytest.fixture()
 def example_xy_objects_horizontal_nan() -> Tuple[XY, XY]:
