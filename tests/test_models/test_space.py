@@ -20,6 +20,8 @@ def test_dvm_constructor(example_pitch_dfl) -> None:
         model = DiscreteVoronoiModel(pitch, xpoints=9)
     with pytest.raises(ValueError):
         model = DiscreteVoronoiModel(pitch, xpoints=1001)
+    with pytest.raises(ValueError):
+        model = DiscreteVoronoiModel(pitch, motion_model="foo")
 
     # check correct executing of post_init
     model = DiscreteVoronoiModel(pitch, xpoints=10)
@@ -659,3 +661,163 @@ def test_plot_mesh(example_xy_objects_space_control, example_pitch_dfl) -> None:
     assert isinstance(ax, matplotlib.axes.Axes)
 
     plt.close()
+
+
+# tests for motion-based models
+@pytest.mark.unit
+def test_bisect_roots() -> None:
+    # g(t) = 5 - t has root at t = 5 (positive = infeasible, negative = feasible)
+    def g(t):
+        return 5.0 - t
+
+    t_lo = np.array([0.0, 1.0, 3.0])
+    t_hi = np.array([10.0, 8.0, 6.0])
+
+    roots = DiscreteVoronoiModel._bisect_roots(g, t_lo, t_hi)
+
+    assert np.allclose(roots, 5.0, atol=1e-2)
+
+
+@pytest.mark.unit
+def test_calc_cell_controls_taki_hasegawa(
+    example_xy_objects_motion_space_control, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_motion_space_control
+    pitch = example_pitch_dfl
+    model = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="taki_hasegawa"
+    )
+    model.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5.0, 5.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 5.0, 5.0, 5.0, 3.0],
+            ]
+        ),
+        model._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5.0, 5.0, 3.0, 3.0],
+                [0.0, 0.0, 1.0, 1.0, 1.0, 5.0, 5.0, 5.0, 5.0, 3.0],
+            ]
+        ),
+        model._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_calc_cell_controls_fujimura_sugihara(
+    example_xy_objects_motion_space_control, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_motion_space_control
+    pitch = example_pitch_dfl
+    model = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="fujimura_sugihara"
+    )
+    model.fit(xy1, xy2)
+
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 5.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 3.0, 3.0],
+            ]
+        ),
+        model._cell_controls_[0],
+    )
+    assert np.array_equal(
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 5.0, 3.0, 3.0, 3.0],
+                [0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 3.0, 3.0],
+            ]
+        ),
+        model._cell_controls_[1],
+    )
+
+
+@pytest.mark.unit
+def test_motion_model_differs_from_euclidean(
+    example_xy_objects_motion_space_control, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_motion_space_control
+    pitch = example_pitch_dfl
+
+    dvm_eucl = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="euclidean"
+    )
+    dvm_taki = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="taki_hasegawa"
+    )
+    dvm_fuji = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="fujimura_sugihara"
+    )
+    dvm_eucl.fit(xy1, xy2)
+    dvm_taki.fit(xy1, xy2)
+    dvm_fuji.fit(xy1, xy2)
+
+    # all three models should produce different cell controls
+    assert not np.array_equal(dvm_eucl._cell_controls_, dvm_taki._cell_controls_)
+    assert not np.array_equal(dvm_eucl._cell_controls_, dvm_fuji._cell_controls_)
+    assert not np.array_equal(dvm_taki._cell_controls_, dvm_fuji._cell_controls_)
+
+
+@pytest.mark.unit
+def test_motion_model_nan_handling(
+    example_xy_objects_horizontal_nan, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_horizontal_nan
+    pitch = example_pitch_dfl
+
+    model = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="taki_hasegawa"
+    )
+    model.fit(xy1, xy2)
+
+    # all-NaN frame should remain NaN in cell controls
+    assert np.all(np.isnan(model._cell_controls_[1]))
+    # valid frames should have no NaN
+    assert not np.any(np.isnan(model._cell_controls_[0]))
+    assert not np.any(np.isnan(model._cell_controls_[2]))
+
+
+@pytest.mark.unit
+def test_compute_velocities(
+    example_xy_objects_motion_space_control, example_pitch_dfl
+) -> None:
+    xy1, xy2 = example_xy_objects_motion_space_control
+    pitch = example_pitch_dfl
+    model = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="taki_hasegawa"
+    )
+    model.fit(xy1, xy2)
+
+    # check velocity vector shapes: (T, N, 2)
+    assert model._vel1.shape == (2, 3, 2)
+    assert model._vel2.shape == (2, 3, 2)
+    # check speed shapes: (T, N)
+    assert model._speed1.shape == (2, 3)
+    assert model._speed2.shape == (2, 3)
+    # velocities should not be set for euclidean model
+    model_eucl = DiscreteVoronoiModel(
+        pitch, mesh="square", xpoints=10, motion_model="euclidean"
+    )
+    model_eucl.fit(xy1, xy2)
+    assert model_eucl._vel1 is None
+    assert model_eucl._speed1 is None
