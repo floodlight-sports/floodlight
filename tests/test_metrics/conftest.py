@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from floodlight import PlayerProperty, TeamProperty
+from floodlight import PlayerProperty, TeamProperty, XY
 
 
 # Basic PlayerProperty fixtures
@@ -97,3 +97,22 @@ def player_property_4_frames() -> PlayerProperty:
         name="values",
     )
     return prop
+
+
+@pytest.fixture()
+def example_xy_fsim() -> XY:
+    """5 frames, 4 players in a stable rectangular formation with small noise."""
+    xy = XY(
+        np.array(
+            [
+                [10, 30, 30, 30, 10, 60, 30, 60],
+                [11, 31, 31, 31, 11, 61, 31, 61],
+                [10, 29, 30, 29, 10, 59, 30, 59],
+                [11, 30, 31, 30, 11, 60, 31, 60],
+                [10, 31, 30, 31, 10, 61, 30, 61],
+            ],
+            dtype=float,
+        ),
+        framerate=10,
+    )
+    return xy
