@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
@@ -105,7 +107,9 @@ def assign_roles(xy: XY, reference: np.ndarray = None, n_iter: int = 1) -> XY:
 
     # compute reference from mean positions if not provided
     if reference is None:
-        reference = np.nanmean(xy.xy, axis=0).reshape(-1, 2)  # (N, 2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            reference = np.nanmean(xy.xy, axis=0).reshape(-1, 2)  # (N, 2)
 
     if reference.shape != (N, 2):
         raise ValueError(
@@ -116,7 +120,9 @@ def assign_roles(xy: XY, reference: np.ndarray = None, n_iter: int = 1) -> XY:
 
     # iterative refinement: recompute reference from assigned data
     for _ in range(n_iter - 1):
-        reference = np.nanmean(assigned_data.reshape(T, -1, 2), axis=0)  # (N, 2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            reference = np.nanmean(assigned_data.reshape(T, -1, 2), axis=0)  # (N, 2)
         assigned_data = _assign_roles_once(assigned_data, reference, T, N)
 
     xy_assigned = XY(xy=assigned_data, framerate=xy.framerate, direction=xy.direction)

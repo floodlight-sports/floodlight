@@ -59,11 +59,11 @@ def test_formation_similarity_exclude_xids(example_xy_fsim: XY) -> None:
 
 @pytest.mark.unit
 def test_formation_similarity_template_shape_error(example_xy_fsim: XY) -> None:
-    # Arrange — wrong template shape (3 instead of 4 players)
-    wrong_template = np.array([[0, 0], [1, 0], [0.5, 1]], dtype=float)
+    # Arrange — 1D template
+    wrong_template = np.array([0, 1, 2, 3], dtype=float)
 
     # Act & Assert
-    with pytest.raises(ValueError, match="Template has shape"):
+    with pytest.raises(ValueError, match="must have shape"):
         formation_similarity(example_xy_fsim, wrong_template)
 
 

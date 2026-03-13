@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
@@ -38,8 +40,8 @@ def formation_similarity(
     xy: XY
         Spatiotemporal tracking data for one team, shape (T, 2*N).
     template: np.ndarray
-        Template position array of shape (N_outfield, 2), where N_outfield is
-        the number of players after excluding ``exclude_xIDs``.
+        Template position array of shape (M, 2) representing an idealized
+        formation.
     exclude_xIDs: list, optional
         A list of player indices (xIDs) to exclude from the analysis. Excluded
         players are removed from centroid computation and from the formation
@@ -108,12 +110,9 @@ def formation_similarity(
             direction=xy_centered.direction,
         )
 
-    N = xy_centered.N
-
-    # validate template
     template = np.asarray(template, dtype=float)
-    if template.shape != (N, 2):
-        raise ValueError(f"Template has shape {template.shape}, expected ({N}, 2).")
+    if template.ndim != 2 or template.shape[1] != 2:
+        raise ValueError(f"Template must have shape (M, 2), got {template.shape}.")
 
     # step 2: role assignment via Hungarian algorithm
     if role_assignment:
@@ -121,7 +120,13 @@ def formation_similarity(
 
     # step 3: average role-resolved positions across frames
     T = len(xy_centered)
-    mean_formation = np.nanmean(xy_centered.xy.reshape(T, -1, 2), axis=0)  # (N, 2)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        mean_formation = np.nanmean(xy_centered.xy.reshape(T, -1, 2), axis=0)
+
+    # drop all-NaN rows (players never observed)
+    valid = ~np.isnan(mean_formation[:, 0])
+    mean_formation = mean_formation[valid]
 
     # step 4: normalize query and template
     query = min_max_normalize(mean_formation)
