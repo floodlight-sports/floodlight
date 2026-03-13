@@ -9,6 +9,8 @@ Collection of data transformation and processing functions.
    :caption: Submodule Reference
 
    filter
+   spatial
+   permutation
 
 .. rubric:: Filter
 
@@ -18,3 +20,20 @@ Collection of data transformation and processing functions.
 
    butterworth_lowpass
    savgol_lowpass
+
+.. rubric:: Spatial
+
+.. currentmodule:: floodlight.transforms.spatial
+.. autosummary::
+   :nosignatures:
+
+   subtract_centroid
+   min_max_normalize
+
+.. rubric:: Permutation
+
+.. currentmodule:: floodlight.transforms.permutation
+.. autosummary::
+   :nosignatures:
+
+   assign_roles

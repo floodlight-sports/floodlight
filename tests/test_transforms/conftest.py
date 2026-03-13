@@ -90,3 +90,50 @@ def example_xy_filter_one_frame():
 def example_xy_filter_empty():
     xy = XY(np.array(()), framerate=20)
     return xy
+
+
+@pytest.fixture()
+def example_xy_spatial():
+    xy = XY(
+        np.array(
+            [
+                [0, 0, 6, 0, 3, 6],
+                [1, 1, 7, 1, 4, 7],
+                [2, 2, 8, 2, 5, 8],
+            ]
+        ),
+        framerate=10,
+        direction="lr",
+    )
+    return xy
+
+
+@pytest.fixture()
+def example_xy_spatial_with_nan():
+    xy = XY(
+        np.array(
+            [
+                [0.0, 0.0, 6.0, 0.0, 3.0, 6.0],
+                [np.nan, np.nan, 7.0, 1.0, 4.0, 7.0],
+                [2.0, 2.0, 8.0, 2.0, 5.0, 8.0],
+            ]
+        ),
+        framerate=10,
+    )
+    return xy
+
+
+@pytest.fixture()
+def example_xy_permutation():
+    xy = XY(
+        np.array(
+            [
+                [0.0, 0.0, 10.0, 0.0, 5.0, 10.0],
+                [10.0, 0.0, 0.0, 0.0, 5.0, 10.0],
+                [5.0, 10.0, 0.0, 0.0, 10.0, 0.0],
+                [0.0, 0.0, 5.0, 10.0, 10.0, 0.0],
+            ]
+        ),
+        framerate=10,
+    )
+    return xy
