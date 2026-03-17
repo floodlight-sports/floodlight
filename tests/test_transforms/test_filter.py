@@ -374,3 +374,138 @@ def test_savgol_lowpass_empty(example_xy_filter_empty: XY) -> None:
 
     # Assert
     assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_kalman_default(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -8.66, np.nan, 1.0],
+                [np.nan, -7.45, np.nan, 1.51],
+                [-5.07, -6.22, np.nan, 2.09],
+                [-3.86, -4.64, np.nan, 2.8],
+                [np.nan, -2.84, np.nan, 3.67],
+                [np.nan, -0.64, np.nan, 4.67],
+                [-0.95, 1.49, np.nan, 5.76],
+                [1.88, 3.95, np.nan, 6.88],
+                [4.32, 6.23, np.nan, 8.01],
+                [6.81, 8.63, np.nan, 8.54],
+                [8.77, np.nan, np.nan, 8.61],
+                [10.84, np.nan, np.nan, 8.36],
+                [12.61, np.nan, np.nan, 7.88],
+                [14.37, 15.18, np.nan, 7.23],
+                [16.03, 16.93, np.nan, 6.45],
+                [17.49, 18.54, np.nan, 5.58],
+                [18.95, 19.96, np.nan, 4.65],
+                [20.47, 21.34, np.nan, 4.08],
+                [21.96, 22.89, np.nan, 3.8],
+                [23.43, 24.31, np.nan, 3.75],
+                [24.83, 25.79, np.nan, 3.9],
+                [26.24, 27.11, np.nan, 4.22],
+                [27.64, 28.58, np.nan, 4.67],
+                [np.nan, 30.04, np.nan, 5.23],
+                [30.54, np.nan, np.nan, 5.9],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_kalman_nan_preservation(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert - NaN positions in input must remain NaN in output
+    input_nans = np.isnan(np.array(data.xy, dtype=float))
+    output_nans = np.isnan(data_filt.xy)
+    assert np.array_equal(input_nans, output_nans)
+
+
+@pytest.mark.unit
+def test_kalman_all_nan() -> None:
+    # Arrange
+    data = XY(
+        np.array(
+            [
+                [np.nan, np.nan],
+                [np.nan, np.nan],
+                [np.nan, np.nan],
+            ]
+        ),
+        framerate=20,
+    )
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert
+    assert np.all(np.isnan(data_filt.xy))
+
+
+@pytest.mark.unit
+def test_kalman_no_framerate() -> None:
+    # Arrange
+    data = XY(np.array([[1.0, 2.0], [3.0, 4.0]]))
+
+    # Act
+    with pytest.raises(
+        ValueError,
+        match="The Kalman filter requires xy.framerate to be set",
+    ):
+        filter.kalman(data)
+
+
+@pytest.mark.unit
+def test_kalman_single_observation() -> None:
+    # Arrange
+    data = XY(
+        np.array(
+            [
+                [np.nan, np.nan],
+                [5.0, 3.0],
+                [np.nan, np.nan],
+            ]
+        ),
+        framerate=20,
+    )
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert - only the single observation frame should be non-NaN
+    assert np.array_equal(
+        data_filt.xy,
+        np.array(
+            [
+                [np.nan, np.nan],
+                [5.0, 3.0],
+                [np.nan, np.nan],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_kalman_empty(example_xy_filter_empty: XY) -> None:
+    # Arrange
+    data = example_xy_filter_empty
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
