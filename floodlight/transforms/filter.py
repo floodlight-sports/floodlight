@@ -402,3 +402,216 @@ def savgol_lowpass(
     xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
 
     return xy_filtered
+
+
+def _kalman_filter_1d(
+    signal: np.ndarray,
+    dt: float,
+    process_noise: float = 1.0,
+    measurement_noise: float = 0.04,
+) -> np.ndarray:
+    """Applies a forward-only 1D Kalman filter with a constant-velocity model.
+
+    The state vector is ``[position, velocity]`` and only position is observed.
+    NaN values in the input are handled natively: when an observation is missing,
+    only the predict step runs (covariance grows), and the output remains NaN.
+    The filter state is preserved across gaps so that velocity and uncertainty
+    information carries over when observations resume.
+
+    Parameters
+    ----------
+    signal: np.ndarray
+        Array of shape (T,) containing the signal to be smoothed. May contain
+        NaNs (missing observations).
+    dt: float
+        Time step between frames in seconds (1 / framerate).
+    process_noise: float, optional
+        Process noise intensity (acceleration variance in m²/s⁴) that controls
+        how much the model trusts the constant-velocity prediction. Larger
+        values allow faster changes in velocity. Default corresponds to
+        :math:`\\sigma_a = 1\\,\\mathrm{m/s^2}`, which is a conservative smoothing
+        prior.
+    measurement_noise: float, optional
+        Measurement noise variance (in m²) that controls how much the model
+        trusts the observed positions. Larger values produce smoother output.
+        Default is 0.04, corresponding to 0.20 m (20 cm) RMSE, a conservative
+        estimate for common local or optical tracking systems during high-dynamic
+        situations.
+
+    Returns
+    -------
+    signal_filtered: np.ndarray
+        Filtered signal of shape (T,). Frames where the input is NaN remain
+        NaN in the output.
+    """
+    T = len(signal)
+    signal = np.array(signal, dtype=float)
+
+    # state transition matrix (constant velocity model)
+    F = np.array([[1.0, dt], [0.0, 1.0]])
+    # observation matrix (only position is observed)
+    H = np.array([[1.0, 0.0]])
+    # process noise covariance (standard CV discretization assuming
+    # piecewise-constant acceleration noise with intensity process_noise)
+    Q = process_noise * np.array([[dt**4 / 4.0, dt**3 / 2.0], [dt**3 / 2.0, dt**2]])
+    # measurement noise covariance
+    R = np.array([[measurement_noise]])
+
+    filtered = np.full(T, np.nan)
+
+    # find first non-NaN observation to initialize state
+    initialized = False
+    x = None
+    P = None
+
+    for t in range(T):
+        obs = signal[t]
+
+        if not initialized:
+            if np.isnan(obs):
+                continue
+            # initialize state from first observation
+            x = np.array([obs, 0.0])
+            P = np.diag([measurement_noise, measurement_noise / dt])
+            filtered[t] = obs
+            initialized = True
+            continue
+
+        # predict
+        x = F @ x
+        P = F @ P @ F.T + Q
+
+        if np.isnan(obs):
+            # no observation: predict only, output stays NaN
+            continue
+
+        # update with observation
+        y = obs - H @ x  # innovation
+        S = H @ P @ H.T + R  # innovation covariance
+        K = P @ H.T / S[0, 0]  # Kalman gain (S is scalar)
+        x = x + K.ravel() * y[0]
+        P = (np.eye(2) - K @ H) @ P
+
+        filtered[t] = x[0]
+
+    return filtered
+
+
+def kalman(
+    xy: XY,
+    process_noise: float = 1.0,
+    measurement_noise: float = 0.04,
+) -> XY:
+    """Applies a forward Kalman filter to a XY data object. [3]_
+
+    Uses a constant-velocity motion model where the state vector consists of
+    position and velocity. Only positions are observed. The filter smooths noisy
+    position data by combining predictions from the motion model with the
+    observed measurements.
+
+    Parameters
+    ----------
+    xy: XY
+        Floodlight XY Data object. Must have ``framerate`` set.
+    process_noise: float, optional
+        Process noise intensity (acceleration variance in m²/s⁴) that controls
+        how much the model trusts the constant-velocity prediction. Larger
+        values allow faster changes in velocity. Default corresponds to
+        :math:`\\sigma_a = 1\\,\\mathrm{m/s^2}`, which is a conservative smoothing
+        prior.
+    measurement_noise: float, optional
+        Measurement noise variance (in m²) controlling how much the model
+        trusts the observed positions. Larger values produce smoother output.
+        Default is 0.04, corresponding to 0.20 m RMSE, a conservative
+        estimate for common optical [4]_ and local [5]_ tracking systems
+        during high-dynamic situations.
+
+    Returns
+    -------
+    xy_filtered: XY
+        XY object with position data filtered by the Kalman filter.
+
+    Notes
+    -----
+    The Kalman filter requires ``xy.framerate`` to be set in order to compute
+    the time interval between frames.
+
+    The default noise parameters assume positions are given in meters. If
+    positions use a different unit (e.g. centimeters), the noise parameters
+    must be adjusted accordingly (e.g. ``measurement_noise = 20.0**2`` for
+    20 cm RMSE in centimeter units).
+
+    Unlike :func:`~floodlight.transforms.filter.butterworth_lowpass` and
+    :func:`~floodlight.transforms.filter.savgol_lowpass`, the Kalman filter
+    handles missing data (NaN) natively. When an observation is missing, the
+    filter runs a predict-only step, maintaining its internal state (velocity
+    estimate, covariance) across gaps. Frames with missing input data remain
+    NaN in the output — no gap-filling is performed.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight import XY
+    >>> from floodlight.transforms.filter import kalman
+
+    Generate a noisy XY-object to smooth.
+
+    >>> t = np.linspace(-5, 5, 1000)
+    >>> player_x = np.sin(t) * t + np.random.rand(1000)
+    >>> player_x[450:495] = np.NaN
+    >>> player_x[505:550] = np.NaN
+    >>> player_y = t + np.random.randn()
+    >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
+
+    Apply the Kalman filter with default settings.
+
+    >>> xy_filt = kalman(xy)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/kalman_default_example.png
+
+
+    Apply the filter with increased measurement noise for stronger smoothing.
+
+    >>> xy_filt = kalman(xy, measurement_noise=1.0)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/kalman_adjusted_example.png
+
+    References
+    ----------
+        .. [3] `Kalman, R. E. (1960). A New Approach to Linear Filtering and
+            Prediction Problems. Journal of Basic Engineering, 82(1), 35-45.
+            <https://doi.org/10.1115/1.3662552>`_
+        .. [4] `Linke, D., Link, D., & Lames, M. (2020). Football-specific
+            validity of TRACAB's optical video tracking systems. PLoS ONE,
+            15(3), e0230179. <https://doi.org/10.1371/journal.pone.0230179>`_
+        .. [5] `Blauberger, P., Marzilger, R., & Lames, M. (2021). Validation
+            of player and ball tracking with a local positioning system.
+            Sensors, 21(4), 1465. <https://doi.org/10.3390/s21041465>`_
+    """
+    if xy.framerate is None:
+        raise ValueError(
+            "The Kalman filter requires xy.framerate to be set in order to "
+            "compute the time step between frames."
+        )
+
+    dt = 1.0 / xy.framerate
+
+    # pre-allocate space for filtered data
+    xy_filt = np.empty(xy.xy.shape)
+    # loop through the xy-object columns
+    for i, column in enumerate(np.transpose(xy.xy)):
+        xy_filt[:, i] = _kalman_filter_1d(column, dt, process_noise, measurement_noise)
+
+    # create new XY-data object with filtered data
+    xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
+
+    return xy_filtered
