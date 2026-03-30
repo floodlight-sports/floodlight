@@ -404,6 +404,197 @@ def savgol_lowpass(
     return xy_filtered
 
 
+def _filter_sequence_fir_lowpass(
+    signal: np.ndarray,
+    numtaps: int = 21,
+    cutoff: Numeric = 1,
+    framerate: Numeric = None,
+    window: str = "hamming",
+    **kwargs,
+) -> np.ndarray:
+    """Filters the incoming signal with a FIR lowpass filter.
+
+    Wrapper for combined application of the `scipy.signal.firwin <https://docs.scipy.
+    org/doc/scipy/reference/generated/scipy.signal.firwin.html>`__ and `scipy.signal.
+    filtfilt <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.
+    filtfilt.html>`_ functions.
+
+    Parameters
+    ----------
+    signal: np.ndarray
+        Array of shape (T, N) containing the signal to be smoothed with T frames and N
+        independent signals. Corresponds to the argument ``x`` from the `scipy.signal.
+        filtfilt <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.
+        filtfilt.html>`_ function.
+    numtaps: int, optional
+        Length of the FIR filter (number of coefficients, i.e. the filter order + 1).
+        ``numtaps`` must be odd for a Type I filter. Corresponds to the argument
+        ``numtaps`` from the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/
+        reference/generated/scipy.signal.firwin.html>`_ function. Default is 21.
+    cutoff: Numeric, optional
+        The cutoff frequency of the filter in Hz (when ``framerate`` is specified).
+        Corresponds to the argument ``cutoff`` from the `scipy.signal.firwin
+        <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.
+        firwin.html>`_ function. Default is 1.
+    framerate: Numeric, optional
+        The sampling frequency of the signal in Hz. Corresponds to the argument ``fs``
+        from the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.firwin.html>`_ function.
+    window: str, optional
+        Desired window to use for the FIR filter design. Corresponds to the argument
+        ``window`` from the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/
+        reference/generated/scipy.signal.firwin.html>`_ function. Default is
+        ``"hamming"``.
+    kwargs:
+        Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
+        to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.filtfilt.html>`_ function.
+
+    Returns
+    -------
+    signal_filtered: np.array
+        Signal filtered by the FIR lowpass filter.
+    """
+    # Design FIR filter coefficients
+    h = scipy.signal.firwin(numtaps, cutoff, window=window, fs=framerate)
+    # Apply zero-phase filtering (FIR filter has a = 1)
+    signal_filtered = scipy.signal.filtfilt(h, 1, signal, axis=0, **kwargs)
+
+    return signal_filtered
+
+
+def fir_lowpass(
+    xy: XY,
+    numtaps: int = 21,
+    cutoff: Numeric = 1,
+    window: str = "hamming",
+    remove_short_seqs: bool = False,
+    **kwargs,
+) -> XY:
+    """Applies a FIR lowpass-filter to a XY data object.
+
+    For filtering, the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/reference/
+    generated/scipy.signal.firwin.html>`_ and the `scipy.signal.filtfilt <https://docs.
+    scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html>`_ functions are
+    used. This function provides a convenience access to both functions, directly
+    applying the filter to all non-NaN sequences in all columns.
+
+    Parameters
+    ----------
+    xy: XY
+        Floodlight XY Data object.
+    numtaps: int, optional
+        Length of the FIR filter (number of coefficients, i.e. the filter order + 1).
+        ``numtaps`` must be odd for a Type I filter. Corresponds to the argument
+        ``numtaps`` from the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/
+        reference/generated/scipy.signal.firwin.html>`_ function. Default is 21.
+    cutoff: Numeric, optional
+        The cutoff frequency of the filter in Hz. Corresponds to the argument ``cutoff``
+        from the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.firwin.html>`_ function. Default is 1.
+    window: str, optional
+        Desired window to use for the FIR filter design. Corresponds to the argument
+        ``window`` from the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/
+        reference/generated/scipy.signal.firwin.html>`_ function. Default is
+        ``"hamming"``.
+    remove_short_seqs: bool, optional
+        If True, sequences that are too short for the filter with the specified settings
+        are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
+    kwargs:
+        Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
+        to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
+        generated/scipy.signal.filtfilt.html>`_ function.
+
+    Returns
+    -------
+    xy_filtered: XY
+        XY object with position data filtered by the designed FIR lowpass filter.
+
+    Notes
+    -----
+    The values of the input data are assumed to be numerical. Missing data is assumed
+    to be either np.NaN or None. The FIR filter requires a minimum signal length
+    depending on the settings. A signal is a sequence of data in the XY-object that is
+    not interrupted by missing values. The minimum signal length is defined as
+    :math:`3 \\cdot numtaps`. The treatment of signals shorter than the minimum
+    signal length are specified with the ``remove_short_seqs``-argument, where True
+    will replace these sequences with np.NaNs and False will keep the sequences in the
+    data unfiltered.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight import XY
+    >>> from floodlight.transforms.filter import fir_lowpass
+
+    We first generate a noisy XY-object to smooth.
+
+    >>> t = np.linspace(-5, 5, 1000)
+    >>> player_x = np.sin(t) * t + np.random.rand(1000)
+    >>> player_x[450:495] = np.NaN
+    >>> player_x[505:550] = np.NaN
+    >>> player_y = t + np.random.randn()
+    >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
+
+    Apply the FIR lowpass filter with its default settings.
+
+    >>> xy_filt = fir_lowpass(xy)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/fir_default_example.png
+
+
+    Apply the filter with different specifications.
+
+    >>> xy_filt = fir_lowpass(xy, numtaps=101, cutoff=3)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/fir_adjusted_example.png
+    """
+    # minimum signal length a filter with this specs can be applied on
+    min_signal_len = 3 * numtaps
+    framerate = xy.framerate
+
+    # pre-allocate space for filtered data
+    xy_filt = np.empty(xy.xy.shape)
+    # loop through the xy-object columns
+    for i, column in enumerate(np.transpose(xy.xy)):
+        # extract indices of filterable and short sequences
+        seqs_filt, seqs_short = _get_filterable_and_short_sequences(
+            column, min_signal_len
+        )
+        # pre-allocate space for filtered column
+        col_filt = np.full(column.shape, np.nan)
+
+        # loop through filterable sequences
+        for start, end in seqs_filt:
+            # apply filter to the sequence and enter filtered data to their
+            # respective indices in the data
+            col_filt[start:end] = _filter_sequence_fir_lowpass(
+                column[start:end], numtaps, cutoff, framerate, window, **kwargs
+            )
+        # check treatment of sequences that don't meet minimum signal length
+        if remove_short_seqs is False:
+            # enter short sequences unfiltered to their respective indices in the data
+            for start, end in seqs_short:
+                col_filt[start:end] = column[start:end]
+
+        # enter filtered data into respective column
+        xy_filt[:, i] = col_filt
+
+    # create new XY-data object with filtered data
+    xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
+
+    return xy_filtered
+
+
 def _kalman_filter_1d(
     signal: np.ndarray,
     dt: float,

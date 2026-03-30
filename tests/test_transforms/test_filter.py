@@ -377,6 +377,106 @@ def test_savgol_lowpass_empty(example_xy_filter_empty: XY) -> None:
 
 
 @pytest.mark.unit
+def test_fir_lowpass_remove_seqs_false(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.fir_lowpass(data, numtaps=3)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -8.66, np.nan, 1.0],
+                [np.nan, -6.34, np.nan, 2.0],
+                [-5.07, -4.27, np.nan, 3.0],
+                [-2.7, -2.01, np.nan, 4.0],
+                [np.nan, -0.06, np.nan, 5.0],
+                [np.nan, 2.19, np.nan, 6.0],
+                [1.53, 3.9, np.nan, 7.0],
+                [4.92, 6.38, np.nan, 7.99],
+                [7.08, 8.18, np.nan, 8.75],
+                [9.26, 10.53, np.nan, 7.99],
+                [10.28, np.nan, np.nan, 7.0],
+                [12.15, np.nan, np.nan, 6.0],
+                [13.31, np.nan, np.nan, 5.0],
+                [14.84, 14.88, np.nan, 4.0],
+                [16.17, 16.94, np.nan, 3.0],
+                [17.14, 18.31, np.nan, 2.01],
+                [18.59, 19.31, np.nan, 1.25],
+                [20.27, 20.58, np.nan, 2.01],
+                [21.7, 22.46, np.nan, 3.0],
+                [23.08, 23.63, np.nan, 4.0],
+                [24.28, 25.13, np.nan, 5.0],
+                [25.73, 26.12, np.nan, 6.0],
+                [27.13, 27.99, np.nan, 7.0],
+                [np.nan, 29.55, np.nan, 8.0],
+                [30.06, np.nan, np.nan, 9.0],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_fir_lowpass_remove_seqs_true(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act - default numtaps=21, all sequences are too short
+    data_filt = filter.fir_lowpass(data, remove_short_seqs=True)
+
+    # Assert - all values should be NaN since no sequence meets min length
+    assert np.all(np.isnan(data_filt.xy))
+
+
+@pytest.mark.unit
+def test_fir_lowpass_short_remove_seqs_false(
+    example_xy_filter_short: XY,
+) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.fir_lowpass(data)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_fir_lowpass_short_remove_seqs_true(
+    example_xy_filter_short: XY,
+) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.fir_lowpass(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(
+        data_filt,
+        np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]]),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_fir_lowpass_empty(example_xy_filter_empty: XY) -> None:
+    # Arrange
+    data = example_xy_filter_empty
+
+    # Act
+    data_filt = filter.fir_lowpass(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
 def test_kalman_default(example_xy_filter: XY) -> None:
     # Arrange
     data = example_xy_filter
