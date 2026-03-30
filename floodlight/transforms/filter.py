@@ -806,3 +806,128 @@ def kalman(
     xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
 
     return xy_filtered
+
+
+def wiener(
+    xy: XY,
+    window_size: int = 5,
+    noise: float = None,
+    remove_short_seqs: bool = False,
+) -> XY:
+    """Applies a Wiener filter to a XY data object. [6]_
+
+    For filtering, the `scipy.signal.wiener <https://docs.scipy.org/doc/scipy/reference/
+    generated/scipy.signal.wiener.html>`_ function is used. This function provides a
+    convenient access to the function, directly applying the filter to all non-NaN
+    sequences in all columns.
+
+    Parameters
+    ----------
+    xy: XY
+        Floodlight XY Data object.
+    window_size: int, optional
+        Size of the local window used for noise estimation and filtering. Corresponds
+        to the argument ``mysize`` from the `scipy.signal.wiener <https://docs.scipy.
+        org/doc/scipy/reference/generated/scipy.signal.wiener.html>`_ function.
+        Default is 5.
+    noise: float, optional
+        Noise power estimate. If None, the noise power is estimated locally from the
+        data within the window. Corresponds to the argument ``noise`` from the
+        `scipy.signal.wiener <https://docs.scipy.org/doc/scipy/reference/generated/
+        scipy.signal.wiener.html>`_ function. Default is None.
+    remove_short_seqs: bool, optional
+        If True, sequences that are too short for the filter with the specified settings
+        are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
+
+    Returns
+    -------
+    xy_filtered: XY
+        XY object with position data filtered by the Wiener filter.
+
+    Notes
+    -----
+    The values of the input data are assumed to be numerical. Missing data is assumed
+    to be either np.NaN or None. The Wiener filter requires a minimum signal length
+    depending on the settings. A signal is a sequence of data in the XY-object that is
+    not interrupted by missing values. The minimum signal length is defined as
+    the ``window_size``. The treatment of signals shorter than the minimum signal
+    length are specified with the ``remove_short_seqs``-argument, where True will
+    replace these sequences with np.NaNs and False will keep the sequences in the
+    data unfiltered.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from floodlight import XY
+    >>> from floodlight.transforms.filter import wiener
+
+    We first generate a noisy XY-object to smooth.
+
+    >>> t = np.linspace(-5, 5, 1000)
+    >>> player_x = np.sin(t) * t + np.random.rand(1000)
+    >>> player_x[450:495] = np.NaN
+    >>> player_x[505:550] = np.NaN
+    >>> player_y = t + np.random.randn()
+    >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
+
+    Apply the Wiener filter with its default settings.
+
+    >>> xy_filt = wiener(xy)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/wiener_default_example.png
+
+
+    Apply the filter with a larger window size for stronger smoothing.
+
+    >>> xy_filt = wiener(xy, window_size=25)
+    >>> plt.plot(xy.x)
+    >>> plt.plot(xy_filt.x, linewidth=3)
+    >>> plt.legend(("Raw", "Smoothed"))
+    >>> plt.show()
+
+    .. image:: ../../_img/wiener_adjusted_example.png
+
+    References
+    ----------
+        .. [6] `Wiener, N. (1949). Extrapolation, Interpolation, and Smoothing of
+            Stationary Time Series. MIT Press.
+            <https://doi.org/10.7551/mitpress/2946.001.0001>`_
+    """
+    # minimum signal length a filter with this specs can be applied on
+    min_signal_len = window_size
+
+    # pre-allocate space for filtered data
+    xy_filt = np.empty(xy.xy.shape)
+    # loop through the xy-object columns
+    for i, column in enumerate(np.transpose(xy.xy)):
+        # extract indices of filterable and short sequences
+        seqs_filt, seqs_short = _get_filterable_and_short_sequences(
+            column, min_signal_len
+        )
+        # pre-allocate space for filtered column
+        col_filt = np.full(column.shape, np.nan)
+
+        # loop through filterable sequences
+        for start, end in seqs_filt:
+            # apply filter to the sequence
+            col_filt[start:end] = scipy.signal.wiener(
+                column[start:end].astype(float), mysize=window_size, noise=noise
+            )
+        # check treatment of sequences that don't meet minimum signal length
+        if remove_short_seqs is False:
+            # enter short sequences unfiltered to their respective indices
+            for start, end in seqs_short:
+                col_filt[start:end] = column[start:end]
+
+        # enter filtered data into respective column
+        xy_filt[:, i] = col_filt
+
+    # create new XY-data object with filtered data
+    xy_filtered = XY(xy=xy_filt, framerate=xy.framerate, direction=xy.direction)
+
+    return xy_filtered

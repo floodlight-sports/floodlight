@@ -609,3 +609,131 @@ def test_kalman_empty(example_xy_filter_empty: XY) -> None:
 
     # Assert
     assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_wiener_remove_seqs_false(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.wiener(data)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -4.36, np.nan, 1.2],
+                [np.nan, -4.24, np.nan, 2.0],
+                [-5.07, -4.27, np.nan, 3.0],
+                [-2.7, -2.07, np.nan, 4.0],
+                [np.nan, -0.07, np.nan, 5.0],
+                [np.nan, 2.1, np.nan, 6.0],
+                [2.74, 4.1, np.nan, 7.0],
+                [4.63, 6.24, np.nan, 7.6],
+                [6.65, 6.23, np.nan, 7.8],
+                [8.81, 7.38, np.nan, 7.6],
+                [10.42, np.nan, np.nan, 7.0],
+                [12.0, np.nan, np.nan, 6.0],
+                [13.35, np.nan, np.nan, 5.0],
+                [14.74, 11.98, np.nan, 4.0],
+                [15.99, 14.48, np.nan, 3.0],
+                [17.41, 18.01, np.nan, 2.4],
+                [18.77, 19.55, np.nan, 2.2],
+                [20.15, 20.85, np.nan, 2.4],
+                [21.58, 22.23, np.nan, 3.0],
+                [23.02, 23.56, np.nan, 4.0],
+                [24.38, 25.08, np.nan, 5.0],
+                [24.62, 26.47, np.nan, 6.0],
+                [25.66, 25.9, np.nan, 7.0],
+                [np.nan, 26.72, np.nan, 7.48],
+                [30.06, np.nan, np.nan, 8.31],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_wiener_remove_seqs_true(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.wiener(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -4.36, np.nan, 1.2],
+                [np.nan, -4.24, np.nan, 2.0],
+                [np.nan, -4.27, np.nan, 3.0],
+                [np.nan, -2.07, np.nan, 4.0],
+                [np.nan, -0.07, np.nan, 5.0],
+                [np.nan, 2.1, np.nan, 6.0],
+                [2.74, 4.1, np.nan, 7.0],
+                [4.63, 6.24, np.nan, 7.6],
+                [6.65, 6.23, np.nan, 7.8],
+                [8.81, 7.38, np.nan, 7.6],
+                [10.42, np.nan, np.nan, 7.0],
+                [12.0, np.nan, np.nan, 6.0],
+                [13.35, np.nan, np.nan, 5.0],
+                [14.74, 11.98, np.nan, 4.0],
+                [15.99, 14.48, np.nan, 3.0],
+                [17.41, 18.01, np.nan, 2.4],
+                [18.77, 19.55, np.nan, 2.2],
+                [20.15, 20.85, np.nan, 2.4],
+                [21.58, 22.23, np.nan, 3.0],
+                [23.02, 23.56, np.nan, 4.0],
+                [24.38, 25.08, np.nan, 5.0],
+                [24.62, 26.47, np.nan, 6.0],
+                [25.66, 25.9, np.nan, 7.0],
+                [np.nan, 26.72, np.nan, 7.48],
+                [np.nan, np.nan, np.nan, 8.31],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_wiener_short_remove_seqs_false(example_xy_filter_short: XY) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.wiener(data)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_wiener_short_remove_seqs_true(example_xy_filter_short: XY) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.wiener(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(
+        data_filt,
+        np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]]),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_wiener_empty(example_xy_filter_empty: XY) -> None:
+    # Arrange
+    data = example_xy_filter_empty
+
+    # Act
+    data_filt = filter.wiener(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
