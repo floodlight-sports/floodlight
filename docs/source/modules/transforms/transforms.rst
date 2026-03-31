@@ -11,6 +11,7 @@ Collection of data transformation and processing functions.
    filter
    spatial
    permutation
+   interpolation
 
 .. rubric:: Filter
 
@@ -37,3 +38,13 @@ Collection of data transformation and processing functions.
    :nosignatures:
 
    assign_roles
+
+.. rubric:: Interpolation
+
+.. currentmodule:: floodlight.transforms.interpolation
+.. autosummary::
+   :nosignatures:
+
+   interpolate_linear
+   interpolate_polynomial
+   interpolate_spline
