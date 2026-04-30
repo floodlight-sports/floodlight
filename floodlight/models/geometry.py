@@ -94,7 +94,7 @@ class CentroidModel(BaseModel):
             include[exclude_start:exclude_end] = False
 
         with warnings.catch_warnings():
-            # supress warnings caused by empty slices
+            # suppress warnings caused by empty slices
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             # calculate centroid
             centroids = np.nanmean(xy.xy[:, include].reshape((len(xy), -1, 2)), axis=1)
@@ -200,7 +200,7 @@ class CentroidModel(BaseModel):
         centroid_distances = self.centroid_distance(xy=xy, axis=axis)
 
         with warnings.catch_warnings():
-            # supress warnings caused by empty slices
+            # suppress warnings caused by empty slices
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             # calculate stretch index
             stretch_index = np.nanmean(centroid_distances.property, axis=1)

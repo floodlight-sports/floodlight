@@ -78,9 +78,9 @@ def read_event_data_xml(
     -----
     Opta's format of handling event data information involves an elaborate use of so
     called qualifiers, which attach additional information to certain events. There
-    also exist a number of mappings that define which qualifiers may be  attached to
+    also exists a number of mappings that define which qualifiers may be attached to
     which kind of events. Parsing this information involves quite a bit of logic and is
-    planned to be inclucded in further releases. As of now, qualifier information is
+    planned to be included in further releases. As of now, qualifier information is
     parsed as a string in the `qualifier` column of the returned DataFrame and can be
     transformed to a dict of the form `{qualifier_id: value}`.
     """

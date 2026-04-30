@@ -11,7 +11,7 @@ def _get_filterable_and_short_sequences(
     data: np.ndarray, min_signal_len: int
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Returns start and end indices of continuous, filterable sequences and sequences
-    to short for filtering with the specified filter.
+    too short for filtering with the specified filter.
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def _get_filterable_and_short_sequences(
     short_sequences: np.ndarray
         Two-dimensional array of shape (N, 2) and form
         ``[[sequence_start_idx, sequence_end_idx]]`` containing start and end indices of
-         N sequences in the original data that don't contain NaNs but are to short to
+         N sequences in the original data that don't contain NaNs but are too short to
          apply the specified filter on.
     """
     if data.ndim != 1:
@@ -40,7 +40,7 @@ def _get_filterable_and_short_sequences(
             f"data instead."
         )
 
-    # Convert possible None-types in data to np.NaN
+    # Convert possible None-types in data to np.nan
     data = np.array(data, dtype=float)
 
     # indices where nans and numbers are next to each other
@@ -129,7 +129,7 @@ def _filter_sequence_butterworth_lowpass(
 def butterworth_lowpass(
     xy: XY, order: int = 3, Wn: Numeric = 1, remove_short_seqs: bool = False, **kwargs
 ) -> XY:
-    """Applies a digital Butterworth lowpass-filter to a XY data object. [1]_
+    """Applies a digital Butterworth lowpass-filter to an XY data object. [1]_
 
     For filtering, the `scipy.filter.butter <https://docs.scipy.org/doc/scipy/reference/
     generated/scipy.signal.butter.html>`_ and the `scipy.signal.filtfilt <https://docs.
@@ -150,8 +150,8 @@ def butterworth_lowpass(
         from the `scipy.signal.butter <https://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.butter.html>`_ function. Default is 1.
     remove_short_seqs: bool, optional
-        If True, sequences that are to short for the filter with the specified settings
-        are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
+        If True, sequences that are too short for the filter with the specified settings
+        are replaced with np.nan. If False, they are kept unfiltered. Default is False.
     kwargs:
         Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
         to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
@@ -164,12 +164,12 @@ def butterworth_lowpass(
     Notes
     -----
     The values of the input data are assumed to be numerical. Missing data is assumed
-    to be either np.NaN or None. The Butterworth-filter requires a minimum signal length
+    to be either np.nan or None. The Butterworth-filter requires a minimum signal length
     depending on the settings. A signal is a sequence of data in the XY-object that is
     not interrupted by missing values. The minimum signal length is defined as
     :math:`3 \\cdot (order + 1)`. The treatment of signals shorter than the minimum
     signal length are specified with the ``remove_short_sequence``-argument, where True
-    will replace these sequences with np.NaNs ond False will keep the sequences in the
+    will replace these sequences with np.nan and False will keep the sequences in the
     data unfiltered.
 
     Examples
@@ -183,8 +183,8 @@ def butterworth_lowpass(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t + np.random.rand(1000)
-    >>> player_x[450:495] = np.NaN
-    >>> player_x[505:550] = np.NaN
+    >>> player_x[450:495] = np.nan
+    >>> player_x[505:550] = np.nan
     >>> player_y = t + np.random.randn()
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 
@@ -199,7 +199,7 @@ def butterworth_lowpass(
     .. image:: ../../_img/butterworth_default_example.png
 
 
-    Apply the same filter but remove the sequence that is to short to filter.
+    Apply the same filter but remove the sequence that is too short to filter.
 
     >>> xy_filt = butterworth_lowpass(xy, remove_short_seqs=True)
     >>> plt.plot(xy.x)
@@ -269,7 +269,7 @@ def savgol_lowpass(
     remove_short_seqs: bool = False,
     **kwargs,
 ) -> XY:
-    """Applies a Savitzky-Golay lowpass-filter to a XY data object. [2]_
+    """Applies a Savitzky-Golay lowpass-filter to an XY data object. [2]_
 
     For filtering, the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
     generated/scipy.signal.savgol_filter.html>`_ function is used. This function
@@ -284,13 +284,13 @@ def savgol_lowpass(
         The length of the filter window. Corresponds to the argument ``window_length``
         from the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.savgol_filter.html>`_ function. Default is 5.
-    polyorder: Numeric, optional
+    poly_order: Numeric, optional
         The order of the polynomial used to fit the samples. ``poly_order`` must be less
-        than ``window_length``. Default is 3. Corresponds to the argument ``polyorder``
+        than ``window_length``. Default is 3. Corresponds to the argument ``poly_order``
         from the `scipy.filter.savgol <https://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.savgol_filter.html>`_ function. Default is 5.
     remove_short_seqs: bool, optional
-        If True, sequences that are to short for the Filter with the specified settings
+        If True, sequences that are too short for the filter with the specified settings
         are removed from the data. If False, they are kept unfiltered. Default is False.
     kwargs:
         Optional arguments {'deriv', 'delta', 'mode', 'cval'} that can be passed to
@@ -300,17 +300,18 @@ def savgol_lowpass(
     Returns
     -------
     xy_filtered: XY
-        XY object with position data filtered by designed Butterworth low pass filter.
+        XY object with position data filtered by designed Savitzky-Golay low pass
+        filter.
 
     Notes
     -----
     The values of the input data are assumed to be numerical. Missing data is assumed
-    to be either np.NaN or None. The Savitzky-Golay-filter requires a minimum signal
+    to be either np.nan or None. The Savitzky-Golay-filter requires a minimum signal
     length depending on the settings. A signal is a sequence of data in the XY-object
     that is not interrupted by missing values. The minimum signal length is defined as
     the ``window_length``. The treatment of signals shorter than the minimum signal
     length are specified with the ``remove_short_sequence``-argument, where True will
-    replace these sequences with np.NaNs ond False will keep the sequences in the data
+    replace these sequences with np.nan and False will keep the sequences in the data
     unfiltered.
 
     Examples
@@ -324,8 +325,8 @@ def savgol_lowpass(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t + np.random.rand(1000)
-    >>> player_x[450:495] = np.NaN
-    >>> player_x[505:550] = np.NaN
+    >>> player_x[450:495] = np.nan
+    >>> player_x[505:550] = np.nan
     >>> player_y = t + np.random.randn()
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 
@@ -340,8 +341,8 @@ def savgol_lowpass(
     .. image:: ../../_img/savgol_default_example.png
 
 
-    Apply the filter with a longer window lengh and remove the sequence that is to short
-    to filter.
+    Apply the filter with a longer window length and remove the sequence that is too
+    short to filter.
 
     >>> xy_filt = savgol_lowpass(xy, window_length=12, remove_short_seqs=True)
     >>> plt.plot(xy.x)
@@ -471,7 +472,7 @@ def fir_lowpass(
     remove_short_seqs: bool = False,
     **kwargs,
 ) -> XY:
-    """Applies a FIR lowpass-filter to a XY data object.
+    """Applies a FIR lowpass-filter to an XY data object.
 
     For filtering, the `scipy.signal.firwin <https://docs.scipy.org/doc/scipy/reference/
     generated/scipy.signal.firwin.html>`_ and the `scipy.signal.filtfilt <https://docs.
@@ -499,7 +500,7 @@ def fir_lowpass(
         ``"hamming"``.
     remove_short_seqs: bool, optional
         If True, sequences that are too short for the filter with the specified settings
-        are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
+        are replaced with np.nans. If False, they are kept unfiltered. Default is False.
     kwargs:
         Optional arguments {'padtype', 'padlen', 'method', 'irlen'} that can be passed
         to the `scipy.signal.filtfilt <https://docs.scipy.org/doc/scipy/reference/
@@ -513,12 +514,12 @@ def fir_lowpass(
     Notes
     -----
     The values of the input data are assumed to be numerical. Missing data is assumed
-    to be either np.NaN or None. The FIR filter requires a minimum signal length
+    to be either np.nan or None. The FIR filter requires a minimum signal length
     depending on the settings. A signal is a sequence of data in the XY-object that is
     not interrupted by missing values. The minimum signal length is defined as
     :math:`3 \\cdot numtaps`. The treatment of signals shorter than the minimum
     signal length are specified with the ``remove_short_seqs``-argument, where True
-    will replace these sequences with np.NaNs and False will keep the sequences in the
+    will replace these sequences with np.nan and False will keep the sequences in the
     data unfiltered.
 
     Examples
@@ -532,8 +533,8 @@ def fir_lowpass(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t + np.random.rand(1000)
-    >>> player_x[450:495] = np.NaN
-    >>> player_x[505:550] = np.NaN
+    >>> player_x[450:495] = np.nan
+    >>> player_x[505:550] = np.nan
     >>> player_y = t + np.random.randn()
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 
@@ -693,7 +694,7 @@ def kalman(
     process_noise: float = 1.0,
     measurement_noise: float = 0.04,
 ) -> XY:
-    """Applies a forward Kalman filter to a XY data object. [3]_
+    """Applies a forward Kalman filter to an XY data object. [3]_
 
     Uses a constant-velocity motion model where the state vector consists of
     position and velocity. Only positions are observed. The filter smooths noisy
@@ -750,8 +751,8 @@ def kalman(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t + np.random.rand(1000)
-    >>> player_x[450:495] = np.NaN
-    >>> player_x[505:550] = np.NaN
+    >>> player_x[450:495] = np.nan
+    >>> player_x[505:550] = np.nan
     >>> player_y = t + np.random.randn()
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 
@@ -814,7 +815,7 @@ def wiener(
     noise: float = None,
     remove_short_seqs: bool = False,
 ) -> XY:
-    """Applies a Wiener filter to a XY data object. [6]_
+    """Applies a Wiener filter to an XY data object. [6]_
 
     For filtering, the `scipy.signal.wiener <https://docs.scipy.org/doc/scipy/reference/
     generated/scipy.signal.wiener.html>`_ function is used. This function provides a
@@ -837,7 +838,7 @@ def wiener(
         scipy.signal.wiener.html>`_ function. Default is None.
     remove_short_seqs: bool, optional
         If True, sequences that are too short for the filter with the specified settings
-        are replaced with np.NaNs. If False, they are kept unfiltered. Default is False.
+        are replaced with np.nan. If False, they are kept unfiltered. Default is False.
 
     Returns
     -------
@@ -847,12 +848,12 @@ def wiener(
     Notes
     -----
     The values of the input data are assumed to be numerical. Missing data is assumed
-    to be either np.NaN or None. The Wiener filter requires a minimum signal length
+    to be either np.nan or None. The Wiener filter requires a minimum signal length
     depending on the settings. A signal is a sequence of data in the XY-object that is
     not interrupted by missing values. The minimum signal length is defined as
     the ``window_size``. The treatment of signals shorter than the minimum signal
     length are specified with the ``remove_short_seqs``-argument, where True will
-    replace these sequences with np.NaNs and False will keep the sequences in the
+    replace these sequences with np.nan and False will keep the sequences in the
     data unfiltered.
 
     Examples
@@ -866,8 +867,8 @@ def wiener(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t + np.random.rand(1000)
-    >>> player_x[450:495] = np.NaN
-    >>> player_x[505:550] = np.NaN
+    >>> player_x[450:495] = np.nan
+    >>> player_x[505:550] = np.nan
     >>> player_y = t + np.random.randn()
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 

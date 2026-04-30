@@ -20,7 +20,7 @@ def test_eigd_transform(
     )
 
 
-# Test get method from StatsBombDataset
+# Test get method from StatsBombOpenDataset
 @pytest.mark.unit
 def test_statsbomb_get() -> None:
 
@@ -36,7 +36,7 @@ def test_statsbomb_get() -> None:
     assert isinstance(teamsheets["Away"], Teamsheet)
 
 
-# Test get_teamsheet method from StatsBombDataset
+# Test get_teamsheet method from StatsBombOpenDataset
 @pytest.mark.unit
 def test_statsbomb_get_teamsheet() -> None:
 

@@ -41,11 +41,11 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
 
     # sanity checks
     if type(sig) is not np.ndarray:
-        raise TypeError(f"sig should be Numpy.ndarray, got {type(sig)}.")
+        raise TypeError(f"sig should be np.ndarray, got {type(sig)}.")
     if sig.ndim != 1:
-        raise TypeError(f"sig should have only a single dimension, got {sig.ndim}")
+        raise TypeError(f"sig should have only a single dimension, got {sig.ndim}.")
     if np.any(np.isnan(sig)):
-        raise ValueError("Signal cannot contain Numpy.NaNs.")
+        raise ValueError("Signal cannot contain np.nan.")
 
     N = len(sig)
 
@@ -54,11 +54,11 @@ def approx_entropy(sig: npt.NDArray, m: int = 2, r: float = 0.5) -> float:
 
         Parameters
         ----------
-        m: comparison length
+        m_: comparison length
 
         Returns
         -------
-        Phi: sample entropy
+        ap: sample entropy
         """
         no_parts = N - m_ + 1
         x_i_s = np.zeros((no_parts, m_))

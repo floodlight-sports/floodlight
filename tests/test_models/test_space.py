@@ -634,7 +634,7 @@ def test_plot_hex(example_xy_objects_space_control, example_pitch_dfl) -> None:
     # assert plot generation
     assert isinstance(ax, matplotlib.axes.Axes)
 
-    # assert recangle generation
+    # assert rectangle generation
     plotted_polygons = 0
     for patch in plt.gca().patches:
         if isinstance(patch, matplotlib.patches.RegularPolygon):

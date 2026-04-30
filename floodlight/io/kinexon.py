@@ -58,7 +58,7 @@ def _get_column_links(
         Dictionary with column index for relevant recorded columns.
         'column_links[column] = index'
         The following columns are currently considered relevant:
-              floodlight id: 'column name in Kinexon.csv-file
+              floodlight id: 'column name in Kinexon.csv-file'
             - time: 'ts in ms'
             - sensor_id: 'sensor id'
             - mapped_id: 'mapped id'
@@ -120,7 +120,7 @@ def _get_group_id(
         Dictionary with column index for relevant recorded columns.
         'column_links[column] = index'
         The following columns are currently considered relevant:
-              floodlight id: 'column name in Kinexon.csv-file
+              floodlight id: 'column name in Kinexon.csv-file'
             - time: 'ts in ms'
             - sensor_id: 'sensor id'
             - mapped_id: 'mapped id'
@@ -214,7 +214,7 @@ def get_meta_data(
     # check for group identifier
     has_groups = len(recorded_group_identifier) > 0
     if not has_groups:
-        warnings.warn("Since no group exist in data, dummy group '0' is created!")
+        warnings.warn("Since no groups exist in data, dummy group '0' is created.")
 
     # loop
     with open(str(filepath_data), "r", encoding="utf-8") as f:
@@ -266,7 +266,7 @@ def get_meta_data(
     if not framerate.is_integer():
         warnings.warn(
             f"Non-integer frame rate: Minimum time step of "
-            f"{minimum_time_step} detected. Framerate is round to "
+            f"{minimum_time_step} detected. Framerate is rounded to "
             f"{int(framerate)}."
         )
 

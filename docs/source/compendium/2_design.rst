@@ -11,13 +11,13 @@ The scope of this package is another reason we explicitly formalized these princ
 
     All data structures and functionality should be implemented with a clear focus on scientific data analytics. We attempt to optimize core objects and manipulation functions so that data processing becomes intuitive and easy. If a trade-off has to be made, we prioritize data handling over (external) API compatibility, database friendliness, or use-case specific requirements. Performance is also an issue we keep in mind.
 
-    On an implementation level, we make extensive use of data analysis packages such as *numpy*, *pandas*, or *matplotlib*. We let the experts do what they're the best at, and gratefully use their great tools. Many of our core data objects are container classes wrapping ``ndarray``\s or ``DataFrame``\s. This way, we can add our own flavour and add needed functionaliy, while leveraging and interfacing their rich functionality such as views, indexing, and vectorization.
+    On an implementation level, we make extensive use of data analysis packages such as *numpy*, *pandas*, or *matplotlib*. We let the experts do what they're the best at, and gratefully use their great tools. Many of our core data objects are container classes wrapping ``ndarray``\s or ``DataFrame``\s. This way, we can add our own flavour and add needed functionality, while leveraging and interfacing their rich functionality such as views, indexing, and vectorization.
 
 2. **Sports Independence**
 
     The basics of processing sports data apply to many sports across the board. Most spatial or temporal transforms, data manipulation techniques or performance metrics apply irrespectively of whether there are eleven players chasing a ball, or five a puck. We intend to provide essential data structures and functionality for all team invasion games, such as football, basketball, handball, hockey, and so on.
 
-    We are aware that data analysis on football draws by far the major portion of attention. Submodules that solve a sport-specific problems are certainly welcome, but please double check whether your contribution can be further abstracted to apply to all team sports. If not, that's okay, but make sure to mark it as sport-specific!
+    We are aware that data analysis on football draws by far the major portion of attention. Submodules that solve sport-specific problems are certainly welcome, but please double check whether your contribution can be further abstracted to apply to all team sports. If not, that's okay, but make sure to mark it as sport-specific!
 
 3. **Provider Independence**
 
@@ -39,7 +39,7 @@ The scope of this package is another reason we explicitly formalized these princ
 
     However, we are fully aware that sports data processing is full of choices. Many algorithms or standard procedures can be done this way or that way, which require selecting a default behavior. In these cases, we intend to choose a sensible default that is independent of any data flavours or personal preferences. In case multiple options are available, we inform the user about our choice and include handling processing alternatives via function parameters.
 
-    We also try to not exclude any potential personal preferences or use cases by requirements that are to strict, or function calls that are narrower in their scope as their name and description promises.
+    We also try to not exclude any potential personal preferences or use cases by requirements that are too strict, or function calls that are narrower in their scope as their name and description promises.
 
 6. **Intuitive High-Level Interfaces**
 

@@ -12,7 +12,7 @@ class MetabolicPowerModel(BaseModel):
     """Class for calculating Metabolic Power and derived metrics from spatiotemporal
     data.
 
-    Upon calling the :func:`~MetbolicPowerModel.fit`-method, this model calculates the
+    Upon calling the :func:`~MetabolicPowerModel.fit`-method, this model calculates the
     frame-wise Metabolic Power for each player. The following calculations can
     subsequently be queried by calling the corresponding methods:
 
@@ -31,7 +31,7 @@ equivalent_distance`
     unit body mass and distance [:math:`\\frac{J}{kg \\cdot m}`] and velocity
     [:math:`\\frac{m}{s}`]. Metabolic Power and Energy cost of walking is calculated
     according to di Prampero & Osgnach [1]_. Energy cost of running is calculated with
-    the updated formula of Minetti & Parvei [2]_.
+    the updated formula of Minetti & Pavei [2]_.
 
     Examples
     --------
@@ -62,7 +62,7 @@ equivalent_distance`
             581-587.
             <https://www.thieme-connect.de/products/ejournals/abstract/10.1055/
             a-0592-7660>`_
-        .. [2] `Minetti, A.E., Parvei, G. (2018). Update and extension of the
+        .. [2] `Minetti, A.E., Pavei, G. (2018). Update and extension of the
             ‘Equivalent Slope’ of speed changing level locomotion in humans: A
             computational model for shuttle running. Journal Experimental Biology,
             221:jeb.182303.
@@ -295,8 +295,8 @@ equivalent_distance`
 
     @staticmethod
     def _calc_ecr(es: np.ndarray, em: np.ndarray, eccr: Numeric = 3.6) -> np.ndarray:
-        """Calculates Energy cost of running based on formula (3) and (4) from
-        Minetti & Parvei (2018).
+        """Calculates energy cost of running based on formula (3) and (4) from
+        Minetti & Pavei (2018).
 
         Parameters
         ----------
@@ -314,6 +314,7 @@ equivalent_distance`
         ecr: np.array
             Energy cost of running
         """
+
         # Cost of negative gradient from Minetti (2018)
         def _cng(es: np.ndarray):
             return -8.34 * es + eccr * np.exp(13 * es)
@@ -411,7 +412,7 @@ equivalent_distance`
         ----------
         xy: XY
             Floodlight XY Data object.
-        difference: {'central', 'forward}, optional
+        difference: {'central', 'forward'}, optional
             The method of differentiation to calculate velocity and acceleration.
             See :func:`~floodlight.models.kinematics.VelocityModel` for further details.
         axis: {None, 'x', 'y'}, optional
@@ -478,7 +479,7 @@ equivalent_distance`
         """
         cum_metp = np.divide(
             np.nancumsum(self._metabolic_power_.property, axis=0),
-            self._metabolic_power_.framerate
+            self._metabolic_power_.framerate,
         )
         cumulative_metabolic_power = PlayerProperty(
             property=cum_metp,
@@ -537,7 +538,7 @@ equivalent_distance`
         """
         cum_metp = np.divide(
             np.nancumsum(self._metabolic_power_.property, axis=0),
-            self._metabolic_power_.framerate
+            self._metabolic_power_.framerate,
         )
         cum_eqdist = cum_metp / eccr
 

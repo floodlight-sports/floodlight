@@ -5,10 +5,10 @@ from floodlight.models.kinematics import DistanceModel, VelocityModel, Accelerat
 
 
 # Differences in the kinematic models can be calculated via central or backward
-# difference methode. This is specified in the respective models .fit()-method.
+# difference method. This is specified in the respective models .fit()-method.
 # As this has no impact on the calculations in the other class methods, only the
 # .fit()-methods are tested with both difference methods. The other class methods are
-# tested with the default difference methode (i.e., 'central').
+# tested with the default difference method (i.e., 'central').
 
 
 @pytest.mark.unit

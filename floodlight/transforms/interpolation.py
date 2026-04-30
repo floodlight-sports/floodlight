@@ -179,8 +179,8 @@ def interpolate_linear(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t
-    >>> player_x[200:220] = np.NaN
-    >>> player_x[500:530] = np.NaN
+    >>> player_x[200:220] = np.nan
+    >>> player_x[500:530] = np.nan
     >>> player_y = t
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 
@@ -292,8 +292,8 @@ def interpolate_polynomial(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t
-    >>> player_x[200:220] = np.NaN
-    >>> player_x[500:530] = np.NaN
+    >>> player_x[200:220] = np.nan
+    >>> player_x[500:530] = np.nan
     >>> player_y = t
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 
@@ -409,8 +409,8 @@ def interpolate_spline(
 
     >>> t = np.linspace(-5, 5, 1000)
     >>> player_x = np.sin(t) * t
-    >>> player_x[200:220] = np.NaN
-    >>> player_x[500:530] = np.NaN
+    >>> player_x[200:220] = np.nan
+    >>> player_x[500:530] = np.nan
     >>> player_y = t
     >>> xy = XY(np.transpose(np.stack((player_x, player_y))), framerate=20)
 

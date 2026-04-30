@@ -57,7 +57,7 @@ def read_event_data_json(
     the gross time passed in seconds in relation to the start of the respective segment.
     The "minute_gross" and "second_gross" columns contain the "gameclock" converted to
     minutes and seconds, respectively. The columns "minutes" and "seconds" contain the
-    information about the net match-clock. the column "time_stamp" contains the global
+    information about the net match-clock. The column "time_stamp" contains the global
     time-stamp of the respective event in the ISO 8601 standard format.
 
     The column "outcome" in the return contains the "outcome" information in the raw

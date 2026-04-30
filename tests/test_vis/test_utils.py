@@ -1,12 +1,13 @@
 import pytest
 import matplotlib
-matplotlib.use('agg')
-from matplotlib import pyplot as plt    # noqa: 402
 
-from floodlight.vis.utils import check_axes_given   # noqa: 402
+matplotlib.use("agg")
+from matplotlib import pyplot as plt  # noqa: E402
+
+from floodlight.vis.utils import check_axes_given  # noqa: E402
 
 
-# Test check_axes_given(func
+# Test check_axes_given(func)
 @pytest.mark.plot
 def test_check_axes_given():
     # Arrange
