@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from floodlight import XY
+from floodlight import XY, Code
+from floodlight.core.property import TeamProperty, PlayerProperty, DyadicProperty
 
 
 @pytest.fixture()
@@ -137,3 +138,46 @@ def example_xy_permutation():
         framerate=10,
     )
     return xy
+
+
+@pytest.fixture()
+def example_code_temporal():
+    code = Code(
+        code=np.array([0, 0, 1, 1, 2, 2, 1, 1, 0, 0], dtype=int),
+        name="possession",
+        definitions={0: "none", 1: "home", 2: "away"},
+        framerate=50,
+    )
+    return code
+
+
+@pytest.fixture()
+def example_team_property_temporal():
+    prop = TeamProperty(
+        property=np.arange(10, dtype=float),
+        name="stretch_index",
+        framerate=50,
+    )
+    return prop
+
+
+@pytest.fixture()
+def example_player_property_temporal():
+    prop = PlayerProperty(
+        property=np.arange(30, dtype=float).reshape(10, 3),
+        name="speed",
+        framerate=50,
+    )
+    return prop
+
+
+@pytest.fixture()
+def example_dyadic_property_temporal():
+    # Asymmetric shape N_1=2, N_2=3 -> (10, 2, 3) guards against any accidental
+    # N_1 == N_2 assumption in resample's DyadicProperty adapter.
+    prop = DyadicProperty(
+        property=np.arange(60, dtype=float).reshape(10, 2, 3),
+        name="distance",
+        framerate=50,
+    )
+    return prop
