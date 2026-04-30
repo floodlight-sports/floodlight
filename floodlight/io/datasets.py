@@ -865,7 +865,7 @@ class IDSSEDataset:
 
     def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
         self._IDSSE_SCHEMA = "https"
-        self._IDSSE_BASE_URL = "figshare.com/ndownloader/files"
+        self._IDSSE_BASE_URL = "ndownloader.figshare.com/files"
         self._IDSSE_FILE_IDS_INFO = {
             "J03WMX": "51643475",
             "J03WN1": "51643472",
