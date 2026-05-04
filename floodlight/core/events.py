@@ -437,7 +437,7 @@ class Events:
         events_sliced: Union[Event, None]
         """
         if slice_by not in self.events:
-            ValueError(f"Events object does not contain column {slice_by}!")
+            raise ValueError(f"Events object does not contain column {slice_by}!")
         if start is None:
             start = 0
         if end is None:

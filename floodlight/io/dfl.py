@@ -578,12 +578,12 @@ def read_event_data_xml(
     team1 = list(team_dfs[segments[0]].keys())[0]
     team2 = list(team_dfs[segments[0]].keys())[1]
     if not np.all([team1 in team_dfs[segment].keys() for segment in segments]):
-        KeyError(
+        raise KeyError(
             f"Found tID {team1} of the first segment missing in at least one "
             f"other segment!"
         )
     if not np.all([team2 in team_dfs[segment].keys() for segment in segments]):
-        KeyError(
+        raise KeyError(
             f"Found tID {team2} of the first segment missing in at least one "
             f"other segment!"
         )
