@@ -1,9 +1,10 @@
 import pytest
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt     # noqa: 402
 
-from floodlight.vis.positions import plot_positions, plot_trajectories      # noqa: 402
+matplotlib.use("agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+from floodlight.vis.positions import plot_positions, plot_trajectories  # noqa: E402
 
 
 # Test plot_positions( xy, frame: int, ball: bool, ax: matplotlib.axes, **kwargs)
@@ -29,7 +30,7 @@ def test_plot_positions_return_with_axes(example_xy_object):
 
 # Test plot_trajectories(xy, frame: int, ball: bool, ax: matplotlib.axes, **kwargs)
 @pytest.mark.plot
-def test_plot_trajectoriess_return_matplotlib_axes_without_ax(example_xy_object):
+def test_plot_trajectories_return_matplotlib_axes_without_ax(example_xy_object):
     # Act
     ax = plot_trajectories(
         example_xy_object, start_frame=0, end_frame=4, ball=False, ax=None

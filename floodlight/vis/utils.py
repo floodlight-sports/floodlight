@@ -11,7 +11,7 @@ def check_axes_given(func):
     ----------
     func:
         Function object that needs a matplotlib.axes as an argument. If ax == None
-        an axes is created an passed to the given function object as a keyworded
+        an axes is created and passed to the given function object as a keyworded
         argument.
 
     Returns
@@ -23,7 +23,7 @@ def check_axes_given(func):
 
     @wraps(func)
     def add_ax(*args, **kwargs):  # actual wrapper function that gets args and kwargs
-        # from the funtion that was passed
+        # from the function that was passed
         # If matplotlib.axes is not given (ax == None) an axes is created.
         if not kwargs.get("ax"):
             kwargs.pop("ax")  # Remove ax from kwargs

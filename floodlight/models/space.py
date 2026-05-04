@@ -59,10 +59,10 @@ class DiscreteVoronoiModel(BaseModel):
         Defaults to 4.2 according to [5]_.
     vmax: float, optional
         Terminal velocity in m/s used by 'fujimura_sugihara'. Defaults to
-        7.8, according to [4]_ .
+        7.8, according to [4]_.
     alpha: float, optional
         Drag coefficient controlling how quickly players approach terminal
-        velocity used by 'fujimura_sugihara'. Defaults to 1.3 according to [4]_ .
+        velocity used by 'fujimura_sugihara'. Defaults to 1.3 according to [4]_.
 
     Notes
     -----
@@ -607,7 +607,7 @@ class DiscreteVoronoiModel(BaseModel):
         -------
         player_controls: Tuple[PlayerProperty, PlayerProperty]
             One Property object for each team (corresponding to the fitted xy1 and xy2)
-            of shape (n_frames x n_players), respectively. Property objets contain the
+            of shape (n_frames x n_players), respectively. Property objects contain the
             percentage of points controlled by each player on the pitch.
         """
         # infer number of mesh cells
@@ -648,7 +648,7 @@ class DiscreteVoronoiModel(BaseModel):
         -------
         team_controls: Tuple[TeamProperty, TeamProperty]
             One Property object for each team (corresponding to the fitted xy1 and xy2)
-            of shape (n_frames x 1), respectively. Property objets contain the
+            of shape (n_frames x 1), respectively. Property objects contain the
             percentage of points controlled by each team on the pitch.
         """
         # infer number of mesh cells

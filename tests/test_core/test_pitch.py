@@ -151,6 +151,7 @@ def test_center_property() -> None:
 #   ax: plt.axes = None,
 #   **kwargs)
 
+
 # Test return
 @pytest.mark.plot
 def test_plot_football_return_matplotlib_axes_without_given_as_argument(
@@ -202,7 +203,7 @@ def test_plot_handball_pitch_return_matplotlib_axes_with_axes_given_as_argument(
 
 # Test value error if wrong sport is given
 @pytest.mark.plot
-def test_plot_value_error_unvalid_sport() -> None:
+def test_plot_value_error_invalid_sport() -> None:
     # Arrange
     pitch = Pitch(
         xlim=(0, 105), ylim=(0, 68), unit="m", boundaries="fixed", sport="NoSport"
@@ -215,7 +216,7 @@ def test_plot_value_error_unvalid_sport() -> None:
 
 # Test value error if wrong color_scheme is given
 @pytest.mark.plot
-def test_plot_value_error_unvalid_color_scheme(example_pitch_football) -> None:
+def test_plot_value_error_invalid_color_scheme(example_pitch_football) -> None:
     # Assert
     with pytest.raises(ValueError):
         example_pitch_football.plot(color_scheme="No valid color scheme")

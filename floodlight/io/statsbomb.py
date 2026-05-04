@@ -157,7 +157,7 @@ def read_open_event_data_json(
         Full path to json file where information about all matches of a season are
         stored.
     filepath_threesixty: str or pathlib.Path, optional
-        Full path to json file where the StatsBomb360 data in is saved if available. The
+        Full path to json file where the StatsBomb360 data is saved if available. The
         information about the area of the field where player positions are tracked
         (``visible_area``) and player positions at single events (``freeze frame``) are
         stored as a string in the ``qualifier`` column.

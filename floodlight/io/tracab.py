@@ -101,7 +101,7 @@ def _read_metadata_from_json(
     # get framerate
     metadata["framerate"] = get_and_convert(metafile, "FrameRate", int)
 
-    # get length and with and convert from cm to m
+    # get length and width and convert from cm to m
     length = get_and_convert(metafile, "PitchLongSide", float)
     width = get_and_convert(metafile, "PitchShortSide", float)
     metadata["length"] = length / 100 if length else None
@@ -368,7 +368,7 @@ def read_position_data_dat(
         case) or in order of appearance (json case).
     teamsheet_away: Teamsheet, optional
         Teamsheet object for the away team. If given as None (default), teamsheet is
-        extracted from the .dat or -json file. See teamsheet_home for details.
+        extracted from the .dat or .json file. See teamsheet_home for details.
 
     Returns
     -------
@@ -512,9 +512,7 @@ def read_position_data_dat(
                     xydata[team][segment][frame_rel, y_col] = positions[team][jID][1]
 
             # get ball data
-            xydata["Ball"][segment][
-                frame_rel,
-            ] = ball["position"]
+            xydata["Ball"][segment][frame_rel,] = ball["position"]
             codes["possession"][segment].append(ball.get("possession", np.nan))
             codes["ballstatus"][segment].append(ball.get("ballstatus", np.nan))
 

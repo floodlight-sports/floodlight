@@ -53,7 +53,7 @@ def _get_position_precedence(position: str) -> int:
 def _read_metajson(
     filepath_metadata: Union[str, Path]
 ) -> Tuple[Dict, Dict, Dict, Pitch]:
-    """Reads Second Spectrums's metadata file and extracts information about match
+    """Reads Second Spectrum's metadata file and extracts information about match
     metainfo, periods, playing directions, and the pitch.
 
     Parameters
@@ -421,7 +421,7 @@ def read_event_data_jsonl(
     filepath_insight: Union[str, Path],
     filepath_metadata: Union[str, Path],
 ) -> Tuple[Dict[str, Dict[str, Events]], Pitch]:
-    """Parse Second Spectrums's Insight file (containing match events) and extract
+    """Parse Second Spectrum's Insight file (containing match events) and extract
     event data and pitch information.
 
     This function provides a high-level access to the particular Second Spectrum

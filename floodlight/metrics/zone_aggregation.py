@@ -119,7 +119,7 @@ def aggregate_property_by_zones(
 
     References
     ----------
-    .. [1] `Miguel, M., Oliviera, R., Loureiro, N. Garcia-Rubio, J. & Ibáñez, S.
+    .. [1] `Miguel, M., Oliveira, R., Loureiro, N. Garcia-Rubio, J. & Ibáñez, S.
            (2021). Load Measures in Training/Match Monitoring in Soccer: A Systematic
            Review. International Journal of Environmental Research and Public Health,
            18(5), 2721.
