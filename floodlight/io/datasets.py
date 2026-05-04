@@ -499,7 +499,10 @@ class StatsBombOpenDataset:
                         "sID": sID,
                         "mID": info["match_id"],
                     }
-                    summary = summary.append(match_info, ignore_index=True)
+                    summary = pd.concat(
+                        [summary, pd.DataFrame([match_info])], ignore_index=True
+                    )
+
         return summary
 
     def get(

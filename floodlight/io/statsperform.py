@@ -284,13 +284,14 @@ def read_open_event_data_csv(
             # insert to bin
             if team:
                 team = float(team)
-                events[team][segment] = events[team][segment].append(
-                    event, ignore_index=True
+                events[team][segment] = pd.concat(
+                    [events[team][segment], pd.DataFrame([event])], ignore_index=True
                 )
             else:  # if no clear assignment possible, insert to bins for both teams
                 for team in team_ids.values():
-                    events[team][segment] = events[team][segment].append(
-                        event, ignore_index=True
+                    events[team][segment] = pd.concat(
+                        [events[team][segment], pd.DataFrame([event])],
+                        ignore_index=True,
                     )
 
     # create objects
