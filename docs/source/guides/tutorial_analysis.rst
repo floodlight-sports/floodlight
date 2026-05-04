@@ -79,7 +79,7 @@ Let's try out some of the models that are part of the ``floodlight.models`` subm
     from floodlight.models.geometry import CentroidModel
 
     # dictionary for computed metrics
-    metrics = {"Name": [f"Player {n}" for n in range(home.N)]}
+    metrics = {"Name": [f"P {n}" for n in range(home.N)]}
 
 
 Now it's time to do the number crunching! Luckily, our data is scaled in meter (given by the ``pitch.unit`` attribute), so we don't need to worry about unit systems and can start processing.

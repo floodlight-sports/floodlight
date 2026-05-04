@@ -22,6 +22,9 @@ Collection of data transformation and processing functions.
 
    butterworth_lowpass
    savgol_lowpass
+   fir_lowpass
+   kalman
+   wiener
 
 .. rubric:: Spatial
 
