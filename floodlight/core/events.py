@@ -207,8 +207,11 @@ class Events:
         framerate: int
             Temporal resolution of data in frames per second/Hertz.
         """
-        frameclock = np.full((len(self.events)), -1, dtype=int)
-        frameclock[:] = np.floor(self.events["gameclock"].values * framerate)
+
+        frameclock = np.full(len(self.events), -1, dtype=int)
+        gameclock = self.events["gameclock"].values * framerate
+        valid = ~np.isnan(gameclock)
+        frameclock[valid] = np.floor(gameclock[valid]).astype(int)
         self.events["frameclock"] = frameclock
 
     def select(
