@@ -1,6 +1,6 @@
-=====================
-floodlight.io.entropy
-=====================
+==========================
+floodlight.metrics.entropy
+==========================
 
 .. automodule:: floodlight.metrics.entropy
     :members:

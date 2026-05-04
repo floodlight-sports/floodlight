@@ -6,14 +6,14 @@ designed with a clear focus on scientific computing and built upon popular libra
 such as *numpy* or *pandas*.
 
 Load, integrate, and process tracking and event data, codes and other match-related
-information from major data providers. This package provides a set of  standardized
+information from major data providers. This package provides a set of standardized
 data objects to structure and handle sports data, together with a suite of common
 processing operations such as transforms or data manipulation methods.
 
 All implementations run completely provider- and sports-independent, while maintaining
 a maximum of flexibility to incorporate as many data flavours as possible. A high-level
 interface allows easy access to all standard routines, so that you can stop worrying
-about data wrangling and start focussing on the analysis instead!
+about data wrangling and start focusing on the analysis instead!
 
 
 .. toctree::

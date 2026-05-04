@@ -28,7 +28,7 @@ def plot_positions(
 
     Returns
     -------
-    axes: matplotib.axes
+    axes: matplotlib.axes
         Axes from matplotlib library on which the positions are plotted.
 
     Notes
@@ -138,7 +138,7 @@ def plot_trajectories(
 
     Returns
     -------
-    axes: matplotib.axes
+    axes: matplotlib.axes
         Axes from matplotlib library on which the trajectories are drawn.
 
     Notes

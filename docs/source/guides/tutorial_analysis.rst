@@ -27,7 +27,7 @@ Data Preparation
 
 Before we jump into the analysis, we will have to do some pre-processing. Tracking data can generally be of very varying quality and contain artefacts such as rapid jumps in player positions. Such jumps can be problematic, depending on the analysis. Although the EIGD data is of good general quality, we will perform a filtering step in applying a lowpass Butterworth filter to smooth the trajectories and eliminate major jumps. As we want to calculate physical performance metrics later on, this will prevent that our results contain super-human abilities due to measurement errors.
 
-To demonstrate the effect of the filter, we first create a small plot showing all players' trajectories for the first 5000 frames. This is also is a nice eyeball test to check if our data generally looks alright before we do any calculations!
+To demonstrate the effect of the filter, we first create a small plot showing all players' trajectories for the first 5000 frames. This also is a nice eyeball test to check if our data generally looks alright before we do any calculations!
 
 
 .. code-block:: python

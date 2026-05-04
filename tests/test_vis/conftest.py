@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib
 
 matplotlib.use("agg")
-import matplotlib.pyplot as plt  # noqa: 402
+import matplotlib.pyplot as plt  # noqa: E402
 
-from floodlight.core.xy import XY  # noqa: 402
+from floodlight.core.xy import XY  # noqa: E402
 
 
 @pytest.fixture()

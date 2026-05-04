@@ -14,7 +14,7 @@ There exists, however, a major difference across data providers as to how they h
 Coordinate Systems
 ==================
 
-Lets start with a quick example. The most straightforward way to fixate position data in a coordinate system is to center the playing field. This way, the center mark of the pitch is at the coordinate *(0,0)*. It looks something like this:
+Let's start with a quick example. The most straightforward way to fixate position data in a coordinate system is to center the playing field. This way, the center mark of the pitch is at the coordinate *(0,0)*. It looks something like this:
 
 .. image:: ../_img/pitch.png
 
@@ -26,7 +26,7 @@ Another common version is to align the bottom left corner at the origin. This en
 
 This highlights a second important information: pitch sizes. The data itself does not tell you whether somebody is in or out of bounds. To stick with our example (and the all-positive-numbers sketch), imagine a player is standing at *(120,0)*. Unless you know the pitch size of the *x*-dimension (also called longitudinal side), you can't tell if he or she is stepping out of line.
 
-Pitch size information is typically known, often from provider meta files. It has to be somehow incorporated, though. Its also possible to estimate length and width by checking all player's min- and max-positions over the course of a segment, but this will most likely be a quite biased estimate, especially if someone is *really* stepping out of line.
+Pitch size information is typically known, often from provider meta files. It has to be somehow incorporated, though. It's also possible to estimate length and width by checking all player's min- and max-positions over the course of a segment, but this will most likely be a quite biased estimate, especially if someone is *really* stepping out of line.
 
 So far, it hasn't really become *too* complicated, but there's another common format: standardized pitches. If one is interested in comparing data across different matches, and if these matches were to be played on differently sized pitches, this can cause problems. Imagine you want to analyze events with respect to some sort of zonal system, then these zones need to be adapted to each and every pitch format.
 
@@ -40,7 +40,7 @@ It is problematic though if you want to compute anything that involves distances
 
 There is another aspect to standardization. Maybe you noticed that the two players on the sketched pitch have gathered on the left side of the pitch. In order to standardize, some providers will not only re-scale pitch dimensions, but playing directions as well. Consider the plotting example just mentioned. It's quite handy if the player in question has taken all of his or her shots on the same side of the pitch. As a result, in Opta's raw data, everybody is always playing from left to right.
 
-These examples include the most common approaches we've encountered to define the space where position data are encoded. All have pro's and con's, and we are not the ones to judge. We'd like to incorporate all these formats which begs the question as how to make all these pitches work together. Or, on an implementation level, how can we design a general data structure that makes transformations between these pitches straightforward.
+These examples include the most common approaches we've encountered to define the space where position data are encoded. All have pros and cons, and we are not the ones to judge. We'd like to incorporate all these formats which begs the question as how to make all these pitches work together. Or, on an implementation level, how can we design a general data structure that makes transformations between these pitches straightforward.
 
 
 Decoupling Data and Pitches
@@ -49,11 +49,11 @@ Decoupling Data and Pitches
 In our attempt, the first step towards achieving this is to extract all properties necessary to pin down the exact format of a certain playing surface. We've covered that previously, so let's summarize:
 
 Unit of measurement
-    Whats x and y measured in?
+    What's x and y measured in?
 Pitch dimension
-    Whats the length and with of the pitch?
+    What's the length and width of the pitch?
 Anchoring
-    Wheres the pitch "anchored" on the coordinate system, i.e. where exactly is *(0,0)*?
+    Where's the pitch "anchored" on the coordinate system, i.e. where exactly is *(0,0)*?
 Standardization
     Are the positions "actual" points in meter or centimeter, or on some form of standardized/projected pitch?
 Playing direction
@@ -61,7 +61,7 @@ Playing direction
 
 On top, there are some implicit assumptions we need to be aware of: Up to this point, we are moving fully Euclidean (we'll come to polar coordinates later) and everything is happening in Cartesian coordinate system. Also, we want our pitch to be rectangular (`sorry, Bangkok <https://mymodernmet.com/non-rectangular-soccer-field-thailand/>`_).
 
-From a technical standpoint, there is one observation that can be made: The data don't care about the space they live in. As long as we go with our assumptions, they are just points in a space. We *actually* need all this pitch information purely for "semantics", i.e., for us and our algorithms to make sense of whats actually happening with our data.
+From a technical standpoint, there is one observation that can be made: The data don't care about the space they live in. As long as we go with our assumptions, they are just points in a space. We *actually* need all this pitch information purely for "semantics", i.e., for us and our algorithms to make sense of what's actually happening with our data.
 
 Thus, we made two design choices around this: First, we do not incorporate any pitch information into our data objects (XY and Events). Except for the playing direction, which we treat as an innate attribute to positions. Besides that, the raw data is fully decoupled from any pitch information. That does not prohibit us from using spatial transformations for the data though, they are just completely independent of the underlying pitch. You may rotate a XY object 90 degrees like
 

@@ -51,8 +51,8 @@ class Events:
     -----
     Event data, particularly information available for each event, may vary across
     data providers. To accommodate all data flavours, any column name or data type is
-    permissible. However, two `essential` column are required (`"eID"` and
-    `"gameclock`). Other column names are `protected`. Using these names assumes that
+    permissible. However, two `essential` columns are required (`"eID"` and
+    `"gameclock"`). Other column names are `protected`. Using these names assumes that
     data stored in these columns follows conventions in terms of data types and value
     ranges. These are required for methods working with protected columns to assure
     correct calculations. Definitions for `essential` and `protected` columns can be
@@ -437,7 +437,7 @@ class Events:
 
         Returns
         -------
-        events_sliced: Union[Event, None]
+        events_sliced: Union[Events, None]
         """
         if slice_by not in self.events:
             raise ValueError(f"Events object does not contain column {slice_by}!")

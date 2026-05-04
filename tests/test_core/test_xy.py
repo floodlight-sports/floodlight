@@ -328,5 +328,5 @@ def test_plot_value_error_for_unknown_plot_type(example_xy_object):
 
     # Assert
     with pytest.raises(ValueError):
-        xy.plot(t=(0, 4), plot_type="unkown plot type")
+        xy.plot(t=(0, 4), plot_type="unknown plot type")
     plt.close()

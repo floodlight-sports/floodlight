@@ -152,7 +152,7 @@ Remember that we follow a (slim-fit) version of the git-flow model, which gives 
 * You want to keep your local copies of these two branches up to date with the original ones to avoid merge conflicts due to missed updates
 * You shouldn't work on these branches directly but use feature- or hotfix-branches for your work that branch from and merge into `develop`
 
-If you add your own feature branch, there's now three repositories and three branches flying around. This might be puzzling at first sight, maybe take a moment and try to sort these out. On second sight, however, the GitHub-workflow and git-flow model are great teamplayers. There's a one-way road opening up that goes like this:
+If you add your own feature branch, there's now three repositories and three branches flying around. This might be puzzling at first sight, maybe take a moment and try to sort these out. On second sight, however, the GitHub-workflow and git-flow model are great team players. There's a one-way road opening up that goes like this:
 
 ``base:main`` /``base:develop`` > updates > ``local:main``/``local:develop`` > branches > ``local:my_feat_branch``
 
@@ -160,7 +160,7 @@ That's pretty much half of the cycle that starts at `base` and ends at your loca
 
 ``local:my_feat_branch`` > pushes > ``origin:my_feat_branch`` > merge > ``base:develop``
 
-Again, you would need write access to `base` to perform the merge in the last step by yourself. Instead, the final step of contributing your code is handled by GitHubs **Pull Request (PR)**. Essentally, you use GitHub to explain/present your work, show that it passes all the workflows triggered by GitHub Actions and ask the maintainer to merge your changes.
+Again, you would need write access to `base` to perform the merge in the last step by yourself. Instead, the final step of contributing your code is handled by GitHubs **Pull Request (PR)**. Essentially, you use GitHub to explain/present your work, show that it passes all the workflows triggered by GitHub Actions and ask the maintainer to merge your changes.
 
 So much of the theory, let's see how one can perform all these steps in practice:
 
@@ -344,7 +344,7 @@ In order to test files, classes or methods in the current directory and subdirec
 
 .. code-block:: shell
 
-    $ pytest <filename>.py::<methode_name> # to run a specific test (<method_name>) within a module (<filename>)
+    $ pytest <filename>.py::<method_name> # to run a specific test (<method_name>) within a module (<filename>)
 
 In order to understand the test report provided by pytest in detail this `link <https://docs.pytest.org/en/latest/how-to/output.html>`__ is recommended.
 
@@ -417,14 +417,14 @@ Marks can be used to categorize your tests. To do so you need to decorate the me
         # Assert
         assert np.array_equal(x_position, np.array([[1, 3], [5, 7]]))
 
-Pytest comes with a few marks out of the box which can bee seen `here <https://docs.pytest.org/en/6.2.x/mark.html#>`_. To create your own customized mark you have add the following plugin to the ``pyproject.toml`` file:
+Pytest comes with a few marks out of the box which can be seen `here <https://docs.pytest.org/en/6.2.x/mark.html#>`_. To create your own customized mark you have add the following plugin to the ``pyproject.toml`` file:
 
 .. code-block::
 
     [tool.pytest.ini_options]
     markers = [
         "<mark_name1>: description",
-        "<mark_name2: description"
+        "<mark_name2>: description"
     ]
 
 Testing workflow
@@ -435,4 +435,4 @@ A helpful testing workflow could look something like this:
     #. Before starting the coding session :ref:`run pytest <How to execute pytest>` in your terminal to see if everything works or you get some errors which have to be fixed.
     #. After or before writing a class or method write the according tests and fixtures to keep your test suite always up to date.
     #. After finishing your coding session :ref:`run pytest <How to execute pytest>` again.
-    #. If you have to interrupt your work, write a test that points to were you ended the last time.
+    #. If you have to interrupt your work, write a test that points to where you ended the last time.

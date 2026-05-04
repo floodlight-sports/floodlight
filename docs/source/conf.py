@@ -5,7 +5,7 @@ import sys
 # -- Path setup --------------------------------------------------------------
 sys.path.insert(0, os.path.abspath("../.."))
 
-import floodlight   # noqa: 402
+import floodlight  # noqa: E402
 
 
 # -- Project information -----------------------------------------------------
