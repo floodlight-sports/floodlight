@@ -137,9 +137,9 @@ We can use pandas to brush and display the results. So let's create a DataFrame,
 
 Here's the (formatted) result you should get:
 
-=======  =================  ================  =================  =========================
-Subject  Total Dist. [m]    Top Speed [m/s]   Metabolic Work     Avg. Centroid Dist. [m]
-=======  =================  ================  =================  =========================
+=====  =================  ================  =================  =========================
+Name   Total Dist. [m]    Top Speed [m/s]   Metabolic Work     Avg. Centroid Dist. [m]
+=====  =================  ================  =================  =========================
 P 0           394.095             6.941           1669.19                       5.805
 P 1           371.544             5.948           1536.22                       3.965
 P 2           321.057             6.413           1461.03                       9.409
@@ -150,6 +150,6 @@ P 6           211.308             3.181            746.941                     1
 P 7           216.569             6.058            958.511                      4.584
 P 8             0               nan                  0                        nan
 P 9             0               nan                  0                        nan
-=======  =================  ================  =================  =========================
+=====  =================  ================  =================  =========================
 
 And that's it! If you inspect the data a little closer, you'll find there are some players where all values are either NaN or 0. Those are the substitutes that did not play in the short snippet we've investigated. Feel free to expand the code and loop over the entire EIGD dataset to compare performances between teams and samples!
