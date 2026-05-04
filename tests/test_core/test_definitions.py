@@ -4,7 +4,7 @@ from floodlight.core.definitions import essential_events_columns, protected_colu
 
 
 # Test for column specifications - tests only dictionary syntax, so that new added
-# columns dont' break existing methods
+# columns don't break existing methods
 @pytest.mark.unit
 def test_essential_events_columns() -> None:
     # Arrange

@@ -29,7 +29,7 @@ As this is a data analysis package, the obvious first step is to get some data.
 Provider Data
 -------------
 
-If you have data files saved in a specific provider format, see if there is matching parser in the :doc:`io <../modules/io/io>` module. Parsing might work slightly different depending on the specific provider file types. But in essence, there is one submodule per supported provider, and one function per file type. In cases where parsing requires multiple files (e.g. when you have a data containing position data and an attached metadata file), there is one function that does so.
+If you have data files saved in a specific provider format, see if there is matching parser in the :doc:`io <../modules/io/io>` module. Parsing might work slightly different depending on the specific provider file types. But in essence, there is one submodule per supported provider, and one function per file type. In cases where parsing requires multiple files (e.g. when you have data containing position data and an attached metadata file), there is one function that does so.
 
 Let's look at a quick example loading Tracab position and Opta event data:
 
@@ -152,7 +152,7 @@ Plotting
 
 All plotting is based on the `matplotlib <https://matplotlib.org/>`_ library, and also follows the matplotlib syntax. All low-level plotting functionality can be accessed via the :doc:`vis <../modules/vis/vis>` module, but some core objects have a ``.plot()``-method which is a convenience wrapper for plotting.
 
-Plotting functions and methods accept an ``ax`` argument, which is an matplotlib.axes on which the plot is created (and create one if none is given). This allows to plot in the same fashion as is known from matplotlib:
+Plotting functions and methods accept an ``ax`` argument, which is a matplotlib.axes on which the plot is created (and create one if none is given). This allows to plot in the same fashion as is known from matplotlib:
 
 .. code-block:: python
 

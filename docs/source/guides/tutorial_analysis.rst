@@ -27,7 +27,7 @@ Data Preparation
 
 Before we jump into the analysis, we will have to do some pre-processing. Tracking data can generally be of very varying quality and contain artefacts such as rapid jumps in player positions. Such jumps can be problematic, depending on the analysis. Although the EIGD data is of good general quality, we will perform a filtering step in applying a lowpass Butterworth filter to smooth the trajectories and eliminate major jumps. As we want to calculate physical performance metrics later on, this will prevent that our results contain super-human abilities due to measurement errors.
 
-To demonstrate the effect of the filter, we first create a small plot showing all players' trajectories for the first 5000 frames. This is also is a nice eyeball test to check if our data generally looks alright before we do any calculations!
+To demonstrate the effect of the filter, we first create a small plot showing all players' trajectories for the first 5000 frames. This also is a nice eyeball test to check if our data generally looks alright before we do any calculations!
 
 
 .. code-block:: python
@@ -79,7 +79,7 @@ Let's try out some of the models that are part of the ``floodlight.models`` subm
     from floodlight.models.geometry import CentroidModel
 
     # dictionary for computed metrics
-    metrics = {"Name": [f"Player {n}" for n in range(home.N)]}
+    metrics = {"Name": [f"P {n}" for n in range(home.N)]}
 
 
 Now it's time to do the number crunching! Luckily, our data is scaled in meter (given by the ``pitch.unit`` attribute), so we don't need to worry about unit systems and can start processing.
@@ -137,9 +137,9 @@ We can use pandas to brush and display the results. So let's create a DataFrame,
 
 Here's the (formatted) result you should get:
 
-=======  =================  ================  =================  =========================
-Subject  Total Dist. [m]    Top Speed [m/s]   Metabolic Work     Avg. Centroid Dist. [m]
-=======  =================  ================  =================  =========================
+=====  =================  ================  =================  =========================
+Name   Total Dist. [m]    Top Speed [m/s]   Metabolic Work     Avg. Centroid Dist. [m]
+=====  =================  ================  =================  =========================
 P 0           394.095             6.941           1669.19                       5.805
 P 1           371.544             5.948           1536.22                       3.965
 P 2           321.057             6.413           1461.03                       9.409
@@ -150,6 +150,6 @@ P 6           211.308             3.181            746.941                     1
 P 7           216.569             6.058            958.511                      4.584
 P 8             0               nan                  0                        nan
 P 9             0               nan                  0                        nan
-=======  =================  ================  =================  =========================
+=====  =================  ================  =================  =========================
 
 And that's it! If you inspect the data a little closer, you'll find there are some players where all values are either NaN or 0. Those are the substitutes that did not play in the short snippet we've investigated. Feel free to expand the code and loop over the entire EIGD dataset to compare performances between teams and samples!

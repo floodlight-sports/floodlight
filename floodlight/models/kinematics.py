@@ -21,7 +21,7 @@ covered`
     For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
-        *Central difference method* (recommended) allows for differenciation without
+        *Central difference method* (recommended) allows for differentiation without
         temporal shift:
 
                 .. math::
@@ -54,7 +54,7 @@ covered`
     PlayerProperty(property=array([[1.        ],
        [0.70710678],
        [1.11803399],
-       [1.41421356]]), name='distance_covered'0)
+       [1.41421356]]), name='distance_covered')
     >>> dm.cumulative_distance_covered()
     PlayerProperty(property=array([[1.        ],
        [0.70710678],
@@ -106,7 +106,7 @@ covered`
         elif axis == "y":
             if difference == "central":
                 distance_euclidean = np.gradient(xy.y, axis=0)
-            if difference == "backward":
+            elif difference == "backward":
                 distance_euclidean = np.diff(
                     xy.y, axis=0, prepend=xy.y[0].reshape(1, -1)
                 )
@@ -167,7 +167,7 @@ class VelocityModel(BaseModel):
     For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
-        *Central difference method* (recommended) allows for differenciation without
+        *Central difference method* (recommended) allows for differentiation without
         temporal shift:
 
                 .. math::
@@ -256,7 +256,7 @@ class VelocityModel(BaseModel):
 
 
 class AccelerationModel(BaseModel):
-    """Computations for velocities of all players.
+    """Computations for accelerations of all players.
 
     Upon calling the :func:`~AccelerationModel.fit`-method, this model calculates the
     frame-wise acceleration for each player. The calculation can subsequently be queried
@@ -269,7 +269,7 @@ class AccelerationModel(BaseModel):
     For input data in metrical units, the output equals the input unit.
     Differences between frames can be calculated with two different methods:
 
-        *Central difference method* (recommended) allows for differenciation without
+        *Central difference method* (recommended) allows for differentiation without
         temporal shift:
 
                 .. math::

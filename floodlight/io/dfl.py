@@ -52,13 +52,13 @@ def _create_periods_from_dat(
                 framerate_est = int(round(1 / delta.total_seconds()))
             elif framerate_est != int(round(1 / delta.total_seconds())):
                 warnings.warn(
-                    f"Framerate estimation yielded diverging results."
+                    f"Framerate estimation yielded diverging results. "
                     f"The originally estimated framerate of {framerate_est} Hz did not "
                     f"match the current estimation of "
                     f"{int(round(1 / delta.total_seconds()))} Hz. This might be "
-                    f"caused by missing frame(s) in the position data."
+                    f"caused by missing frame(s) in the position data. "
                     f"Continuing by choosing the latest estimation of "
-                    f"{int(round(1 / delta.total_seconds()))} Hz"
+                    f"{int(round(1 / delta.total_seconds()))} Hz."
                 )
                 framerate_est = int(round(1 / delta.total_seconds()))
 
@@ -578,12 +578,12 @@ def read_event_data_xml(
     team1 = list(team_dfs[segments[0]].keys())[0]
     team2 = list(team_dfs[segments[0]].keys())[1]
     if not np.all([team1 in team_dfs[segment].keys() for segment in segments]):
-        KeyError(
+        raise KeyError(
             f"Found tID {team1} of the first segment missing in at least one "
             f"other segment!"
         )
     if not np.all([team2 in team_dfs[segment].keys() for segment in segments]):
-        KeyError(
+        raise KeyError(
             f"Found tID {team2} of the first segment missing in at least one "
             f"other segment!"
         )

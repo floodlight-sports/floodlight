@@ -9,6 +9,10 @@ Collection of data transformation and processing functions.
    :caption: Submodule Reference
 
    filter
+   spatial
+   permutation
+   interpolation
+   temporal
 
 .. rubric:: Filter
 
@@ -18,3 +22,41 @@ Collection of data transformation and processing functions.
 
    butterworth_lowpass
    savgol_lowpass
+   fir_lowpass
+   kalman
+   wiener
+
+.. rubric:: Spatial
+
+.. currentmodule:: floodlight.transforms.spatial
+.. autosummary::
+   :nosignatures:
+
+   subtract_centroid
+   min_max_normalize
+
+.. rubric:: Permutation
+
+.. currentmodule:: floodlight.transforms.permutation
+.. autosummary::
+   :nosignatures:
+
+   assign_roles
+
+.. rubric:: Interpolation
+
+.. currentmodule:: floodlight.transforms.interpolation
+.. autosummary::
+   :nosignatures:
+
+   interpolate_linear
+   interpolate_polynomial
+   interpolate_spline
+
+.. rubric:: Temporal
+
+.. currentmodule:: floodlight.transforms.temporal
+.. autosummary::
+   :nosignatures:
+
+   resample

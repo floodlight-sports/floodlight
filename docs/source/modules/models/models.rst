@@ -24,6 +24,9 @@ Collection of data models grouped by category. Each submodule contains model cla
    kinematics.VelocityModel
    kinematics.AccelerationModel
    geometry.CentroidModel
+   geometry.NearestMateModel
+   geometry.NearestOpponentModel
+   geometry.ConvexHullModel
    kinetics.MetabolicPowerModel
    space.DiscreteVoronoiModel
 
@@ -39,6 +42,11 @@ For quick reference, the following computations are available after calling the 
    CentroidModel.centroid
    CentroidModel.centroid_distance
    CentroidModel.stretch_index
+   NearestMateModel.distance_to_nearest_mate
+   NearestMateModel.team_spread
+   NearestOpponentModel.distance_to_nearest_opponent
+   ConvexHullModel.convex_hull_area
+   ConvexHullModel.plot
 
 
 .. rubric:: Kinematics

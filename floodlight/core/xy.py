@@ -26,9 +26,9 @@ class XY:
 
     Attributes
     ----------
-    x: np.array
+    x: np.ndarray
         X-data array, where each player's x-coordinates occupy one column.
-    y: np.array
+    y: np.ndarray
         Y-data array, where each player's y-coordinates occupy one column.
     N: int
         The object's number of players.
@@ -172,7 +172,9 @@ class XY:
         elif axis == "y":
             self.y = np.round(self.y * factor, 3)
         else:
-            raise ValueError(f"Expected axis to be one of ('x', 'y', None), got {axis}")
+            raise ValueError(
+                f"Expected axis to be one of ('x', 'y', None), got {axis}."
+            )
 
     def reflect(self, axis: str):
         """Reflects data on given `axis`.
@@ -188,7 +190,7 @@ class XY:
         elif axis == "y":
             self.scale(factor=-1, axis="x")
         else:
-            raise ValueError(f"Expected axis to be one of ('x', 'y'), got {axis}")
+            raise ValueError(f"Expected axis to be one of ('x', 'y'), got {axis}.")
 
     def rotate(self, alpha: float):
         """Rotates data on given angle 'alpha' around the origin.
@@ -266,14 +268,14 @@ class XY:
         ax: matplotlib.axes = None,
         **kwargs,
     ) -> matplotlib.axes:
-        """Plots a snapshot or time intervall of the object's spatiotemporal data on a
+        """Plots a snapshot or time interval of the object's spatiotemporal data on a
         matplotlib axes.
 
         Parameters
         ----------
         t: Union[int, Tuple [int, int]]
-            Frame for which postions should be plotted if plot_type == 'positions', or a
-            Tuple that has the form (start_frame, end_frame) if
+            Frame for which positions should be plotted if plot_type == 'positions', or
+            a Tuple that has the form (start_frame, end_frame) if
             plot_type == 'trajectories'.
         plot_type: str, optional
             One of {'positions', 'trajectories'}. Determines which plotting function is

@@ -50,6 +50,7 @@ Collection of file parsing functionalities for different data providers as well 
    :nosignatures:
 
    read_position_data_csv
+   read_teamsheets_from_csv
    create_links_from_meta_data
    get_meta_data
    get_column_names_from_csv

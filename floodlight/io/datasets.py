@@ -154,7 +154,7 @@ class EIGDDataset:
             Array of shape (T, N*2), with T time dimension and N the number of players.
             All z-coordinates are omitted to match typical floodlight format.
         """
-        # EIDG data is stored in 3-dimensional array, extract size and reshape
+        # EIGD data is stored in 3-dimensional array, extract size and reshape
         T, N, _ = data.shape
         data_transformed = data[:, :, :2].reshape((T, N * 2))
 
@@ -225,7 +225,7 @@ class ToyDataset:
 
         if segment not in ["HT1", "HT2"]:
             raise FileNotFoundError(
-                f"Expected segment to be of 'HT1' or 'HT2', got {segment}"
+                f"Expected segment to be one of 'HT1' or 'HT2', got {segment}."
             )
 
         xy_home = XY(
@@ -499,7 +499,10 @@ class StatsBombOpenDataset:
                         "sID": sID,
                         "mID": info["match_id"],
                     }
-                    summary = summary.append(match_info, ignore_index=True)
+                    summary = pd.concat(
+                        [summary, pd.DataFrame([match_info])], ignore_index=True
+                    )
+
         return summary
 
     def get(
@@ -865,7 +868,7 @@ class IDSSEDataset:
 
     def __init__(self, dataset_dir_name="idsse_dataset", match_id="J03WMX"):
         self._IDSSE_SCHEMA = "https"
-        self._IDSSE_BASE_URL = "figshare.com/ndownloader/files"
+        self._IDSSE_BASE_URL = "ndownloader.figshare.com/files"
         self._IDSSE_FILE_IDS_INFO = {
             "J03WMX": "51643475",
             "J03WN1": "51643472",
@@ -913,7 +916,7 @@ class IDSSEDataset:
             pass
         else:
             raise ValueError(
-                f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or"
+                f"Expected match_id to be in {self._IDSSE_FILE_IDS_INFO.values()} or "
                 f"`all`, got {match_id} instead."
             )
         self._IDSSE_FILE_EXT = "xml"
@@ -1055,7 +1058,7 @@ class IDSSEDataset:
                 form `links[pID] = team`. If given as None (default), teamsheet is
                 extracted from the data.
         teamsheet_away: Teamsheet, optional
-            Teamsheet-object for the home team used to create link dictionaries of the
+            Teamsheet-object for the away team used to create link dictionaries of the
                 form `links[pID] = team`. If given as None (default), teamsheet is
                 extracted from the data.
         events: bool, optional
@@ -1071,7 +1074,7 @@ class IDSSEDataset:
         Returns
         -------
         match_data: Tuple[Dict[str, Dict[str, Events]], Dict[str, Dict[str, XY]],
-        Dict[str, Code], Dict[str, Code], Dict[str, Teamsheet],Pitch
+        Dict[str, Code], Dict[str, Code], Dict[str, Teamsheet],Pitch]
             Returns a tuple of shape (events_objects, xy_objects, possession_objects,
             ballstatus_objects, teamsheets_objects, pitch_object) as returned by the
             ``floodlight.io.dfl.read_event_data_xml()`` and

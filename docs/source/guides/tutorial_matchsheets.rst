@@ -210,7 +210,7 @@ Therefore, we setup a grid of subplots (in this case a 2x3 grid for the six goal
 
 .. image:: ../_img/tutorial_matchsheets_grid.png
 
-Now we create the match sheet by iterating over all goals and updating the respective subplots. For visibility we want to display the goals for Spain at the left side of the pitch. Therefore we use the ``rotate`` and ``translate`` function of the floodlight XY module.
+Now we create the match sheet by iterating over all goals and updating the respective subplots. For visibility we want to display the goals for Spain at the left side of the pitch. Therefore we use the ``rotate`` and ``translate`` functions of the floodlight XY module.
 
 .. code-block:: python
 

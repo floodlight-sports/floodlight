@@ -1,10 +1,14 @@
 import pytest
 import numpy as np
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt     # noqa: 402
 
-from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch     # noqa: 402
+matplotlib.use("agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+from floodlight.vis.pitches import (  # noqa: E402
+    plot_handball_pitch,
+    plot_football_pitch,
+)
 
 
 # Test def plot_*_pitch(
@@ -16,7 +20,7 @@ from floodlight.vis.pitches import plot_handball_pitch, plot_football_pitch     
 #     color_scheme: str,
 #     show_axis_ticks: bool,
 #     ax: matplotlib.axes,
-#     **kwargs,) -> matplotib.axes
+#     **kwargs,) -> matplotlib.axes
 # Test return
 # football
 

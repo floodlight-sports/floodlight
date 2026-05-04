@@ -164,7 +164,7 @@ def read_teamsheets_from_open_data_csv(
         if not (tID in team_ids.values() or tID == ball_id or np.isnan(tID)):
             warnings.warn(
                 f"tID {tID} did not match any of the standard tIDs "
-                f"({team_ids.values}) or the ball ID ({ball_id})!"
+                f"({team_ids.values()}) or the ball ID ({ball_id})!"
             )
 
     # initialize teamsheets
@@ -284,13 +284,14 @@ def read_open_event_data_csv(
             # insert to bin
             if team:
                 team = float(team)
-                events[team][segment] = events[team][segment].append(
-                    event, ignore_index=True
+                events[team][segment] = pd.concat(
+                    [events[team][segment], pd.DataFrame([event])], ignore_index=True
                 )
             else:  # if no clear assignment possible, insert to bins for both teams
                 for team in team_ids.values():
-                    events[team][segment] = events[team][segment].append(
-                        event, ignore_index=True
+                    events[team][segment] = pd.concat(
+                        [events[team][segment], pd.DataFrame([event])],
+                        ignore_index=True,
                     )
 
     # create objects
@@ -477,7 +478,7 @@ def read_open_position_data_csv(
             [(periods[segment][0] <= frame <= periods[segment][-1]) for frame in frames]
         )
         xydata["Ball"][segment][:, 0] = ball_df["pos_x"].values[appearance]
-        xydata["Ball"][segment][:, 1] = ball_df["pos_x"].values[appearance]
+        xydata["Ball"][segment][:, 1] = ball_df["pos_y"].values[appearance]
 
         # update codes
         codes["possession"][segment] = ball_df["possession"].values[appearance]

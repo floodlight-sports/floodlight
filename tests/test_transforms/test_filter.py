@@ -374,3 +374,366 @@ def test_savgol_lowpass_empty(example_xy_filter_empty: XY) -> None:
 
     # Assert
     assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_fir_lowpass_remove_seqs_false(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.fir_lowpass(data, numtaps=3)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -8.66, np.nan, 1.0],
+                [np.nan, -6.34, np.nan, 2.0],
+                [-5.07, -4.27, np.nan, 3.0],
+                [-2.7, -2.01, np.nan, 4.0],
+                [np.nan, -0.06, np.nan, 5.0],
+                [np.nan, 2.19, np.nan, 6.0],
+                [1.53, 3.9, np.nan, 7.0],
+                [4.92, 6.38, np.nan, 7.99],
+                [7.08, 8.18, np.nan, 8.75],
+                [9.26, 10.53, np.nan, 7.99],
+                [10.28, np.nan, np.nan, 7.0],
+                [12.15, np.nan, np.nan, 6.0],
+                [13.31, np.nan, np.nan, 5.0],
+                [14.84, 14.88, np.nan, 4.0],
+                [16.17, 16.94, np.nan, 3.0],
+                [17.14, 18.31, np.nan, 2.01],
+                [18.59, 19.31, np.nan, 1.25],
+                [20.27, 20.58, np.nan, 2.01],
+                [21.7, 22.46, np.nan, 3.0],
+                [23.08, 23.63, np.nan, 4.0],
+                [24.28, 25.13, np.nan, 5.0],
+                [25.73, 26.12, np.nan, 6.0],
+                [27.13, 27.99, np.nan, 7.0],
+                [np.nan, 29.55, np.nan, 8.0],
+                [30.06, np.nan, np.nan, 9.0],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_fir_lowpass_remove_seqs_true(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act - default numtaps=21, all sequences are too short
+    data_filt = filter.fir_lowpass(data, remove_short_seqs=True)
+
+    # Assert - all values should be NaN since no sequence meets min length
+    assert np.all(np.isnan(data_filt.xy))
+
+
+@pytest.mark.unit
+def test_fir_lowpass_short_remove_seqs_false(
+    example_xy_filter_short: XY,
+) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.fir_lowpass(data)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_fir_lowpass_short_remove_seqs_true(
+    example_xy_filter_short: XY,
+) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.fir_lowpass(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(
+        data_filt,
+        np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]]),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_fir_lowpass_empty(example_xy_filter_empty: XY) -> None:
+    # Arrange
+    data = example_xy_filter_empty
+
+    # Act
+    data_filt = filter.fir_lowpass(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_kalman_default(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -8.66, np.nan, 1.0],
+                [np.nan, -7.45, np.nan, 1.51],
+                [-5.07, -6.22, np.nan, 2.09],
+                [-3.86, -4.64, np.nan, 2.8],
+                [np.nan, -2.84, np.nan, 3.67],
+                [np.nan, -0.64, np.nan, 4.67],
+                [-0.95, 1.49, np.nan, 5.76],
+                [1.88, 3.95, np.nan, 6.88],
+                [4.32, 6.23, np.nan, 8.01],
+                [6.81, 8.63, np.nan, 8.54],
+                [8.77, np.nan, np.nan, 8.61],
+                [10.84, np.nan, np.nan, 8.36],
+                [12.61, np.nan, np.nan, 7.88],
+                [14.37, 15.18, np.nan, 7.23],
+                [16.03, 16.93, np.nan, 6.45],
+                [17.49, 18.54, np.nan, 5.58],
+                [18.95, 19.96, np.nan, 4.65],
+                [20.47, 21.34, np.nan, 4.08],
+                [21.96, 22.89, np.nan, 3.8],
+                [23.43, 24.31, np.nan, 3.75],
+                [24.83, 25.79, np.nan, 3.9],
+                [26.24, 27.11, np.nan, 4.22],
+                [27.64, 28.58, np.nan, 4.67],
+                [np.nan, 30.04, np.nan, 5.23],
+                [30.54, np.nan, np.nan, 5.9],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_kalman_nan_preservation(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert - NaN positions in input must remain NaN in output
+    input_nans = np.isnan(np.array(data.xy, dtype=float))
+    output_nans = np.isnan(data_filt.xy)
+    assert np.array_equal(input_nans, output_nans)
+
+
+@pytest.mark.unit
+def test_kalman_all_nan() -> None:
+    # Arrange
+    data = XY(
+        np.array(
+            [
+                [np.nan, np.nan],
+                [np.nan, np.nan],
+                [np.nan, np.nan],
+            ]
+        ),
+        framerate=20,
+    )
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert
+    assert np.all(np.isnan(data_filt.xy))
+
+
+@pytest.mark.unit
+def test_kalman_no_framerate() -> None:
+    # Arrange
+    data = XY(np.array([[1.0, 2.0], [3.0, 4.0]]))
+
+    # Act
+    with pytest.raises(
+        ValueError,
+        match="The Kalman filter requires xy.framerate to be set",
+    ):
+        filter.kalman(data)
+
+
+@pytest.mark.unit
+def test_kalman_single_observation() -> None:
+    # Arrange
+    data = XY(
+        np.array(
+            [
+                [np.nan, np.nan],
+                [5.0, 3.0],
+                [np.nan, np.nan],
+            ]
+        ),
+        framerate=20,
+    )
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert - only the single observation frame should be non-NaN
+    assert np.array_equal(
+        data_filt.xy,
+        np.array(
+            [
+                [np.nan, np.nan],
+                [5.0, 3.0],
+                [np.nan, np.nan],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_kalman_empty(example_xy_filter_empty: XY) -> None:
+    # Arrange
+    data = example_xy_filter_empty
+
+    # Act
+    data_filt = filter.kalman(data)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_wiener_remove_seqs_false(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.wiener(data)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -4.36, np.nan, 1.2],
+                [np.nan, -4.24, np.nan, 2.0],
+                [-5.07, -4.27, np.nan, 3.0],
+                [-2.7, -2.07, np.nan, 4.0],
+                [np.nan, -0.07, np.nan, 5.0],
+                [np.nan, 2.1, np.nan, 6.0],
+                [2.74, 4.1, np.nan, 7.0],
+                [4.63, 6.24, np.nan, 7.6],
+                [6.65, 6.23, np.nan, 7.8],
+                [8.81, 7.38, np.nan, 7.6],
+                [10.42, np.nan, np.nan, 7.0],
+                [12.0, np.nan, np.nan, 6.0],
+                [13.35, np.nan, np.nan, 5.0],
+                [14.74, 11.98, np.nan, 4.0],
+                [15.99, 14.48, np.nan, 3.0],
+                [17.41, 18.01, np.nan, 2.4],
+                [18.77, 19.55, np.nan, 2.2],
+                [20.15, 20.85, np.nan, 2.4],
+                [21.58, 22.23, np.nan, 3.0],
+                [23.02, 23.56, np.nan, 4.0],
+                [24.38, 25.08, np.nan, 5.0],
+                [24.62, 26.47, np.nan, 6.0],
+                [25.66, 25.9, np.nan, 7.0],
+                [np.nan, 26.72, np.nan, 7.48],
+                [30.06, np.nan, np.nan, 8.31],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_wiener_remove_seqs_true(example_xy_filter: XY) -> None:
+    # Arrange
+    data = example_xy_filter
+
+    # Act
+    data_filt = filter.wiener(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(
+        np.round(data_filt, 2),
+        np.array(
+            [
+                [np.nan, -4.36, np.nan, 1.2],
+                [np.nan, -4.24, np.nan, 2.0],
+                [np.nan, -4.27, np.nan, 3.0],
+                [np.nan, -2.07, np.nan, 4.0],
+                [np.nan, -0.07, np.nan, 5.0],
+                [np.nan, 2.1, np.nan, 6.0],
+                [2.74, 4.1, np.nan, 7.0],
+                [4.63, 6.24, np.nan, 7.6],
+                [6.65, 6.23, np.nan, 7.8],
+                [8.81, 7.38, np.nan, 7.6],
+                [10.42, np.nan, np.nan, 7.0],
+                [12.0, np.nan, np.nan, 6.0],
+                [13.35, np.nan, np.nan, 5.0],
+                [14.74, 11.98, np.nan, 4.0],
+                [15.99, 14.48, np.nan, 3.0],
+                [17.41, 18.01, np.nan, 2.4],
+                [18.77, 19.55, np.nan, 2.2],
+                [20.15, 20.85, np.nan, 2.4],
+                [21.58, 22.23, np.nan, 3.0],
+                [23.02, 23.56, np.nan, 4.0],
+                [24.38, 25.08, np.nan, 5.0],
+                [24.62, 26.47, np.nan, 6.0],
+                [25.66, 25.9, np.nan, 7.0],
+                [np.nan, 26.72, np.nan, 7.48],
+                [np.nan, np.nan, np.nan, 8.31],
+            ]
+        ),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_wiener_short_remove_seqs_false(example_xy_filter_short: XY) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.wiener(data)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)
+
+
+@pytest.mark.unit
+def test_wiener_short_remove_seqs_true(example_xy_filter_short: XY) -> None:
+    # Arrange
+    data = example_xy_filter_short
+
+    # Act
+    data_filt = filter.wiener(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(
+        data_filt,
+        np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]]),
+        equal_nan=True,
+    )
+
+
+@pytest.mark.unit
+def test_wiener_empty(example_xy_filter_empty: XY) -> None:
+    # Arrange
+    data = example_xy_filter_empty
+
+    # Act
+    data_filt = filter.wiener(data, remove_short_seqs=True)
+
+    # Assert
+    assert np.array_equal(data, data_filt, equal_nan=True)

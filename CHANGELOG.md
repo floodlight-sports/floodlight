@@ -1,6 +1,77 @@
 # Changelog
 
-## 1.1.0 (2025-11-08)
+## 1.2.0 (2026-05-04)
+
+#### New Features
+
+* temporal resample
+* temporal resample
+* interpolation module with linear, polynomial and spline methods
+* interpolation module with linear, polynomial and spline methods
+* wiener filter
+* wiener filter
+* fir lowpass filter
+* fir lowpass filter
+* kalman filter
+* kalman filter
+* template matching
+* template matching
+* add motion-based space control models (Taki-Hasegawa, Fujimura-Sugihara)
+* refactor and finalize Taki and Fujimura motion models
+* convex hull model merge
+* chull model PR merge init commit
+* zone aggregation metric
+* zone aggregation metric initial commit
+* distance to nearest mate/opponent model
+#### Fixes
+
+* scipy dtype deprication
+* code review bugfixes
+* DistanceModel elif logic
+* list return type
+* remove duplicate, tighten add_frameclock_with_none
+* nan-handling in add_frameclock leading to RuntimeWarning under numpy >= 2
+* at_x - to_x copy paste error
+* assign pos_y to y_col and format team_ids
+* add raise on Value/KeyError
+* idsse figshare link
+* idsse figshare link
+* template shape validation, suppress runtime warning from nanmean on all-nan slice
+* teamspread shape
+* team_spread teamproperty shape
+* broadcasting mask shape for PlayerProperty by TeamProperty case
+#### Refactorings
+
+* pandas 3.X deprication
+* black reformat
+* pandas 2.X update
+* split DistanceModel into NearestMateModel and NearestOpponentModel
+#### Docs
+
+* fixed typos
+* fixed typos
+* synch header
+* sync docs with codebase
+* update docs and examples
+* adjust examples and update rst files
+* add references and fix formatting
+#### Others
+
+* refresh dependencies
+* update sphinx-trd-theme and drop depricated display_version
+* support Python 3.13
+* bump pytz
+* update black target version
+* refresh dependencies
+* remove unrelated image from PR
+* sync develop with v1.1.0 release
+* add test convex hull tests
+* add tests
+* refactor nearest mate/opponent tests
+
+Full set of changes: [`1.1.0...1.2.0`](https://github.com/floodlight-sports/floodlight/compare/1.1.0...1.2.0)
+
+## 1.1.0 (2025-11-10)
 
 #### New Features
 
@@ -18,6 +89,14 @@
 * remove redundant existence check and explicit None return
 * update idsse download link and reference
 * update idsse download link and reference
+#### Docs
+
+* update changelog
+#### Others
+
+* release 1.1.0
+* prepare release 1.1.0
+* bump version
 
 Full set of changes: [`1.0.0...1.1.0`](https://github.com/floodlight-sports/floodlight/compare/1.0.0...1.1.0)
 
@@ -44,6 +123,7 @@ Full set of changes: [`1.0.0...1.1.0`](https://github.com/floodlight-sports/floo
 * release 1.0.0
 * release 0.5.0
 * update github actions cache
+* run prehooks
 
 Full set of changes: [`0.5.0...1.0.0`](https://github.com/floodlight-sports/floodlight/compare/0.5.0...1.0.0)
 
@@ -59,7 +139,6 @@ Full set of changes: [`0.5.0...1.0.0`](https://github.com/floodlight-sports/floo
 * update changelog
 * update readme
 * update and fix docs
-* fix poetry install command ([#133](https://github.com/floodlight-sports/floodlight/issues/133))
 #### Others
 
 * release 0.5.0
@@ -69,6 +148,22 @@ Full set of changes: [`0.5.0...1.0.0`](https://github.com/floodlight-sports/floo
 Full set of changes: [`0.4.0...0.5.0`](https://github.com/floodlight-sports/floodlight/compare/0.4.0...0.5.0)
 
 ## 0.4.0 (2023-02-03)
+
+#### Others
+
+* release 0.4.0
+
+Full set of changes: [`0.3.3...0.4.0`](https://github.com/floodlight-sports/floodlight/compare/0.3.3...0.4.0)
+
+## 0.3.3 (2022-08-23)
+
+#### Others
+
+* release 0.3.3
+
+Full set of changes: [`0.3.2...0.3.3`](https://github.com/floodlight-sports/floodlight/compare/0.3.2...0.3.3)
+
+## 0.3.2 (2022-06-08)
 
 #### New Features
 
@@ -89,66 +184,43 @@ Full set of changes: [`0.4.0...0.5.0`](https://github.com/floodlight-sports/floo
 * replace pandas iterrows ([#96](https://github.com/floodlight-sports/floodlight/issues/96))
 * missing https in hyperlink leading to an unknown page when clicking on it in github ([#98](https://github.com/floodlight-sports/floodlight/issues/98))
 * MetabolicPower framerate bug ([#93](https://github.com/floodlight-sports/floodlight/issues/93))
+* UTF-8 encoding Kinexon parser
+* UFT-8 encoding Kinexon parser
+* minimum signal length ([#81](https://github.com/floodlight-sports/floodlight/issues/81))
+* statsperform pitch templates ([#75](https://github.com/floodlight-sports/floodlight/issues/75))
+* adapt dfl parser to different format versions and fix statsperform gameclock unit ([#76](https://github.com/floodlight-sports/floodlight/issues/76))
+* pass difference argument to axis-specific differentiation and fix prepend ([#77](https://github.com/floodlight-sports/floodlight/issues/77))
 #### Refactorings
 
 * flexible dictionary returns for parser ([#116](https://github.com/floodlight-sports/floodlight/issues/116))
 * streamline IO function names ([#115](https://github.com/floodlight-sports/floodlight/issues/115))
 #### Docs
 
+* fix poetry install command ([#133](https://github.com/floodlight-sports/floodlight/issues/133))
 * update changelog
 * update docs build
 * fix butterworth cutoff freq doc ([#94](https://github.com/floodlight-sports/floodlight/issues/94))
 * update tutorial matchsheets ([#95](https://github.com/floodlight-sports/floodlight/issues/95))
-#### Others
-
-* release 0.4.0
-* bump version
-* update location of flake8 which was moved from gitlab to github ([#99](https://github.com/floodlight-sports/floodlight/issues/99))
-* update README
-* update columns in tests
-
-Full set of changes: [`0.3.3...0.4.0`](https://github.com/floodlight-sports/floodlight/compare/0.3.3...0.4.0)
-
-## 0.3.3 (2022-08-23)
-
-#### Fixes
-
-* UTF-8 encoding Kinexon parser
-* UFT-8 encoding Kinexon parser
-* minimum signal length ([#81](https://github.com/floodlight-sports/floodlight/issues/81))
-#### Docs
-
 * update changelog
 * add information on setup.py
 * update datasets description
 * update readme
-#### Others
-
-* release 0.3.3
-* bump version
-* add dependency pytest-cov
-* add dependency coverage
-* add coverage reports generation and codecov upload
-* update readme
-
-Full set of changes: [`0.3.2...0.3.3`](https://github.com/floodlight-sports/floodlight/compare/0.3.2...0.3.3)
-
-## 0.3.2 (2022-06-08)
-
-#### Fixes
-
-* statsperform pitch templates ([#75](https://github.com/floodlight-sports/floodlight/issues/75))
-* adapt dfl parser to different format versions and fix statsperform gameclock unit ([#76](https://github.com/floodlight-sports/floodlight/issues/76))
-* pass difference argument to axis-specific differentiation and fix prepend ([#77](https://github.com/floodlight-sports/floodlight/issues/77))
-#### Docs
-
 * update changelog
 * add paper reference
 #### Others
 
 * release 0.3.2
 * bump version
+* bump version
+* add dependency pytest-cov
+* add dependency coverage
+* bump version
+* update location of flake8 which was moved from gitlab to github ([#99](https://github.com/floodlight-sports/floodlight/issues/99))
+* add coverage reports generation and codecov upload
+* update README
+* update readme
 * update module init
+* update columns in tests
 
 Full set of changes: [`0.3.1...0.3.2`](https://github.com/floodlight-sports/floodlight/compare/0.3.1...0.3.2)
 

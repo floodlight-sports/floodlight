@@ -29,7 +29,7 @@ class Pitch:
         can be used to denote standardized pitches where data is scaled along the axes
         independent of the actual pitch size. In this case, 'percent' refers to a
         scaling onto the range (0, 100), and 'normed' to all other scalings.
-        To get non-distored calculations from these unit-systems, the `length` and
+        To get non-distorted calculations from these unit-systems, the `length` and
         `width` attributes need to be specified.
     boundaries: str
         One of {'fixed', 'flexible'}. Here, 'fixed' denotes coordinate systems that
@@ -287,19 +287,19 @@ class Pitch:
         sports = ["football", "handball"]
         sport = self.sport
 
-        # check if valide sport was chosen
+        # check if valid sport was chosen
         if sport not in sports or sport is None:
             raise ValueError(
                 f"Expected self.sport to be from {sports}, got {self.sport}"
             )
 
-        # check if a valide color scheme was chosen
+        # check if a valid color scheme was chosen
         if color_scheme not in color_schemes:
             raise ValueError(
                 f"Expected color_scheme to be from {color_schemes}, got {color_scheme}"
             )
 
-        # check wether an axes to plot is given or if a new axes element has to be
+        # check whether an axes to plot is given or if a new axes element has to be
         # created
         ax = ax or plt.subplots()[1]
 
