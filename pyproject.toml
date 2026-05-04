@@ -23,13 +23,13 @@ include = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.10, <3.13"
+python = ">=3.10, <3.14"
 numpy = "^2.1.1"
 scipy = "^1.14.1"
 pandas = "^2.2.2"
 lxml = "^5.3.0"
 iso8601 = "^2.1.0"
-pytz = "^2024.1"
+pytz = "^2025.1"
 h5py = "^3.11.0"
 matplotlib = "^3.9.2"
 
@@ -42,7 +42,7 @@ commitizen = "^3.29.0"
 coverage = "^7.6.1"
 pytest-cov = "^5.0.0"
 sphinx = "^7.0.0"
-sphinx-rtd-theme = "^2.0.0"
+sphinx-rtd-theme = "^3.0.0"
 sphinx-autodoc-typehints = "^2.3.0"
 auto-changelog = "^0.6.0"
 
@@ -57,7 +57,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py310']
 include = '\.pyi?$'
 exclude = '''
 

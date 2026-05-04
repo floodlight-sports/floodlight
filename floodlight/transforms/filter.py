@@ -120,7 +120,7 @@ def _filter_sequence_butterworth_lowpass(
     )
     # applying the filter to the data
     signal_filtered = scipy.signal.filtfilt(
-        coeffs[0], coeffs[1], signal, axis=0, **kwargs
+        coeffs[0], coeffs[1], np.asarray(signal, dtype=np.float64), axis=0, **kwargs
     )
 
     return signal_filtered
@@ -459,7 +459,9 @@ def _filter_sequence_fir_lowpass(
     # Design FIR filter coefficients
     h = scipy.signal.firwin(numtaps, cutoff, window=window, fs=framerate)
     # Apply zero-phase filtering (FIR filter has a = 1)
-    signal_filtered = scipy.signal.filtfilt(h, 1, signal, axis=0, **kwargs)
+    signal_filtered = scipy.signal.filtfilt(
+        h, 1, np.asarray(signal, dtype=np.float64), axis=0, **kwargs
+    )
 
     return signal_filtered
 

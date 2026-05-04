@@ -28,7 +28,7 @@ def test_events_setter(example_events_data_minimal: pd.DataFrame) -> None:
 
     # Act
     data["eID"] = ["1", "2"]
-    data["gameclock"].at[1] = 3.3
+    data.events.loc[1, "gameclock"] = 3.3
 
     # Assert
     assert pd.Series.equals(data["eID"], pd.Series(["1", "2"])) and pd.Series.equals(
