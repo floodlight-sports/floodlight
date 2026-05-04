@@ -329,7 +329,7 @@ class Events:
                 "int64",
                 "float64",
             ]:
-                self.events["at_x"] = self.events["at_x"].map(lambda x: x * factor)
+                self.events["to_x"] = self.events["to_x"].map(lambda x: x * factor)
 
         if axis is None or axis == "y":
             if "at_y" in self.protected and self.events["at_y"].dtype in [
