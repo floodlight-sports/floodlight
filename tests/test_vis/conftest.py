@@ -1,14 +1,15 @@
 import pytest
 import numpy as np
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt     # noqa: 402
 
-from floodlight.core.xy import XY   # noqa: 402
+matplotlib.use("agg")
+import matplotlib.pyplot as plt  # noqa: 402
+
+from floodlight.core.xy import XY  # noqa: 402
 
 
 @pytest.fixture()
-def example_input_plot_football_pitch() -> []:
+def example_input_plot_football_pitch() -> list:
     ax = plt.subplots()[1]
     input = [(0, 105), (0, 68), 105, 68, "m", "standard", False, ax]
 
@@ -16,7 +17,7 @@ def example_input_plot_football_pitch() -> []:
 
 
 @pytest.fixture()
-def example_input_plot_football_pitch_axis_ticks() -> []:
+def example_input_plot_football_pitch_axis_ticks() -> list:
     ax = plt.subplots()[1]
     input = [(0, 105), (0, 68), 105, 68, "m", "standard", True, ax]
 
@@ -24,7 +25,7 @@ def example_input_plot_football_pitch_axis_ticks() -> []:
 
 
 @pytest.fixture()
-def example_input_plot_handball_pitch() -> []:
+def example_input_plot_handball_pitch() -> list:
     ax = plt.subplots()[1]
     input = [(0, 40), (0, 20), "m", "standard", False, ax]
 
@@ -32,7 +33,7 @@ def example_input_plot_handball_pitch() -> []:
 
 
 @pytest.fixture()
-def example_input_plot_handball_pitch_axis_ticks() -> []:
+def example_input_plot_handball_pitch_axis_ticks() -> list:
     ax = plt.subplots()[1]
     input = [(0, 40), (0, 20), "m", "standard", True, ax]
 
