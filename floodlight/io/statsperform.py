@@ -164,7 +164,7 @@ def read_teamsheets_from_open_data_csv(
         if not (tID in team_ids.values() or tID == ball_id or np.isnan(tID)):
             warnings.warn(
                 f"tID {tID} did not match any of the standard tIDs "
-                f"({team_ids.values}) or the ball ID ({ball_id})!"
+                f"({team_ids.values()}) or the ball ID ({ball_id})!"
             )
 
     # initialize teamsheets
@@ -477,7 +477,7 @@ def read_open_position_data_csv(
             [(periods[segment][0] <= frame <= periods[segment][-1]) for frame in frames]
         )
         xydata["Ball"][segment][:, 0] = ball_df["pos_x"].values[appearance]
-        xydata["Ball"][segment][:, 1] = ball_df["pos_x"].values[appearance]
+        xydata["Ball"][segment][:, 1] = ball_df["pos_y"].values[appearance]
 
         # update codes
         codes["possession"][segment] = ball_df["possession"].values[appearance]
