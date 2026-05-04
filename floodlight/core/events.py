@@ -207,8 +207,11 @@ class Events:
         framerate: int
             Temporal resolution of data in frames per second/Hertz.
         """
-        frameclock = np.full((len(self.events)), -1, dtype=int)
-        frameclock[:] = np.floor(self.events["gameclock"].values * framerate)
+
+        frameclock = np.full(len(self.events), -1, dtype=int)
+        gameclock = self.events["gameclock"].values * framerate
+        valid = ~np.isnan(gameclock)
+        frameclock[valid] = np.floor(gameclock[valid]).astype(int)
         self.events["frameclock"] = frameclock
 
     def select(
@@ -329,7 +332,7 @@ class Events:
                 "int64",
                 "float64",
             ]:
-                self.events["at_x"] = self.events["at_x"].map(lambda x: x * factor)
+                self.events["to_x"] = self.events["to_x"].map(lambda x: x * factor)
 
         if axis is None or axis == "y":
             if "at_y" in self.protected and self.events["at_y"].dtype in [
@@ -437,7 +440,7 @@ class Events:
         events_sliced: Union[Events, None]
         """
         if slice_by not in self.events:
-            ValueError(f"Events object does not contain column {slice_by}!")
+            raise ValueError(f"Events object does not contain column {slice_by}!")
         if start is None:
             start = 0
         if end is None:

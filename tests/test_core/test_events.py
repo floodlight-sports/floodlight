@@ -131,19 +131,6 @@ def test_column_values_in_range(
 
 
 @pytest.mark.unit
-def test_add_frameclock(example_events_data_minimal: pd.DataFrame) -> None:
-    # Arrange
-    data = Events(example_events_data_minimal)
-    framerate = 25
-
-    # Act
-    data.add_frameclock(framerate)
-
-    # Assert
-    assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] == 55
-
-
-@pytest.mark.unit
 def test_add_frameclock_with_values(example_events_data_minimal: pd.DataFrame) -> None:
     # Arrange
     data = Events(example_events_data_minimal)
@@ -168,7 +155,7 @@ def test_add_frameclock_with_none(
     data.add_frameclock(framerate)
 
     # Assert
-    assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] < 0
+    assert data["frameclock"].at[0] == 27 and data["frameclock"].at[1] == -1
 
 
 @pytest.mark.unit

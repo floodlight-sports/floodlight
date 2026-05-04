@@ -106,7 +106,7 @@ covered`
         elif axis == "y":
             if difference == "central":
                 distance_euclidean = np.gradient(xy.y, axis=0)
-            if difference == "backward":
+            elif difference == "backward":
                 distance_euclidean = np.diff(
                     xy.y, axis=0, prepend=xy.y[0].reshape(1, -1)
                 )

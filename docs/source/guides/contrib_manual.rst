@@ -23,7 +23,7 @@ Preliminaries
 There are a few pre-requisites for using this guide:
 
 * An account on `GitHub <https://github.com/>`_ where we host all the source code.
-* Both `python 3.8/3.9/3.10` and `git` installed on your machine. If that's not yet the case, install python from the `official page <https://www.python.org/downloads/>`_ (or check out `pyenv <https://github.com/pyenv/pyenv>`_) and `git <https://git-scm.com/>`_.
+* Both `python 3.10-3.12` and `git` installed on your machine. If that's not yet the case, install python from the `official page <https://www.python.org/downloads/>`_ (or check out `pyenv <https://github.com/pyenv/pyenv>`_) and `git <https://git-scm.com/>`_.
 
 .. NOTE::
 
@@ -298,7 +298,7 @@ To clarify this structure here is a very simple example:
 	    return number*number
 
     # test function
-    def test_square_zero()
+    def test_square_zero():
 	    #Arrange
 	    number = 0
 
