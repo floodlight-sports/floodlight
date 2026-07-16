@@ -236,7 +236,7 @@ def read_position_data_json(
                     y_column = x_column + 1
                     xy_objects[half]["Away"][t, x_column] = tracked_object["x"]
                     xy_objects[half]["Away"][t, y_column] = tracked_object["y"]
-                elif pID is ball_id:
+                elif pID == ball_id:
                     xy_objects[half]["Ball"][t, 0] = tracked_object["x"]
                     xy_objects[half]["Ball"][t, 1] = tracked_object["y"]
                 # do not track referee
