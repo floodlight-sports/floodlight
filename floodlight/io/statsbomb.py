@@ -264,7 +264,7 @@ def read_open_event_data_json(
         # get team and segment information
         period = event["period"]
         segment = "HT" + str(period)
-        team = links_tID_to_team[event["possession_team"]["id"]]
+        team = links_tID_to_team[event["team"]["id"]]
 
         # identifier and outcome:
         eID = event["type"]["id"]
